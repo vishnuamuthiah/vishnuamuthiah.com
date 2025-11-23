@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vishnu Muthiah - Product Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #202124;
+            background: #ffffff;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 60px 20px;
+        }
+        header {
+            margin-bottom: 60px;
+            border-bottom: 3px solid #1a73e8;
+            padding-bottom: 30px;
+        }
+        h1 {
+            font-size: 48px;
+            margin-bottom: 10px;
+            color: #202124;
+        }
+        .tagline {
+            font-size: 20px;
+            color: #5f6368;
+            margin-bottom: 20px;
+        }
+        .contact-links {
+            margin-top: 20px;
+        }
+        .contact-links a {
+            color: #1a73e8;
+            text-decoration: none;
+            margin-right: 20px;
+        }
+        .contact-links a:hover {
+            text-decoration: underline;
+        }
+        section {
+            margin-bottom: 60px;
+        }
+        h2 {
+            font-size: 32px;
+            margin-bottom: 20px;
+            color: #202124;
+        }
+        .about {
+            font-size: 18px;
+            line-height: 1.8;
+            color: #3c4043;
+        }
+        .project-grid {
+            display: grid;
+            gap: 30px;
+            margin-top: 30px;
+        }
+        .project-card {
+            border: 1px solid #dadce0;
+            border-radius: 8px;
+            padding: 30px;
+            background: #f8f9fa;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .project-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .project-card h3 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #1a73e8;
+        }
+        .project-card p {
+            color: #5f6368;
+            margin-bottom: 15px;
+        }
+        .project-card .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+        .tag {
+            background: #e8f0fe;
+            color: #1a73e8;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .project-links a {
+            display: inline-block;
+            color: #1a73e8;
+            text-decoration: none;
+            margin-right: 15px;
+            font-weight: 500;
+        }
+        .project-links a:hover {
+            text-decoration: underline;
+        }
+        .experience {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .experience h3 {
+            font-size: 20px;
+            margin-bottom: 15px;
+        }
+        .experience ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        .experience li {
+            padding: 8px 0;
+            color: #3c4043;
+        }
+        .experience li:before {
+            content: "→ ";
+            color: #1a73e8;
+            font-weight: bold;
+        }
+        footer {
+            margin-top: 80px;
+            padding-top: 30px;
+            border-top: 1px solid #dadce0;
+            color: #5f6368;
+            font-size: 14px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Vishnu Muthiah</h1>
+            <p class="tagline">Product Manager | Strategy Consultant | Builder</p>
+            <div class="contact-links">
+                <a href="mailto:VishnuAMuthiah@gmail.com">Email</a>
+                <a href="https://www.linkedin.com/in/vishnumuthiah" target="_blank">LinkedIn</a>
+            </div>
+        </header>
+
+        <section>
+            <h2>About</h2>
+            <div class="about">
+                <p>I'm a product manager and strategy consultant with 9 years of post-undergraduate experience. I combine strategic thinking from consulting with hands-on product development to build tools that solve real problems.</p>
+                <p style="margin-top: 15px;">My background includes tech consulting at IBM, an MBA from University of Michigan Ross School of Business, and strategy consulting work. Currently, I'm focused on building a portfolio of shipped products that demonstrate end-to-end product development capabilities.</p>
+            </div>
+            
+            <div class="experience">
+                <h3>Experience Highlights</h3>
+                <ul>
+                    <li>9 years post-undergraduate experience</li>
+                    <li>MBA, University of Michigan Ross School of Business</li>
+                    <li>Tech Consulting, IBM</li>
+                    <li>Strategy Consulting</li>
+                </ul>
+            </div>
+        </section>
+
+        <section>
+            <h2>Products</h2>
+            <div class="project-grid">
+                <div class="project-card">
+                    <h3>Sources Tracker for Google Slides™</h3>
+                    <p>A Google Workspace add-on that automatically detects and organizes citations, links, and references in presentations. Features include automatic source detection, threaded comments, cross-slide tracking, and exportable summaries.</p>
+                    <div class="tags">
+                        <span class="tag">Google Apps Script</span>
+                        <span class="tag">Product Management</span>
+                        <span class="tag">JavaScript</span>
+                        <span class="tag">OAuth</span>
+                    </div>
+                    <div class="project-links">
+                        <a href="/sources-tracker">Learn More →</a>
+                        <a href="https://workspace.google.com/marketplace" target="_blank">Install →</a>
+                    </div>
+                </div>
+                
+                <!-- Placeholder for future projects -->
+                <div class="project-card" style="opacity: 0.6;">
+                    <h3>More Projects Coming Soon</h3>
+                    <p>Currently building additional products to demonstrate range across different platforms, monetization models, and user segments.</p>
+                    <div class="tags">
+                        <span class="tag">In Development</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Contact</h2>
+            <p style="font-size: 18px; color: #3c4043;">
+                <strong>Email:</strong> <a href="mailto:VishnuAMuthiah@gmail.com" style="color: #1a73e8; text-decoration: none;">VishnuAMuthiah@gmail.com</a><br>
+                <strong>Response Time:</strong> 48-72 hours
+            </p>
+        </section>
+
+        <footer>
+            <p>&copy; 2025 Vishnu Muthiah. All rights reserved.</p>
+        </footer>
+    </div>
+</body>
+</html>

@@ -771,7 +771,7 @@ function getHomepageHTML() {
         <div class="portfolio-embed">
           <h3>Professional Experience</h3>
           <p>A overview of my professional experience, key projects, and capabilities across strategy consulting, product management, and software development.</p>
-          <div class="pdf-viewer-wrapper">
+          <div class="pdf-viewer-wrapper" style="padding-top: 58%;">
             <iframe
               src="https://drive.google.com/file/d/1wIy3K3nzAfCEweJIBcULe-5jm-aiJ8we/preview"
               title="Professional Bio PDF"

@@ -56,26 +56,27 @@ function getSharedStyles() {
       .container {
         max-width: 900px;
         margin: 0 auto;
-        padding: 60px 20px;
+        padding: 44px 20px;
       }
       header {
-        margin-bottom: 60px;
+        margin-bottom: 22px;
         border-bottom: 3px solid #1a73e8;
-        padding-bottom: 30px;
+        padding-bottom: 12px;
       }
       h1 {
         font-size: 48px;
-        margin-bottom: 10px;
+        margin-bottom: 4px;
         color: #202124;
       }
       h2 {
         font-size: 32px;
-        margin-bottom: 20px;
+        margin-top: 0;
+        margin-bottom: 8px;
         color: #202124;
       }
       h3 {
         font-size: 20px;
-        margin-bottom: 15px;
+        margin-bottom: 8px;
         color: #202124;
       }
       p, li {
@@ -105,16 +106,16 @@ function getSharedStyles() {
       .tagline {
         font-size: 20px;
         color: #5f6368;
-        margin-bottom: 20px;
+        margin-bottom: 6px;
       }
       .contact-links {
-        margin-top: 20px;
+        margin-top: 6px;
       }
       .contact-links a {
         margin-right: 20px;
       }
       section {
-        margin-bottom: 60px;
+        margin-bottom: 28px;
       }
       .about {
         font-size: 18px;
@@ -123,13 +124,13 @@ function getSharedStyles() {
       }
       .project-grid {
         display: grid;
-        gap: 30px;
-        margin-top: 30px;
+        gap: 18px;
+        margin-top: 16px;
       }
       .project-card {
         border: 1px solid #dadce0;
         border-radius: 8px;
-        padding: 30px;
+        padding: 18px 24px;
         background: #f8f9fa;
         transition: transform 0.2s, box-shadow 0.2s;
       }
@@ -167,16 +168,17 @@ function getSharedStyles() {
       }
       .experience {
         background: #f8f9fa;
-        padding: 30px;
+        padding: 18px 24px;
         border-radius: 8px;
-        margin-top: 20px;
+        margin-top: 12px;
       }
       .experience ul {
         list-style: none;
         padding-left: 0;
       }
       .experience li {
-        padding: 8px 0;
+        padding: 3px 0;
+        margin-bottom: 0;
       }
       .experience li:before {
         content: "→ ";
@@ -214,7 +216,7 @@ function getSharedStyles() {
       .portfolio-embed {
         border: 1px solid #dadce0;
         border-radius: 8px;
-        padding: 30px;
+        padding: 18px 24px;
         background: #f8f9fa;
         transition: transform 0.2s, box-shadow 0.2s;
       }
@@ -809,7 +811,7 @@ function getHomepageHTML() {
         <div class="portfolio-embed">
           <h3>Consulting Case Interview Mental Model</h3>
           <p>A comprehensive mental model for developing the framework to tackle any consulting case interview.</p>
-          <div class="pdf-viewer-wrapper">
+          <div class="pdf-viewer-wrapper" style="padding-top: 58%;">
             <iframe
               src="https://drive.google.com/file/d/1FxHmnqk2j1rpzcNAYWlfcmt7LVCOY60r/preview"
               title="Case Interview Mental Model PDF"

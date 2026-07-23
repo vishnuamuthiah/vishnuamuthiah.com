@@ -419,273 +419,7 @@ function getTradeVisionPageStyles() {
         font-weight: 600;
       }
 
-      /* (3) Section banding: tinted panels break up the white */
-      .tv-band {
-        background: #f4f6f8;
-        border: 1px solid #e6e9ec;
-        border-radius: 16px;
-        padding: 30px 24px 34px;
-        margin: 16px 0 55px;
-      }
-      .tv-band-title {
-        margin: 0 0 22px;
-        color: #1a73e8;
-        text-align: center;
-      }
-
-      /* (2) Demo Videos coverflow: active clip centered, neighbors behind + grayed */
-      .tv-coverflow {
-        position: relative;
-        max-width: 880px;
-        margin: 0 auto;
-      }
-      .tv-cf-stage {
-        position: relative;
-        height: 720px;
-      }
-      .tv-cf-item {
-        position: absolute;
-        top: 0;
-        left: 50%;
-        width: 365px;
-        max-width: 82vw;
-        margin: 0;
-        transform: translateX(-50%) scale(0.8);
-        opacity: 0;
-        transition: transform 0.4s ease, opacity 0.4s ease, filter 0.4s ease;
-        z-index: 1;
-      }
-      .tv-cf-item.is-active {
-        transform: translateX(-50%) scale(1);
-        opacity: 1;
-        filter: none;
-        z-index: 3;
-      }
-      .tv-cf-item.is-prev {
-        transform: translateX(calc(-50% - 235px)) scale(0.8);
-        opacity: 0.6;
-        filter: grayscale(0.9) brightness(0.75);
-        z-index: 2;
-        cursor: pointer;
-      }
-      .tv-cf-item.is-next {
-        transform: translateX(calc(-50% + 235px)) scale(0.8);
-        opacity: 0.6;
-        filter: grayscale(0.9) brightness(0.75);
-        z-index: 2;
-        cursor: pointer;
-      }
-      /* Neighbors: whole card is a click target to bring it forward (no play/scrub) */
-      .tv-cf-item:not(.is-active) .tv-short-frame {
-        pointer-events: none;
-      }
-      .tv-coverflow .tv-carousel-arrow {
-        z-index: 4;
-      }
-      .tv-cf-item .tv-carousel-caption {
-        max-width: 365px;
-        margin-left: auto;
-        margin-right: auto;
-      }
-      @media (max-width: 760px) {
-        /* Tighter fanning on narrow screens */
-        .tv-cf-item.is-prev { transform: translateX(calc(-50% - 42vw)) scale(0.78); }
-        .tv-cf-item.is-next { transform: translateX(calc(-50% + 42vw)) scale(0.78); }
-      }
-      .tv-gallery {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 24px;
-        margin: 30px 0 50px;
-      }
-      .tv-gallery figure {
-        margin: 0;
-        text-align: center;
-      }
-      .tv-gallery img {
-        display: block;
-        width: 100%;
-        height: auto;
-        border-radius: 12px;
-        border: 1px solid #dadce0;
-        background: #0d1117;
-      }
-      .tv-gallery figcaption {
-        margin-top: 12px;
-        font-size: 14px;
-        color: #5f6368;
-        line-height: 1.4;
-      }
-      .tv-copy h2 {
-        margin-top: 45px;
-        margin-bottom: 15px;
-      }
-      .tv-copy h3 {
-        margin-top: 30px;
-        margin-bottom: 8px;
-        color: #1a73e8;
-      }
-      .tv-copy p {
-        font-size: 17px;
-      }
-      .tv-copy ul {
-        margin-bottom: 20px;
-      }
-      .tv-disclaimer {
-        margin-top: 35px;
-        font-size: 14px;
-        color: #5f6368;
-        border-top: 1px solid #dadce0;
-        padding-top: 20px;
-      }
-
-      /* ===== Demo Videos carousel (YouTube Shorts, 9:16) ===== */
-      .tv-carousel {
-        position: relative;
-        max-width: 460px;
-        margin: 20px auto 50px;
-      }
-      .tv-carousel-viewport {
-        overflow: hidden;
-        max-width: 355px;
-        margin: 0 auto;
-        border-radius: 12px;
-      }
-      .tv-carousel-track {
-        display: flex;
-        transition: transform 0.35s ease;
-      }
-      .tv-carousel-slide {
-        flex: 0 0 100%;
-        min-width: 100%;
-      }
-      .tv-short-frame {
-        position: relative;
-        width: 100%;
-        padding-top: 177.78%; /* 9:16 vertical */
-        background: #0d1117;
-        border-radius: 12px;
-        overflow: hidden;
-        border: 1px solid #dadce0;
-      }
-      .tv-short-frame video {
-        position: absolute;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        border: 0;
-        object-fit: contain;
-        background: #000;
-      }
-      .tv-play-overlay {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        z-index: 2;
-        width: 76px;
-        height: 76px;
-        border-radius: 50%;
-        border: none;
-        padding: 0;
-        background: rgba(233, 234, 237, 0.92); /* light gray */
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: opacity 0.25s ease, transform 0.2s ease, background 0.2s ease;
-      }
-      .tv-play-overlay svg {
-        width: 36px;
-        height: 36px;
-        margin-left: 3px; /* optically center the triangle */
-        fill: #202124; /* dark triangle for contrast on the light gray circle */
-      }
-      .tv-play-overlay:hover {
-        background: rgba(255, 255, 255, 0.98);
-        transform: translate(-50%, -50%) scale(1.06);
-      }
-      .tv-play-overlay.hidden {
-        opacity: 0;
-        pointer-events: none;
-      }
-      .tv-carousel-caption {
-        text-align: center;
-        font-size: 14px;
-        color: #5f6368;
-        line-height: 1.4;
-        margin: 12px 0 0;
-      }
-      /* Image-carousel variant (app screenshots, no fixed 9:16 frame) */
-      .tv-carousel--images .tv-carousel-viewport {
-        max-width: 360px;
-      }
-      .tv-carousel-img {
-        display: block;
-        width: 100%;
-        height: auto;
-        border-radius: 12px;
-      }
-      .tv-carousel-arrow {
-        position: absolute;
-        top: 40%;
-        transform: translateY(-50%);
-        z-index: 2;
-        width: 44px;
-        height: 44px;
-        border-radius: 50%;
-        border: 1px solid #dadce0;
-        background: #fff;
-        color: #1a73e8;
-        font-size: 26px;
-        line-height: 1;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-        transition: background 0.2s, box-shadow 0.2s;
-      }
-      .tv-carousel-arrow:hover {
-        background: #f1f5fd;
-        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.18);
-      }
-      .tv-carousel-prev { left: 0; }
-      .tv-carousel-next { right: 0; }
-      .tv-carousel-dots {
-        display: flex;
-        justify-content: center;
-        gap: 10px;
-        margin-top: 18px;
-      }
-      .tv-carousel-dot {
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        border: none;
-        background: #dadce0;
-        cursor: pointer;
-        padding: 0;
-        transition: background 0.2s, transform 0.2s;
-      }
-      .tv-carousel-dot.active {
-        background: #1a73e8;
-        transform: scale(1.25);
-      }
-      @media (max-width: 640px) {
-        .tv-gallery {
-          grid-template-columns: 1fr;
-          max-width: 340px;
-          margin-left: auto;
-          margin-right: auto;
-        }
-      }
-      @media (max-width: 480px) {
-        .tv-carousel { max-width: 340px; }
-        .tv-carousel-arrow { background: rgba(255, 255, 255, 0.85); }
-        .tv-carousel-prev { left: 2px; }
-        .tv-carousel-next { right: 2px; }
-      }
+      ${getCarouselCSS()}
     </style>
   `;
 }
@@ -1062,15 +796,12 @@ function getHomepageHTML() {
           <h3><a href="/tradevision" target="_blank" rel="noopener noreferrer">TradeVision Edge</a></h3>
           <p>Take a screenshot of your Robinhood order and watch it become an interactive P&amp;L chart. Model different scenarios by adjusting your days to expiration and your implied volatility. Then analyze your Greeks and break-evens, all privately on your device.</p>
 
-          <div style="margin: 20px 0;">
-            <iframe width="100%" height="500" src="https://www.youtube.com/embed/WLhx_eBNLlg" title="TradeVision Edge walkthrough" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen style="border-radius: 8px;"></iframe>
+          <div style="margin: 8px 0 0;">
+            ${getDemoVideosHTML()}
           </div>
 
-          <div class="tags">
-          </div>
           <div class="project-links">
             <a href="/tradevision">Learn More →</a>
-            <a href="https://youtube.com/shorts/WLhx_eBNLlg" target="_blank" rel="noopener noreferrer">Watch on YouTube →</a>
           </div>
         </div>
 
@@ -1170,28 +901,284 @@ function getHomepageHTML() {
         });
       });
     </script>
-  `);
+    ${getDemoVideosScript()}
+  `, `<style>${getCarouselCSS()}</style>`);
 }
 
-function getTradeVisionHTML() {
-  return getLayout('TradeVision Edge — Options Payoff Charts from a Robinhood Screenshot', `
-    <div class="container">
-      <a href="/" class="back-link">← Back to Home</a>
+// ===== Shared Demo Videos coverflow (used by home + /tradevision) =====
+function getCarouselCSS() {
+  return `
+      /* (3) Section banding: tinted panels break up the white */
+      .tv-band {
+        background: #f4f6f8;
+        border: 1px solid #e6e9ec;
+        border-radius: 16px;
+        padding: 14px 24px 14px;
+        margin: 6px 0 14px;
+      }
+      .tv-band-title {
+        margin: 0 0 22px;
+        color: #1a73e8;
+        text-align: center;
+      }
 
-      <h1>TradeVision Edge</h1>
-      <p class="tagline">Take a screenshot from Robinhood and watch it become an interactive P&amp;L chart. Model different scenarios by adjusting your days to expiration and your implied volatility. Then analyze your Greeks and break-evens, all privately on your device.</p>
+      /* (2) Demo Videos coverflow: active clip centered, neighbors behind + grayed */
+      .tv-coverflow {
+        position: relative;
+        max-width: 880px;
+        margin: 0 auto;
+      }
+      .tv-cf-stage {
+        position: relative;
+        height: 702px;
+      }
+      .tv-cf-item {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        width: 365px;
+        max-width: 82vw;
+        margin: 0;
+        transform: translateX(-50%) scale(0.8);
+        opacity: 0;
+        transition: transform 0.4s ease, opacity 0.4s ease, filter 0.4s ease;
+        z-index: 1;
+      }
+      .tv-cf-item.is-active {
+        transform: translateX(-50%) scale(1);
+        opacity: 1;
+        filter: none;
+        z-index: 3;
+      }
+      .tv-cf-item.is-prev {
+        transform: translateX(calc(-50% - 235px)) scale(0.8);
+        opacity: 0.6;
+        filter: grayscale(0.9) brightness(0.75);
+        z-index: 2;
+        cursor: pointer;
+      }
+      .tv-cf-item.is-next {
+        transform: translateX(calc(-50% + 235px)) scale(0.8);
+        opacity: 0.6;
+        filter: grayscale(0.9) brightness(0.75);
+        z-index: 2;
+        cursor: pointer;
+      }
+      /* Neighbors: whole card is a click target to bring it forward (no play/scrub) */
+      .tv-cf-item:not(.is-active) .tv-short-frame {
+        pointer-events: none;
+      }
+      .tv-coverflow .tv-carousel-arrow {
+        z-index: 4;
+      }
+      .tv-cf-item .tv-carousel-caption {
+        max-width: 365px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+      @media (max-width: 760px) {
+        /* Tighter fanning on narrow screens */
+        .tv-cf-item.is-prev { transform: translateX(calc(-50% - 42vw)) scale(0.78); }
+        .tv-cf-item.is-next { transform: translateX(calc(-50% + 42vw)) scale(0.78); }
+      }
+      .tv-gallery {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 24px;
+        margin: 30px 0 50px;
+      }
+      .tv-gallery figure {
+        margin: 0;
+        text-align: center;
+      }
+      .tv-gallery img {
+        display: block;
+        width: 100%;
+        height: auto;
+        border-radius: 12px;
+        border: 1px solid #dadce0;
+        background: #0d1117;
+      }
+      .tv-gallery figcaption {
+        margin-top: 12px;
+        font-size: 14px;
+        color: #5f6368;
+        line-height: 1.4;
+      }
+      .tv-copy h2 {
+        margin-top: 45px;
+        margin-bottom: 15px;
+      }
+      .tv-copy h3 {
+        margin-top: 30px;
+        margin-bottom: 8px;
+        color: #1a73e8;
+      }
+      .tv-copy p {
+        font-size: 17px;
+      }
+      .tv-copy ul {
+        margin-bottom: 20px;
+      }
+      .tv-disclaimer {
+        margin-top: 35px;
+        font-size: 14px;
+        color: #5f6368;
+        border-top: 1px solid #dadce0;
+        padding-top: 20px;
+      }
 
-      <div class="tv-cta">
-        <a class="appstore-badge" href="https://apps.apple.com/app/id6786063635" target="_blank" rel="noopener noreferrer" aria-label="Download TradeVision Edge on the App Store">
-          <svg class="appstore-badge__logo" viewBox="0 0 384 512" aria-hidden="true"><path fill="currentColor" d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/></svg>
-          <span class="appstore-badge__text">
-            <span class="appstore-badge__small">Download on the</span>
-            <span class="appstore-badge__big">App Store</span>
-          </span>
-        </a>
-      </div>
+      /* ===== Demo Videos carousel (YouTube Shorts, 9:16) ===== */
+      .tv-carousel {
+        position: relative;
+        max-width: 460px;
+        margin: 20px auto 50px;
+      }
+      .tv-carousel-viewport {
+        overflow: hidden;
+        max-width: 355px;
+        margin: 0 auto;
+        border-radius: 12px;
+      }
+      .tv-carousel-track {
+        display: flex;
+        transition: transform 0.35s ease;
+      }
+      .tv-carousel-slide {
+        flex: 0 0 100%;
+        min-width: 100%;
+      }
+      .tv-short-frame {
+        position: relative;
+        width: 100%;
+        padding-top: 177.78%; /* 9:16 vertical */
+        background: #0d1117;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid #dadce0;
+      }
+      .tv-short-frame video {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        border: 0;
+        object-fit: contain;
+        background: #000;
+      }
+      .tv-play-overlay {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 2;
+        width: 76px;
+        height: 76px;
+        border-radius: 50%;
+        border: none;
+        padding: 0;
+        background: rgba(233, 234, 237, 0.92); /* light gray */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: opacity 0.25s ease, transform 0.2s ease, background 0.2s ease;
+      }
+      .tv-play-overlay svg {
+        width: 36px;
+        height: 36px;
+        margin-left: 3px; /* optically center the triangle */
+        fill: #202124; /* dark triangle for contrast on the light gray circle */
+      }
+      .tv-play-overlay:hover {
+        background: rgba(255, 255, 255, 0.98);
+        transform: translate(-50%, -50%) scale(1.06);
+      }
+      .tv-play-overlay.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+      .tv-carousel-caption {
+        text-align: center;
+        font-size: 14px;
+        color: #5f6368;
+        line-height: 1.4;
+        margin: 12px 0 0;
+      }
+      /* Image-carousel variant (app screenshots, no fixed 9:16 frame) */
+      .tv-carousel--images .tv-carousel-viewport {
+        max-width: 360px;
+      }
+      .tv-carousel-img {
+        display: block;
+        width: 100%;
+        height: auto;
+        border-radius: 12px;
+      }
+      .tv-carousel-arrow {
+        position: absolute;
+        top: 40%;
+        transform: translateY(-50%);
+        z-index: 2;
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        border: 1px solid #dadce0;
+        background: #fff;
+        color: #1a73e8;
+        font-size: 26px;
+        line-height: 1;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+        transition: background 0.2s, box-shadow 0.2s;
+      }
+      .tv-carousel-arrow:hover {
+        background: #f1f5fd;
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.18);
+      }
+      .tv-carousel-prev { left: 0; }
+      .tv-carousel-next { right: 0; }
+      .tv-carousel-dots {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 8px;
+      }
+      .tv-carousel-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        border: none;
+        background: #dadce0;
+        cursor: pointer;
+        padding: 0;
+        transition: background 0.2s, transform 0.2s;
+      }
+      .tv-carousel-dot.active {
+        background: #1a73e8;
+        transform: scale(1.25);
+      }
+      @media (max-width: 640px) {
+        .tv-gallery {
+          grid-template-columns: 1fr;
+          max-width: 340px;
+          margin-left: auto;
+          margin-right: auto;
+        }
+      }
+      @media (max-width: 480px) {
+        .tv-carousel { max-width: 340px; }
+        .tv-carousel-arrow { background: rgba(255, 255, 255, 0.85); }
+        .tv-carousel-prev { left: 2px; }
+        .tv-carousel-next { right: 2px; }
+      }`;
+}
 
-      <!-- Demo Videos: three R2-hosted MP4s (videos.vishnumuthiah.com/v2/) in a coverflow. -->
+function getDemoVideosHTML() {
+  return `      <!-- Demo Videos: three R2-hosted MP4s (videos.vishnumuthiah.com/v2/) in a coverflow. -->
       <!-- One active/centered; neighbors sit behind, scaled + grayed. Click a neighbor to bring it forward. -->
       <section class="tv-band">
         <h3 class="tv-band-title">Demo Videos</h3>
@@ -1231,7 +1218,122 @@ function getTradeVisionHTML() {
             <button class="tv-carousel-dot" type="button" aria-label="Show Long Iron Condor"></button>
           </div>
         </div>
-      </section>
+      </section>`;
+}
+
+function getDemoVideosScript() {
+  return `    <script>
+      (function () {
+        function initCarousel(carousel) {
+          var track = carousel.querySelector('.tv-carousel-track');
+          var slides = carousel.querySelectorAll('.tv-carousel-slide');
+          var dots = carousel.querySelectorAll('.tv-carousel-dot');
+          var prev = carousel.querySelector('.tv-carousel-prev');
+          var next = carousel.querySelector('.tv-carousel-next');
+          if (!track || !slides.length) return;
+          var count = slides.length;
+          var index = 0;
+
+          function pauseAll() {
+            carousel.querySelectorAll('video').forEach(function (v) {
+              try { v.pause(); } catch (e) {}
+            });
+          }
+
+          function go(i) {
+            pauseAll();
+            index = (i + count) % count;
+            track.style.transform = 'translateX(-' + (index * 100) + '%)';
+            dots.forEach(function (d, di) { d.classList.toggle('active', di === index); });
+          }
+
+          if (prev) prev.addEventListener('click', function () { go(index - 1); });
+          if (next) next.addEventListener('click', function () { go(index + 1); });
+          dots.forEach(function (d, di) {
+            d.addEventListener('click', function () { go(di); });
+          });
+
+          go(0);
+        }
+
+        document.querySelectorAll('.tv-carousel').forEach(initCarousel);
+
+        // Demo Videos coverflow: one active/centered, neighbors behind + grayed.
+        (function initCoverflow() {
+          var cf = document.getElementById('demoCoverflow');
+          if (!cf) return;
+          var items = Array.prototype.slice.call(cf.querySelectorAll('.tv-cf-item'));
+          var dots = cf.querySelectorAll('.tv-carousel-dot');
+          var prevBtn = cf.querySelector('.tv-carousel-prev');
+          var nextBtn = cf.querySelector('.tv-carousel-next');
+          var n = items.length;
+          if (!n) return;
+          var current = 0;
+          items.forEach(function (it, i) { if (it.classList.contains('is-active')) current = i; });
+
+          function render() {
+            items.forEach(function (it, i) {
+              var rel = (i - current + n) % n;
+              it.classList.remove('is-active', 'is-prev', 'is-next');
+              if (rel === 0) it.classList.add('is-active');
+              else if (rel === 1) it.classList.add('is-next');
+              else if (rel === n - 1) it.classList.add('is-prev');
+            });
+            dots.forEach(function (d, i) { d.classList.toggle('active', i === current); });
+          }
+
+          function go(i) {
+            cf.querySelectorAll('video').forEach(function (v) { try { v.pause(); } catch (e) {} });
+            current = (i + n) % n;
+            render();
+          }
+
+          items.forEach(function (it, i) {
+            it.addEventListener('click', function (e) {
+              if (i !== current) { e.preventDefault(); go(i); }
+            });
+          });
+          if (prevBtn) prevBtn.addEventListener('click', function () { go(current - 1); });
+          if (nextBtn) nextBtn.addEventListener('click', function () { go(current + 1); });
+          dots.forEach(function (d, i) { d.addEventListener('click', function () { go(i); }); });
+
+          render();
+        })();
+
+        // Play button per demo video: click to play, hide while playing,
+        // reappear on pause/end.
+        document.querySelectorAll('.tv-short-frame').forEach(function (frame) {
+          var v = frame.querySelector('video');
+          var ov = frame.querySelector('.tv-play-overlay');
+          if (!v || !ov) return;
+          ov.addEventListener('click', function () { v.play(); });
+          v.addEventListener('play', function () { ov.classList.add('hidden'); });
+          v.addEventListener('pause', function () { ov.classList.remove('hidden'); });
+          v.addEventListener('ended', function () { ov.classList.remove('hidden'); });
+        });
+      })();
+    </script>`;
+}
+
+function getTradeVisionHTML() {
+  return getLayout('TradeVision Edge — Options Payoff Charts from a Robinhood Screenshot', `
+    <div class="container">
+      <a href="/" class="back-link">← Back to Home</a>
+
+      <h1>TradeVision Edge</h1>
+      <p class="tagline">Take a screenshot from Robinhood and watch it become an interactive P&amp;L chart. Model different scenarios by adjusting your days to expiration and your implied volatility. Then analyze your Greeks and break-evens, all privately on your device.</p>
+
+      <div class="tv-cta">
+        <a class="appstore-badge" href="https://apps.apple.com/app/id6786063635" target="_blank" rel="noopener noreferrer" aria-label="Download TradeVision Edge on the App Store">
+          <svg class="appstore-badge__logo" viewBox="0 0 384 512" aria-hidden="true"><path fill="currentColor" d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/></svg>
+          <span class="appstore-badge__text">
+            <span class="appstore-badge__small">Download on the</span>
+            <span class="appstore-badge__big">App Store</span>
+          </span>
+        </a>
+      </div>
+
+      ${getDemoVideosHTML()}
 
       <section class="tv-copy">
         <p>TradeVision Edge turns any options trade into an interactive payoff chart so you can trade smarter.</p>
@@ -1334,97 +1436,7 @@ function getTradeVisionHTML() {
       </footer>
     </div>
 
-    <script>
-      (function () {
-        function initCarousel(carousel) {
-          var track = carousel.querySelector('.tv-carousel-track');
-          var slides = carousel.querySelectorAll('.tv-carousel-slide');
-          var dots = carousel.querySelectorAll('.tv-carousel-dot');
-          var prev = carousel.querySelector('.tv-carousel-prev');
-          var next = carousel.querySelector('.tv-carousel-next');
-          if (!track || !slides.length) return;
-          var count = slides.length;
-          var index = 0;
-
-          function pauseAll() {
-            carousel.querySelectorAll('video').forEach(function (v) {
-              try { v.pause(); } catch (e) {}
-            });
-          }
-
-          function go(i) {
-            pauseAll();
-            index = (i + count) % count;
-            track.style.transform = 'translateX(-' + (index * 100) + '%)';
-            dots.forEach(function (d, di) { d.classList.toggle('active', di === index); });
-          }
-
-          if (prev) prev.addEventListener('click', function () { go(index - 1); });
-          if (next) next.addEventListener('click', function () { go(index + 1); });
-          dots.forEach(function (d, di) {
-            d.addEventListener('click', function () { go(di); });
-          });
-
-          go(0);
-        }
-
-        document.querySelectorAll('.tv-carousel').forEach(initCarousel);
-
-        // Demo Videos coverflow: one active/centered, neighbors behind + grayed.
-        (function initCoverflow() {
-          var cf = document.getElementById('demoCoverflow');
-          if (!cf) return;
-          var items = Array.prototype.slice.call(cf.querySelectorAll('.tv-cf-item'));
-          var dots = cf.querySelectorAll('.tv-carousel-dot');
-          var prevBtn = cf.querySelector('.tv-carousel-prev');
-          var nextBtn = cf.querySelector('.tv-carousel-next');
-          var n = items.length;
-          if (!n) return;
-          var current = 0;
-          items.forEach(function (it, i) { if (it.classList.contains('is-active')) current = i; });
-
-          function render() {
-            items.forEach(function (it, i) {
-              var rel = (i - current + n) % n;
-              it.classList.remove('is-active', 'is-prev', 'is-next');
-              if (rel === 0) it.classList.add('is-active');
-              else if (rel === 1) it.classList.add('is-next');
-              else if (rel === n - 1) it.classList.add('is-prev');
-            });
-            dots.forEach(function (d, i) { d.classList.toggle('active', i === current); });
-          }
-
-          function go(i) {
-            cf.querySelectorAll('video').forEach(function (v) { try { v.pause(); } catch (e) {} });
-            current = (i + n) % n;
-            render();
-          }
-
-          items.forEach(function (it, i) {
-            it.addEventListener('click', function (e) {
-              if (i !== current) { e.preventDefault(); go(i); }
-            });
-          });
-          if (prevBtn) prevBtn.addEventListener('click', function () { go(current - 1); });
-          if (nextBtn) nextBtn.addEventListener('click', function () { go(current + 1); });
-          dots.forEach(function (d, i) { d.addEventListener('click', function () { go(i); }); });
-
-          render();
-        })();
-
-        // Play button per demo video: click to play, hide while playing,
-        // reappear on pause/end.
-        document.querySelectorAll('.tv-short-frame').forEach(function (frame) {
-          var v = frame.querySelector('video');
-          var ov = frame.querySelector('.tv-play-overlay');
-          if (!v || !ov) return;
-          ov.addEventListener('click', function () { v.play(); });
-          v.addEventListener('play', function () { ov.classList.add('hidden'); });
-          v.addEventListener('pause', function () { ov.classList.remove('hidden'); });
-          v.addEventListener('ended', function () { ov.classList.remove('hidden'); });
-        });
-      })();
-    </script>
+    ${getDemoVideosScript()}
   `, getTradeVisionPageStyles(), {
     description: 'Turn a Robinhood options screenshot into an interactive P&L chart. Model days-to-expiration and implied volatility, then read your Greeks and break-evens — all privately on your iPhone.',
     image: 'https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/payoff-chart.png',

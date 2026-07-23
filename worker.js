@@ -24,10 +24,15 @@ export default {
         headers: { "content-type": "text/html;charset=UTF-8" },
       });
 
-    } else if (path === '/tradevision') {
+    } else if (path === '/optionsvision') {
       return new Response(getTradeVisionHTML(), {
         headers: { "content-type": "text/html;charset=UTF-8" },
       });
+
+    } else if (path === '/tradevision') {
+      // Old app-name URL — permanently redirect to /optionsvision so existing
+      // links (App Store listing, previously shared links) keep working.
+      return Response.redirect(url.origin + '/optionsvision', 301);
 
     } else {
       return new Response(getHomepageHTML(), {
@@ -833,7 +838,7 @@ function getHomepageHTML() {
 
         <!-- OptionsVision -->
         <div class="project-card">
-          <h3><a href="/tradevision" target="_blank" rel="noopener noreferrer">OptionsVision</a></h3>
+          <h3><a href="/optionsvision" target="_blank" rel="noopener noreferrer">OptionsVision</a></h3>
           <p>Take a screenshot of your Robinhood order and watch it become an interactive P&amp;L chart. Model different scenarios by adjusting your days to expiration and your implied volatility. Then analyze your Greeks and break-evens, all privately on your device.</p>
 
           <div style="margin: 8px 0 0;">
@@ -841,7 +846,7 @@ function getHomepageHTML() {
           </div>
 
           <div class="project-links">
-            <a href="/tradevision">Learn More →</a>
+            <a href="/optionsvision">Learn More →</a>
           </div>
         </div>
 
@@ -1494,7 +1499,7 @@ function getTradeVisionHTML() {
   `, getTradeVisionPageStyles(), {
     description: 'Turn a Robinhood options screenshot into an interactive P&L chart. Model days-to-expiration and implied volatility, then read your Greeks and break-evens — all privately on your iPhone.',
     image: 'https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/payoff-chart.png',
-    url: 'https://vishnumuthiah.com/tradevision',
+    url: 'https://vishnumuthiah.com/optionsvision',
   });
 }
 

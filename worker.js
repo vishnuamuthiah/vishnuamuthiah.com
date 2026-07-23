@@ -373,12 +373,13 @@ function getTradeVisionPageStyles() {
       }
       .tv-walkthrough h3 {
         margin-top: 0;
-        margin-bottom: 14px;
+        margin-bottom: 20px;
         text-align: center;
+        font-size: 28px;
       }
-      /* Demo Videos band title: match the 24px "Demo Walkthrough" heading (scoped to /tradevision) */
+      /* Demo Videos band title: match the "Demo Walkthrough" heading (scoped to /tradevision) */
       .tv-band-title {
-        font-size: 24px;
+        font-size: 28px;
       }
       .tv-walkthrough .tv-carousel {
         margin: 6px auto 6px;

@@ -371,7 +371,9 @@ function getTradeVisionPageStyles() {
         padding-top: 0;
         padding-bottom: 10px;
       }
-      .tv-walkthrough h3 {
+      /* .tv-copy h3 (defined later, equal specificity) was overriding the margins here,
+         so scope with the parent to win the cascade. */
+      .tv-copy .tv-walkthrough h3 {
         margin-top: 0;
         margin-bottom: 36px;
         text-align: center;

@@ -373,7 +373,7 @@ function getTradeVisionPageStyles() {
       }
       .tv-walkthrough h3 {
         margin-top: 0;
-        margin-bottom: 20px;
+        margin-bottom: 36px;
         text-align: center;
         font-size: 28px;
       }

@@ -461,11 +461,37 @@ function getLayout(title, content, additionalStyles = '', meta = {}) {
     ${metaTags}
     ${getSharedStyles()}
     ${additionalStyles}
+    ${getMobileStyles()}
 </head>
 <body>
     ${content}
 </body>
 </html>`;
+}
+
+// ===== Phone-only layout tweaks =====
+// Loaded LAST in <head> so, at equal specificity, these win over the desktop
+// rules above. Everything is scoped inside @media (max-width: 600px), so the
+// laptop/desktop layout is byte-for-byte unchanged — this only applies to phones
+// (and any window narrowed below 600px).
+function getMobileStyles() {
+  return `
+    <style>
+      @media (max-width: 600px) {
+        /* Never let the page scroll sideways: clip the fanned coverflow neighbors
+           (the real source of the horizontal overflow) + a body-level safety net. */
+        body { overflow-x: hidden; }
+        .tv-cf-stage { overflow-x: hidden; }
+
+        /* Comfortable edge padding on small screens */
+        .container { padding-left: 16px; padding-right: 16px; padding-top: 28px; }
+
+        /* Headings scaled down a step so long titles don't dominate the screen */
+        h1 { font-size: 34px; }
+        h2 { font-size: 24px; }
+        .tagline { font-size: 18px; }
+      }
+    </style>`;
 }
 
 // ===== PAGE FUNCTIONS =====

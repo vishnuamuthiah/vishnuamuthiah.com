@@ -1193,7 +1193,6 @@ function getDemoVideosHTML() {
       <section class="tv-band">
         <h3 class="tv-band-title">Demo Videos</h3>
         <div class="tv-coverflow" id="demoCoverflow">
-          <button class="tv-carousel-arrow tv-carousel-prev" type="button" aria-label="Previous video">&#8249;</button>
           <div class="tv-cf-stage">
 
             <figure class="tv-cf-item is-prev">
@@ -1221,7 +1220,6 @@ function getDemoVideosHTML() {
             </figure>
 
           </div>
-          <button class="tv-carousel-arrow tv-carousel-next" type="button" aria-label="Next video">&#8250;</button>
           <div class="tv-carousel-dots">
             <button class="tv-carousel-dot" type="button" aria-label="Show Call Debit Spread"></button>
             <button class="tv-carousel-dot active" type="button" aria-label="Show Long Call"></button>

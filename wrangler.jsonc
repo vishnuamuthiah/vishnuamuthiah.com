@@ -1,0 +1,14 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // Exact name of the live Worker serving vishnumuthiah.com (confirmed from the
+  // Cloudflare dashboard). Deploying by this name updates the site in place.
+  "name": "vishnu-muthiah-portfolio",
+  "main": "worker.js",
+  "compatibility_date": "2026-07-22",
+  "observability": {
+    "enabled": true
+  }
+  // The custom domain (vishnumuthiah.com) is already attached to the Worker in
+  // the dashboard, so no "routes" are needed here -- deploying by the correct
+  // name updates the code and the existing domain binding stays put.
+}

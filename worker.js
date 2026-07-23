@@ -375,7 +375,7 @@ function getTradeVisionPageStyles() {
          so scope with the parent to win the cascade. */
       .tv-copy .tv-walkthrough h3 {
         margin-top: 0;
-        margin-bottom: 36px;
+        margin-bottom: 22px;
         text-align: center;
         font-size: 28px;
       }

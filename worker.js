@@ -367,13 +367,13 @@ function getTradeVisionPageStyles() {
       }
       /* Walkthrough sits at the top of "How It Works" — kept tight */
       .tv-walkthrough {
-        margin-top: 0;
-        padding-top: 2px;
+        margin-top: -6px;
+        padding-top: 0;
         padding-bottom: 10px;
       }
       .tv-walkthrough h3 {
         margin-top: 0;
-        margin-bottom: 6px;
+        margin-bottom: 14px;
         text-align: center;
       }
       /* Demo Videos band title: match the 24px "Demo Walkthrough" heading (scoped to /tradevision) */

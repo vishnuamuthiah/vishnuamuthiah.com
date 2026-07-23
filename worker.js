@@ -1345,14 +1345,25 @@ function getDemoVideosScript() {
 
         // Play button per demo video: click to play, hide while playing,
         // reappear on pause/end.
+        // Touch devices synthesize a "ghost" click ~300ms after a tap. When a tap
+        // pauses the video, the overlay reappears and that delayed ghost click can
+        // land on it and immediately replay the video. Guard against activations
+        // that happen right after the overlay is shown — touch only, so mouse/PC
+        // behavior is unchanged.
+        var isTouch = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
         document.querySelectorAll('.tv-short-frame').forEach(function (frame) {
           var v = frame.querySelector('video');
           var ov = frame.querySelector('.tv-play-overlay');
           if (!v || !ov) return;
-          ov.addEventListener('click', function () { v.play(); });
+          var shownAt = 0;
+          function showOverlay() { ov.classList.remove('hidden'); shownAt = Date.now(); }
+          ov.addEventListener('click', function (e) {
+            if (isTouch && Date.now() - shownAt < 450) { e.preventDefault(); return; }
+            v.play();
+          });
           v.addEventListener('play', function () { ov.classList.add('hidden'); });
-          v.addEventListener('pause', function () { ov.classList.remove('hidden'); });
-          v.addEventListener('ended', function () { ov.classList.remove('hidden'); });
+          v.addEventListener('pause', showOverlay);
+          v.addEventListener('ended', showOverlay);
         });
       })();
     </script>`;

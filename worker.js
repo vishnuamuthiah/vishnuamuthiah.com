@@ -368,7 +368,7 @@ function getTradeVisionPageStyles() {
       /* Walkthrough sits at the top of "How It Works" — kept tight */
       .tv-walkthrough {
         margin-top: -6px;
-        padding-top: 0;
+        padding-top: 14px;
         padding-bottom: 10px;
       }
       /* .tv-copy h3 (defined later, equal specificity) was overriding the margins here,

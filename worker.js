@@ -483,6 +483,10 @@ function getMobileStyles() {
         body { overflow-x: hidden; }
         .tv-cf-stage { overflow-x: hidden; }
 
+        /* Neighbor videos get clipped on phones, so restore the prev/next arrows
+           as the way to change videos. (Loaded last, so this wins the display:none above.) */
+        .tv-coverflow .tv-carousel-arrow { display: flex; }
+
         /* Comfortable edge padding on small screens */
         .container { padding-left: 16px; padding-right: 16px; padding-top: 28px; }
 
@@ -1006,6 +1010,7 @@ function getCarouselCSS() {
       }
       .tv-coverflow .tv-carousel-arrow {
         z-index: 4;
+        display: none; /* desktop: neighbor videos are visible + clickable, no arrows needed */
       }
       .tv-cf-item .tv-carousel-caption {
         max-width: 365px;
@@ -1219,6 +1224,9 @@ function getDemoVideosHTML() {
       <section class="tv-band">
         <h3 class="tv-band-title">Demo Videos</h3>
         <div class="tv-coverflow" id="demoCoverflow">
+          <!-- Arrows are hidden on desktop (tap a neighbor video to switch) and shown
+               only on phones, where the neighbor videos are clipped off-screen. -->
+          <button class="tv-carousel-arrow tv-carousel-prev" type="button" aria-label="Previous video">&#8249;</button>
           <div class="tv-cf-stage">
 
             <figure class="tv-cf-item is-prev">
@@ -1246,6 +1254,7 @@ function getDemoVideosHTML() {
             </figure>
 
           </div>
+          <button class="tv-carousel-arrow tv-carousel-next" type="button" aria-label="Next video">&#8250;</button>
           <div class="tv-carousel-dots">
             <button class="tv-carousel-dot" type="button" aria-label="Show Call Debit Spread"></button>
             <button class="tv-carousel-dot active" type="button" aria-label="Show Long Call"></button>

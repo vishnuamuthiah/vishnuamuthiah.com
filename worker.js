@@ -831,9 +831,9 @@ function getHomepageHTML() {
           </div>
         </div>
 
-        <!-- TradeVision -->
+        <!-- OptionsVision -->
         <div class="project-card">
-          <h3><a href="/tradevision" target="_blank" rel="noopener noreferrer">TradeVision Edge</a></h3>
+          <h3><a href="/tradevision" target="_blank" rel="noopener noreferrer">OptionsVision</a></h3>
           <p>Take a screenshot of your Robinhood order and watch it become an interactive P&amp;L chart. Model different scenarios by adjusting your days to expiration and your implied volatility. Then analyze your Greeks and break-evens, all privately on your device.</p>
 
           <div style="margin: 8px 0 0;">
@@ -1370,15 +1370,15 @@ function getDemoVideosScript() {
 }
 
 function getTradeVisionHTML() {
-  return getLayout('TradeVision Edge — Options Payoff Charts from a Robinhood Screenshot', `
+  return getLayout('OptionsVision — Options Payoff Charts from a Robinhood Screenshot', `
     <div class="container">
       <a href="/" class="back-link">← Back to Home</a>
 
-      <h1>TradeVision Edge</h1>
+      <h1>OptionsVision</h1>
       <p class="tagline">Take a screenshot from Robinhood and watch it become an interactive P&amp;L chart. Model different scenarios by adjusting your days to expiration and your implied volatility. Then analyze your Greeks and break-evens, all privately on your device.</p>
 
       <div class="tv-cta">
-        <a class="appstore-badge" href="https://apps.apple.com/app/id6786063635" target="_blank" rel="noopener noreferrer" aria-label="Download TradeVision Edge on the App Store">
+        <a class="appstore-badge" href="https://apps.apple.com/app/id6786063635" target="_blank" rel="noopener noreferrer" aria-label="Download OptionsVision on the App Store">
           <svg class="appstore-badge__logo" viewBox="0 0 384 512" aria-hidden="true"><path fill="currentColor" d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/></svg>
           <span class="appstore-badge__text">
             <span class="appstore-badge__small">Download on the</span>
@@ -1390,11 +1390,11 @@ function getTradeVisionHTML() {
       ${getDemoVideosHTML()}
 
       <section class="tv-copy">
-        <p>TradeVision Edge turns any options trade into an interactive payoff chart so you can trade smarter.</p>
+        <p>OptionsVision turns any options trade into an interactive payoff chart so you can trade smarter.</p>
 
-        <p>Brokerages like Robinhood only show you the payoff at expiration. What's missing is how to value your position before expiration and how to determine whether the option is cheap or expensive. TradeVision Edge solves these problems in a simple, easy to use UI.</p>
+        <p>Brokerages like Robinhood only show you the payoff at expiration. What's missing is how to value your position before expiration and how to determine whether the option is cheap or expensive. OptionsVision solves these problems in a simple, easy to use UI.</p>
 
-        <p>Wondering what your covered call actually looks like if the stock drops 5% with 3 days to expiration remaining? Where your calendar spread breaks even with a change in volatility? Your theta decay if you sold your option right after ex-dividend date? TradeVision Edge answers these questions with an interactive and accessible payoff chart.</p>
+        <p>Wondering what your covered call actually looks like if the stock drops 5% with 3 days to expiration remaining? Where your calendar spread breaks even with a change in volatility? Your theta decay if you sold your option right after ex-dividend date? OptionsVision answers these questions with an interactive and accessible payoff chart.</p>
 
         <h2>How It Works: Screenshot to Interactive Chart in Seconds</h2>
 
@@ -1406,25 +1406,25 @@ function getTradeVisionHTML() {
           <div class="tv-carousel-viewport">
             <div class="tv-carousel-track">
               <div class="tv-carousel-slide">
-                <img class="tv-carousel-img" src="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/walkthrough/1.png" alt="TradeVision Edge walkthrough slide 1" loading="lazy" />
+                <img class="tv-carousel-img" src="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/walkthrough/1.png" alt="OptionsVision walkthrough slide 1" loading="lazy" />
               </div>
               <div class="tv-carousel-slide">
-                <img class="tv-carousel-img" src="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/walkthrough/2.png" alt="TradeVision Edge walkthrough slide 2" loading="lazy" />
+                <img class="tv-carousel-img" src="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/walkthrough/2.png" alt="OptionsVision walkthrough slide 2" loading="lazy" />
               </div>
               <div class="tv-carousel-slide">
-                <img class="tv-carousel-img" src="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/walkthrough/3.png" alt="TradeVision Edge walkthrough slide 3" loading="lazy" />
+                <img class="tv-carousel-img" src="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/walkthrough/3.png" alt="OptionsVision walkthrough slide 3" loading="lazy" />
               </div>
               <div class="tv-carousel-slide">
-                <img class="tv-carousel-img" src="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/walkthrough/4.png" alt="TradeVision Edge walkthrough slide 4" loading="lazy" />
+                <img class="tv-carousel-img" src="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/walkthrough/4.png" alt="OptionsVision walkthrough slide 4" loading="lazy" />
               </div>
               <div class="tv-carousel-slide">
-                <img class="tv-carousel-img" src="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/walkthrough/5.png" alt="TradeVision Edge walkthrough slide 5" loading="lazy" />
+                <img class="tv-carousel-img" src="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/walkthrough/5.png" alt="OptionsVision walkthrough slide 5" loading="lazy" />
               </div>
               <div class="tv-carousel-slide">
-                <img class="tv-carousel-img" src="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/walkthrough/6.png" alt="TradeVision Edge walkthrough slide 6" loading="lazy" />
+                <img class="tv-carousel-img" src="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/walkthrough/6.png" alt="OptionsVision walkthrough slide 6" loading="lazy" />
               </div>
               <div class="tv-carousel-slide">
-                <img class="tv-carousel-img" src="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/walkthrough/7.png" alt="TradeVision Edge walkthrough slide 7" loading="lazy" />
+                <img class="tv-carousel-img" src="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/walkthrough/7.png" alt="OptionsVision walkthrough slide 7" loading="lazy" />
               </div>
             </div>
           </div>
@@ -1442,7 +1442,7 @@ function getTradeVisionHTML() {
       </div>
 
         <h3>Import in Seconds</h3>
-        <p>Take a screenshot of your Robinhood order ticket and TradeVision Edge reads it with Apple's on-device text recognition and automatically pre-populates the strategy, strikes, expiration, spot price, and premiums. Multi-leg trades import from two screenshots (order ticket + per-leg premium) to capture real per-leg IVs as well as multiple expiration dates for calendar spreads. Prefer to skip the screenshot? Enter any trade by hand in a few taps.</p>
+        <p>Take a screenshot of your Robinhood order ticket and OptionsVision reads it with Apple's on-device text recognition and automatically pre-populates the strategy, strikes, expiration, spot price, and premiums. Multi-leg trades import from two screenshots (order ticket + per-leg premium) to capture real per-leg IVs as well as multiple expiration dates for calendar spreads. Prefer to skip the screenshot? Enter any trade by hand in a few taps.</p>
 
         <h3>See the Whole Trade</h3>
         <p>An interactive profit-and-loss chart shows your position across the full price range: break-evens marked on the curve, max profit and max loss, and distance-to-break-even at a glance. Scrub any price to see your exact expected P&amp;L.</p>
@@ -1460,7 +1460,7 @@ function getTradeVisionHTML() {
         </ul>
 
         <h3>Supports 28 Options Strategies</h3>
-        <p>TradeVision Edge is built to handle each option strategy with context-aware inputs and a clear explanation of how the trade makes and loses money. Supported strategies include:</p>
+        <p>OptionsVision is built to handle each option strategy with context-aware inputs and a clear explanation of how the trade makes and loses money. Supported strategies include:</p>
         <ul>
           <li><strong>Single Leg Options:</strong> Long calls, long puts, covered calls, and cash-secured puts</li>
           <li><strong>2-Leg Vertical Spreads:</strong> Call debit spreads, call credit spreads, put debit spreads, and put credit spreads</li>
@@ -1477,7 +1477,7 @@ function getTradeVisionHTML() {
         <h3>Built for Learning</h3>
         <p>Sharpen how you read a trade and grow the number of options strategies you can confidently use.</p>
 
-        <p class="tv-disclaimer">TradeVision Edge is an educational tool and is not investment advice, not a broker, and never touches your brokerage account. Figures are theoretical model estimates, not live quotes. Options involve substantial risk and are not suitable for every investor.</p>
+        <p class="tv-disclaimer">OptionsVision is an educational tool and is not investment advice, not a broker, and never touches your brokerage account. Figures are theoretical model estimates, not live quotes. Options involve substantial risk and are not suitable for every investor.</p>
       </section>
 
       <footer>

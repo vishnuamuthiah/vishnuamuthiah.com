@@ -18,4 +18,8 @@
     { "pattern": "vishnumuthiah.com", "custom_domain": true },
     { "pattern": "optionsvision.app", "custom_domain": true }
   ]
+  // No "rules" entry needed for share-page.html: wrangler's default module rules
+  // already load **/*.html as a Text module, which is how worker.js imports the
+  // 47 KB share page as a string instead of inlining a file full of backticks
+  // and ${...} into a template literal.
 }

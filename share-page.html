@@ -1,0 +1,770 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="color-scheme" content="dark" />
+  <title>Shared Trade · OptionsVision</title>
+  <style>
+    /* Palette mirrors the app's AppTheme (Theme.swift). */
+    :root {
+      --bg: #0d0f1c;            /* AppTheme.background  rgb(0.05,0.06,0.11) */
+      --panel-fill: #191b28;    /* AppTheme.panelFill   rgb(0.098,0.107,0.155) */
+      --card-fill: #21242b;     /* AppTheme.cardFill    rgb(0.13,0.14,0.17) */
+      --accent: #6bccf5;        /* AppTheme.accent      rgb(0.42,0.80,0.96) */
+      --link: #198ac8;          /* AppTheme.linkBlue */
+      --panel: rgba(255,255,255,.05);   /* .panel() fill */
+      --panel-line: rgba(255,255,255,.08);
+      --text: #ffffff; --dim: rgba(255,255,255,.66); --faint: rgba(255,255,255,.42);
+      --green: #34c759; --red: #ff453a; --orange: #ff9f0a; --gray: #98989f;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { margin: 0; background: var(--bg); color: var(--text);
+      font: 16px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", Roboto, sans-serif; }
+    a { color: inherit; text-decoration: none; }
+    .wrap { max-width: 430px; margin: 0 auto; padding: 0 16px 44px; }
+
+    /* Desktop-only QR block in the download modal — scan to install on a phone */
+    .qr { display: none; margin: 2px 0 16px; }
+    body.is-desktop .qr { display: block; }
+    .qrbox { width: 176px; height: 176px; margin: 0 auto 10px; background: #fff;
+      border-radius: 14px; padding: 12px; }
+    .qrbox svg { width: 100%; height: 100%; display: block; }
+    .qrcap { color: var(--text); font-weight: 700; font-size: 15px; }
+
+    /* Download banner */
+    .banner { display: flex; align-items: center; justify-content: center; gap: 8px;
+      background: var(--accent); color: #06212e; font-weight: 800; padding: 12px 16px;
+      text-align: center; cursor: pointer; position: sticky; top: 0; z-index: 20; }
+    .banner:active { filter: brightness(.95); }
+
+    .top { display: flex; align-items: center; gap: 9px; padding: 18px 0 6px; }
+    .top .sym { font-size: 28px; font-weight: 800; letter-spacing: .2px; }
+    .top .tag { font-size: 13px; font-weight: 600; padding: 4px 10px; border-radius: 999px; }
+    .top .spot { font-size: 14px; font-weight: 600; color: var(--dim); }
+    .top .glyphs { margin-left: auto; display: flex; gap: 6px; }
+    .glyph { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center;
+      background: var(--card-fill); color: var(--dim); border: 1px solid var(--panel-line); cursor: pointer; }
+    .glyph:active { background: #2b2f38; }
+    .glyph svg { width: 20px; height: 20px; }
+    .sub { color: var(--dim); font-size: 14px; margin: 2px 0 16px; }
+
+    .panel { background: var(--panel); border: 1px solid var(--panel-line); border-radius: 16px;
+      padding: 16px; margin-bottom: 14px; }
+    .panel h2 { font-size: 12px; text-transform: uppercase; letter-spacing: .6px;
+      color: var(--faint); margin: 0 0 12px; font-weight: 700; }
+
+    .figs { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; text-align: center; }
+    .fig .lbl { font-size: 12px; color: var(--dim); }
+    .fig .val { font-size: 18px; font-weight: 700; margin-top: 2px; }
+    .val.pos { color: var(--green); } .val.neg { color: var(--red); }
+
+    /* Chart */
+    .chartwrap { position: relative; touch-action: none; user-select: none; }
+    .chart { width: 100%; height: auto; display: block; }
+    .readout { display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+      margin: 6px 2px 2px; }
+    .readout .price { font-size: 18px; font-weight: 700; }
+    .readout .pl { font-size: 16px; font-weight: 700; }
+    .readout .pct { font-size: 13px; color: var(--dim); font-weight: 600; }
+    .zoombtns { display: flex; gap: 8px; }
+    .zoombtn { width: 34px; height: 30px; border-radius: 9px; background: var(--card-fill);
+      border: 1px solid var(--panel-line); color: var(--text); font-size: 18px; font-weight: 700;
+      display: grid; place-items: center; cursor: pointer; }
+    .zoombtn:disabled { opacity: .4; cursor: default; }
+
+    /* Sliders */
+    .slider-row { margin-top: 14px; }
+    .slider-head { display: flex; justify-content: space-between; align-items: baseline;
+      font-size: 13px; margin-bottom: 4px; }
+    .slider-head .name { color: var(--link); font-weight: 700; }
+    .slider-head .v { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+    input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px;
+      border-radius: 3px; background: rgba(255,255,255,.16); outline: none; margin: 8px 0; }
+    input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none;
+      width: 22px; height: 22px; border-radius: 50%; background: var(--accent);
+      border: 2px solid #0d0f1c; cursor: pointer; box-shadow: 0 0 0 1px rgba(0,0,0,.4); }
+    input[type=range]::-moz-range-thumb { width: 22px; height: 22px; border-radius: 50%;
+      background: var(--accent); border: 2px solid #0d0f1c; cursor: pointer; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th, td { text-align: right; padding: 8px 6px; border-bottom: 1px solid var(--panel-line); }
+    th:first-child, td:first-child { text-align: left; }
+    th { color: var(--faint); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .4px; }
+    tr:last-child td { border-bottom: none; }
+    .side-long { color: var(--green); } .side-short { color: var(--red); }
+
+    .cta { display: block; text-align: center; background: var(--accent); color: #06212e;
+      font-weight: 800; padding: 14px; border-radius: 14px; margin: 8px 0 4px; cursor: pointer; }
+    .foot { color: var(--faint); font-size: 12px; text-align: center; margin-top: 22px; line-height: 1.5; }
+    .note { color: var(--faint); font-size: 13px; margin: 8px 2px 0; }
+    .empty { text-align: center; padding: 64px 12px; color: var(--dim); }
+    .empty .big { font-size: 20px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+
+    /* Download modal */
+    .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.62); display: none;
+      align-items: center; justify-content: center; z-index: 50; padding: 24px; }
+    .modal-bg.open { display: flex; }
+    .modal { background: var(--panel-fill); border: 1px solid var(--panel-line); border-radius: 20px;
+      padding: 24px 22px; max-width: 340px; width: 100%; text-align: center; }
+    .modal .logo { width: 56px; height: 56px; border-radius: 14px; background: var(--accent);
+      display: grid; place-items: center; margin: 0 auto 14px; }
+    .modal .logo svg { width: 32px; height: 32px; color: #06212e; }
+    .modal h3 { margin: 0 0 6px; font-size: 20px; font-weight: 800; }
+    .modal p { margin: 0 0 18px; color: var(--dim); font-size: 14px; }
+    .modal .get { display: block; background: var(--accent); color: #06212e; font-weight: 800;
+      padding: 13px; border-radius: 13px; }
+    .modal .dismiss { display: block; margin-top: 10px; color: var(--faint); font-size: 14px;
+      cursor: pointer; padding: 6px; }
+
+    /* P/L matrix launcher — mirrors `profitLossMatrixButton` (ContentView.swift): the
+       home-screen launch-button look (translucent fill + inner shadow, hairline border,
+       blue icon, white label, dim chevron). */
+    .mxbtn { display: flex; align-items: center; gap: 8px; width: 100%; margin-bottom: 14px;
+      padding: 12px 14px; border-radius: 12px; color: var(--text);
+      background: rgba(255,255,255,.05); box-shadow: inset 0 2px 5px rgba(0,0,0,.55);
+      border: 1px solid rgba(255,255,255,.10); font: inherit; font-size: 15px;
+      font-weight: 600; cursor: pointer; text-align: left; }
+    .mxbtn:active { background: rgba(255,255,255,.09); }
+    .mxbtn .ic { color: var(--accent); display: grid; place-items: center; }
+    .mxbtn .ic svg { width: 19px; height: 19px; display: block; }
+    .mxbtn .chev { margin-left: auto; color: rgba(255,255,255,.3); font-weight: 800;
+      font-size: 13px; }
+
+    /* P/L matrix sheet */
+    .mx-bg { position: fixed; inset: 0; background: rgba(0,0,0,.62); display: none;
+      align-items: center; justify-content: center; z-index: 60; padding: 16px; }
+    .mx-bg.open { display: flex; }
+    .mx { background: var(--panel-fill); border: 1px solid var(--panel-line); border-radius: 14px;
+      padding: 16px; width: 100%; max-width: 560px; max-height: 92vh;
+      display: flex; flex-direction: column; gap: 10px; }
+    .mx-head { display: flex; align-items: flex-start; gap: 12px; }
+    .mx-head .ttl { font-size: 17px; font-weight: 700; }
+    .mx-head .sub2 { font-size: 12px; color: var(--gray); margin-top: 2px; }
+    .mx-x { margin-left: auto; color: var(--gray); cursor: pointer; font-size: 22px;
+      line-height: 1; padding: 2px 4px; background: none; border: 0; }
+    /* %/$ selector — the app's capsule pair, quieter than a segmented control. */
+    .mx-toggle { display: flex; gap: 2px; padding: 2px; border-radius: 999px;
+      background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.10); }
+    .mx-toggle button { width: 42px; height: 28px; border: 0; border-radius: 999px;
+      background: none; color: var(--gray); font: inherit; font-size: 15px; font-weight: 600;
+      cursor: pointer; transition: background .15s ease, color .15s ease; }
+    .mx-toggle button.on { background: rgba(255,255,255,.18); color: var(--text); }
+    /* The grid scrolls both ways; the price column freezes via position:sticky. */
+    .mx-scroll { overflow: auto; border-radius: 8px; -webkit-overflow-scrolling: touch; }
+    /* `width: max-content` is load-bearing: without it the grid box only fills the
+       scroller while its columns overflow, and a sticky child cannot leave its containing
+       block — so the frozen price column would slide off-screen as the dates scroll. */
+    .mx-grid { display: grid; width: max-content; }
+    .mx-grid > div { display: flex; align-items: center; justify-content: center;
+      font-size: 9.5px; font-weight: 500; font-variant-numeric: tabular-nums;
+      color: rgba(255,255,255,.92); height: 26px; white-space: nowrap; }
+    .mx-grid > .hd { height: 44px; font-size: 10px; font-weight: 600; color: var(--gray);
+      flex-direction: column; gap: 1px; line-height: 1.05; }
+    .mx-grid > .hd.last { color: var(--accent); font-weight: 700; }
+    /* Sticky price column: needs its own opaque fill so cells can't show through. */
+    .mx-grid > .px { position: sticky; left: 0; z-index: 2; background: var(--panel-fill);
+      justify-content: flex-start; padding-left: 2px; font-size: 11px; font-weight: 600; }
+    .mx-grid > .px.hd { align-items: flex-start; justify-content: center; color: var(--gray);
+      font-size: 11px; font-weight: 700; }
+    /* Heavy rule where spot falls in the ladder (as on optionsprofitcalculator). */
+    .mx-grid > .divide { border-top: 1.5px solid rgba(255,255,255,.8); }
+    .mx-foot { color: var(--gray); font-size: 11px; line-height: 1.45; }
+  </style>
+</head>
+<body>
+  <div class="banner" id="banner">Download the free app today!</div>
+  <div class="wrap" id="app"></div>
+
+  <!-- Download modal -->
+  <div class="modal-bg" id="modalBg">
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 17l5-6 4 4 6-8"/><path d="M17 7h2v2"/></svg>
+      </div>
+      <h3>Get OptionsVision</h3>
+      <p>Build, visualize, and share options trades. Free on the App Store.</p>
+      <!-- Desktop only (body.is-desktop): scan to install on a phone. Static QR of
+           APP_STORE_URL — regenerate if that URL ever changes. -->
+      <div class="qr">
+        <div class="qrbox"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 37 37"><path stroke="#000" d="M4 4.5h7m1 0h1m2 0h2m1 0h1m2 0h3m2 0h7m-29 1h1m5 0h1m1 0h6m2 0h1m1 0h1m3 0h1m5 0h1m-29 1h1m1 0h3m1 0h1m5 0h2m1 0h2m1 0h3m1 0h1m1 0h3m1 0h1m-29 1h1m1 0h3m1 0h1m1 0h1m1 0h1m2 0h1m1 0h3m1 0h1m2 0h1m1 0h3m1 0h1m-29 1h1m1 0h3m1 0h1m5 0h1m2 0h1m1 0h1m1 0h1m2 0h1m1 0h3m1 0h1m-29 1h1m5 0h1m2 0h4m3 0h1m2 0h2m1 0h1m5 0h1m-29 1h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7m-21 1h1m6 0h5m-20 1h1m1 0h2m1 0h3m3 0h2m4 0h2m3 0h1m2 0h1m1 0h2m-28 1h1m1 0h2m2 0h1m1 0h2m3 0h1m4 0h4m1 0h1m3 0h1m-29 1h2m1 0h5m1 0h1m1 0h2m4 0h1m3 0h2m1 0h1m1 0h2m-25 1h1m1 0h1m1 0h1m5 0h2m1 0h1m11 0h1m-28 1h2m1 0h4m1 0h1m2 0h1m2 0h3m5 0h1m1 0h2m-25 1h2m4 0h1m3 0h1m1 0h2m1 0h3m2 0h1m3 0h3m-29 1h4m2 0h1m1 0h2m1 0h1m1 0h1m2 0h1m2 0h1m2 0h1m3 0h3m-29 1h3m2 0h1m1 0h1m2 0h1m1 0h1m3 0h1m1 0h3m3 0h1m2 0h1m-28 1h2m1 0h2m1 0h2m6 0h1m1 0h1m2 0h3m2 0h2m1 0h1m-25 1h3m2 0h1m1 0h1m4 0h3m3 0h1m1 0h1m1 0h3m-28 1h1m4 0h3m3 0h1m1 0h3m1 0h1m2 0h2m2 0h1m1 0h1m-25 1h1m1 0h2m1 0h2m1 0h1m2 0h2m2 0h2m4 0h1m2 0h1m-26 1h2m3 0h2m1 0h1m1 0h1m1 0h3m1 0h10m-19 1h1m1 0h1m1 0h1m4 0h2m1 0h1m3 0h5m-29 1h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h2m1 0h2m1 0h1m1 0h2m1 0h1m-28 1h1m5 0h1m1 0h1m1 0h1m2 0h3m2 0h1m1 0h1m3 0h2m1 0h1m-28 1h1m1 0h3m1 0h1m2 0h1m1 0h2m2 0h3m2 0h5m1 0h1m-27 1h1m1 0h3m1 0h1m1 0h2m1 0h1m3 0h1m1 0h1m2 0h2m2 0h2m2 0h1m-29 1h1m1 0h3m1 0h1m1 0h3m1 0h2m2 0h1m1 0h1m1 0h2m1 0h1m2 0h1m1 0h1m-29 1h1m5 0h1m2 0h5m2 0h1m1 0h1m1 0h2m1 0h3m1 0h1m-28 1h7m1 0h1m1 0h2m4 0h1m2 0h2m2 0h1m3 0h1"/></svg></div>
+        <div class="qrcap">Download the app on your phone today!</div>
+      </div>
+      <a class="get" id="modalGet" href="#">Download on the App Store</a>
+      <div class="dismiss" id="modalClose">Not now</div>
+    </div>
+  </div>
+
+  <!-- P/L matrix sheet — populated by renderMatrix() when the launcher is tapped. -->
+  <div class="mx-bg" id="mxBg">
+    <div class="mx" role="dialog" aria-modal="true" aria-label="Profit and Loss Matrix">
+      <div class="mx-head">
+        <div>
+          <div class="ttl">Profit and Loss Matrix</div>
+          <div class="sub2" id="mxSub"></div>
+        </div>
+        <div class="mx-toggle" id="mxToggle">
+          <button type="button" data-pct="1">%</button>
+          <button type="button" data-pct="" class="on">$</button>
+        </div>
+        <button class="mx-x" id="mxClose" type="button" aria-label="Close">&times;</button>
+      </div>
+      <div class="mx-scroll"><div class="mx-grid" id="mxGrid"></div></div>
+      <div class="mx-foot" id="mxFoot"></div>
+    </div>
+  </div>
+
+  <script>
+    "use strict";
+    // Live App Store listing. Keep in sync with TradeShare.appStoreURL in the iOS app.
+    const APP_STORE_URL = "https://apps.apple.com/app/id6786063635";
+
+    // ---------- decode ----------
+    function decodeTrade() {
+      const m = location.pathname.match(/\/p\/([^/?#]+)/);
+      const payload = m ? m[1] : "";
+      if (!payload) return null;
+      try {
+        let b64 = payload.replace(/-/g, "+").replace(/_/g, "/");
+        while (b64.length % 4) b64 += "=";
+        return JSON.parse(decodeURIComponent(escape(atob(b64))));
+      } catch (e) { return null; }
+    }
+
+    // ---------- Black–Scholes (ports ContentView.swift options math) ----------
+    function erf(x) {
+      const s = x < 0 ? -1 : 1; x = Math.abs(x);
+      const t = 1 / (1 + 0.3275911 * x);
+      const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x);
+      return s * y;
+    }
+    const normCDF = (x) => 0.5 * (1 + erf(x * Math.SQRT1_2));
+    function optionPrice(kind, S, K, t, r, q, sig) {
+      if (kind === "call") {
+        if (!(t > 0 && sig > 0)) return Math.max(S - K, 0);
+        const sq = Math.sqrt(t), d1 = (Math.log(S / K) + (r - q + 0.5 * sig * sig) * t) / (sig * sq), d2 = d1 - sig * sq;
+        return S * Math.exp(-q * t) * normCDF(d1) - K * Math.exp(-r * t) * normCDF(d2);
+      }
+      if (!(t > 0 && sig > 0)) return Math.max(K - S, 0);
+      const sq = Math.sqrt(t), d1 = (Math.log(S / K) + (r - q + 0.5 * sig * sig) * t) / (sig * sq), d2 = d1 - sig * sq;
+      return K * Math.exp(-r * t) * normCDF(-d2) - S * Math.exp(-q * t) * normCDF(-d1);
+    }
+    function ivSolve(kind, prem, S, K, t, r, q) {
+      let lo = 1e-4, hi = 5;
+      for (let i = 0; i < 128; i++) { const m = 0.5 * (lo + hi); (optionPrice(kind, S, K, t, r, q, m) > prem) ? hi = m : lo = m; if (hi - lo < 1e-7) break; }
+      return 0.5 * (lo + hi);
+    }
+    function ivTotal(opts, total, S, t, r, q) {
+      if (!(t > 0 && total > 0 && S > 0)) return 0.30;
+      let lo = 1e-4, hi = 5;
+      for (let i = 0; i < 128; i++) { const m = 0.5 * (lo + hi);
+        const price = opts.reduce((s, l) => s + optionPrice(l.type, S, l.strike, t, r, q, m), 0);
+        (price > total) ? hi = m : lo = m; if (hi - lo < 1e-7) break; }
+      return 0.5 * (lo + hi);
+    }
+    function ivVertical(kind, longK, shortK, S, t, net, r, q) {
+      if (!(t > 0 && S > 0)) return 0.30;
+      const sv = (s) => optionPrice(kind, S, longK, t, r, q, s) - optionPrice(kind, S, shortK, t, r, q, s);
+      const lo = 1e-4, hi = 5, n = 256; let pS = lo, pD = sv(lo) - net, bS = lo, bE = Math.abs(pD);
+      for (let i = 1; i <= n; i++) { const s = lo + (hi - lo) * i / n, d = sv(s) - net;
+        if (Math.abs(d) < bE) { bE = Math.abs(d); bS = s; }
+        if (pD === 0) return pS;
+        if ((pD < 0) !== (d < 0)) { let a = pS, b = s; for (let j = 0; j < 80; j++) { const md = 0.5 * (a + b); ((sv(md) - net) < 0) !== (d < 0) ? a = md : b = md; } return 0.5 * (a + b); }
+        pS = s; pD = d; }
+      return bS;
+    }
+
+    // ---------- reconstruct legs (leg1 = long for verticals; call for straddle/strangle) ----------
+    function legsFor(t) {
+      const qty = Math.max(t.contracts || 1, 1), K1 = t.strike, K2 = t.strike2, p1 = t.premium, p2 = t.premium2;
+      const m1 = (t.mark != null ? t.mark : p1), m2 = (t.mark2 != null ? t.mark2 : p2);
+      const O = (type, side, strike, entry, ivp) => ({ type, side, strike, entry, ivp, qty });
+      switch (t.kind) {
+        case "Long Call": return [O("call", 1, K1, p1, m1)];
+        case "Long Put": return [O("put", 1, K1, p1, m1)];
+        case "Cash-Secured Put": return [O("put", -1, K1, p1, m1)];
+        case "Covered Call": return [{ type: "share", side: 1, entry: (t.shareCost != null ? t.shareCost : t.spot), qty }, O("call", -1, K1, p1, m1)];
+        case "Call Debit Spread": case "Call Credit Spread": return [O("call", 1, K1, p1, m1), O("call", -1, K2, p2, m2)];
+        case "Put Debit Spread": case "Put Credit Spread": return [O("put", 1, K1, p1, m1), O("put", -1, K2, p2, m2)];
+        case "Long Straddle": case "Long Strangle": return [O("call", 1, K1, p1, m1), O("put", 1, K2, p2, m2)];
+        default: return null; // calendars / unknown
+      }
+    }
+    // Entry-calibrated blended IV (mirrors Strategy.defaultIV, single-expiration cases).
+    function defaultIV(legs, S, r, q, dte) {
+      const t = Math.max(dte, 0) / 365, opts = legs.filter(l => l.type !== "share");
+      if (opts.length > 1 && opts.every(l => l.side > 0)) return ivTotal(opts, opts.reduce((s, l) => s + l.ivp, 0), S, t, r, q);
+      if (opts.length === 2) { const lng = opts.find(l => l.side > 0), sht = opts.find(l => l.side < 0);
+        if (lng && sht) return ivVertical(lng.type, lng.strike, sht.strike, S, t, lng.ivp - sht.ivp, r, q); }
+      const leg = opts[0]; if (!leg) return 0.30;
+      return ivSolve(leg.type, leg.ivp, S, leg.strike, t, r, q);
+    }
+    // Per-leg IV skew vs. baseIV when real per-leg premiums were supplied; zeros otherwise.
+    function ivOffsets(legs, baseIV, S, r, q, dte, perLeg) {
+      if (!perLeg) return legs.map(() => 0);
+      const t = Math.max(dte, 0) / 365;
+      return legs.map(l => l.type === "share" ? 0 : ivSolve(l.type, l.ivp, S, l.strike, t, r, q) - baseIV);
+    }
+    // Every leg is ×100: `qty` is the contract count, and a covered call's shares run 100
+    // per contract (the app splits the same units differently — the share leg is built as
+    // quantity: contracts × 100 with a multiplier of 1). The legs table already prints the
+    // share leg as `100 * qty` shares, so this is what it has always claimed to hold.
+    const MULT = 100;
+
+    // Position P&L at a price, valued at `dte` days out with volatility `iv` (+ per-leg skew).
+    function pnlAt(price, legs, offs, iv, dte, r, q) {
+      let sum = 0;
+      legs.forEach((l, i) => {
+        let val;
+        if (l.type === "share") val = price;
+        else { const t = Math.max(dte, 0) / 365, sig = Math.max(iv + offs[i], 0.005); val = optionPrice(l.type, price, l.strike, t, r, q, sig); }
+        sum += l.side * l.qty * MULT * (val - l.entry);
+      });
+      return sum;
+    }
+    function pnlExp(price, legs) {
+      let sum = 0;
+      legs.forEach(l => {
+        const val = l.type === "share" ? price : (l.type === "call" ? Math.max(price - l.strike, 0) : Math.max(l.strike - price, 0));
+        sum += l.side * l.qty * MULT * (val - l.entry);
+      });
+      return sum;
+    }
+
+    // ---------- P/L matrix (ports PLMatrixView.swift) ----------
+    // Round a raw ladder increment to a "nice" step (1 / 2.5 / 5 / 10 × 10ⁿ).
+    function niceStep(raw) {
+      if (!(raw > 0)) return 1;
+      const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+      const norm = raw / mag;
+      return (norm < 1.5 ? 1 : norm < 3.5 ? 2.5 : norm < 7.5 ? 5 : 10) * mag;
+    }
+
+    // Grid model, frozen when the sheet opens: dates across the top (today → the front
+    // expiration, evenly strided down to at most 12, the last column always expiration
+    // itself), prices down the side, each cell the position's dollar P&L there. Cells
+    // price through `pnlAt` — the same call the chart's live curve uses — so a cell agrees
+    // with the chart when the DTE slider sits on that column. Calendars never reach here
+    // (they fall back to the facts-only summary), so every leg runs to the one expiration.
+    function buildMatrix() {
+      const { legs, spot, offs, iv, r, q, entryDTE } = S;
+      const totalDays = Math.trunc(entryDTE);
+      const colCount = Math.min(totalDays + 1, 12);
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      const curYear = today.getFullYear();
+      const dayOffsets = colCount <= 1 ? [totalDays]
+        : Array.from({ length: colCount }, (_, i) => Math.round(i * totalDays / (colCount - 1)));
+      const columns = dayOffsets.map(day => {
+        const d = new Date(today); d.setDate(d.getDate() + day);
+        const yr = d.getFullYear();
+        return { month: MONTHS[d.getMonth() + 1], day: String(d.getDate()),   // MONTHS is 1-indexed
+                 yearSuffix: yr !== curYear ? "'" + String(yr % 100).padStart(2, "0") : null,
+                 dte: totalDays - day };
+      });
+
+      // Ladder: 21 nice-stepped rungs centered on the chart's DEFAULT framing, high first.
+      const { lo, hi } = basePriceWindow();
+      const rowCount = 21;
+      const step = niceStep((hi - lo) / (rowCount - 1));
+      const top = (Math.round(((lo + hi) / 2) / step) + Math.floor(rowCount / 2)) * step;
+      const prices = Array.from({ length: rowCount }, (_, i) => top - i * step).filter(p => p > 0);
+
+      let maxGain = 0, maxLoss = 0;
+      const cells = prices.map(price => columns.map(c => {
+        const pnl = pnlAt(price, legs, offs, iv, c.dte, r, q);
+        maxGain = Math.max(maxGain, pnl); maxLoss = Math.max(maxLoss, -pnl);
+        return pnl;
+      }));
+
+      // Max risk (the % divisor) = worst intrinsic loss at expiration, checked at the
+      // payoff's kink points (spot 0 and each strike) plus one spot far above everything,
+      // where every supported strategy's payoff has gone flat or is rising.
+      const strikes = legs.filter(l => l.strike != null).map(l => l.strike);
+      const extremes = strikes.concat([0, 2 * Math.max(Math.max(...strikes, 0), prices[0] || spot)]);
+      const worstIntrinsic = Math.max(...extremes.map(s => -pnlExp(s, legs)));
+
+      const di = prices.findIndex(p => p <= spot);
+      return { columns, prices, cells, maxGain, maxLoss,
+               maxRisk: worstIntrinsic > 0 ? worstIntrinsic : Math.max(maxLoss, 1),
+               decimals: step % 1 === 0 ? 0 : 2,
+               dividerRow: di > 0 ? di : null };
+    }
+
+    // Green above zero, red below, intensity scaled to the grid's own extremes (sqrt so
+    // mid-size values stay readable rather than washing out near zero).
+    function mxFill(pnl, M) {
+      if (pnl > 0 && M.maxGain > 0) return `rgba(52,199,89,${(0.08 + 0.42 * Math.sqrt(Math.min(pnl / M.maxGain, 1))).toFixed(3)})`;
+      if (pnl < 0 && M.maxLoss > 0) return `rgba(255,69,58,${(0.08 + 0.42 * Math.sqrt(Math.min(-pnl / M.maxLoss, 1))).toFixed(3)})`;
+      return "transparent";
+    }
+
+    // Compact P&L for a cell: whole dollars under $1k, "1.5k" from $1k to $10k, and whole
+    // "15k" at/above $10k — so wide positions still fit a cell. In % mode, whole percent of
+    // max risk, switching to a multiple ("12x") at ±1000% so cheap long options fit.
+    function mxText(pnl, M, percent) {
+      if (percent) {
+        const ratio = pnl / M.maxRisk;
+        if (Math.abs(ratio) >= 9.995) return ratio.toFixed(0) + "x";
+        const pct = Math.round(ratio * 100);
+        return pct === 0 ? "0%" : pct + "%";   // avoid "-0%"
+      }
+      const mag = Math.abs(pnl);
+      if (mag >= 10000) return (pnl / 1000).toFixed(0) + "k";
+      if (mag >= 1000) return (pnl / 1000).toFixed(1) + "k";
+      const rounded = Math.round(pnl);
+      return rounded === 0 ? "0" : String(rounded);   // avoid "-0"
+    }
+
+    // Headline IV for the footnote: the straight average of the option legs' IVs (each at
+    // iv + its offset), matching the chart's blended-IV display. Collapses to `iv` for a
+    // single option leg or when there are no per-leg offsets.
+    function mxDisplayIV() {
+      const sig = S.legs.map((l, i) => l.type === "share" ? null : Math.max(S.iv + S.offs[i], 0.005))
+                        .filter(v => v != null);
+      return sig.length > 1 ? sig.reduce((a, b) => a + b, 0) / sig.length : S.iv;
+    }
+
+    // ---------- formatting ----------
+    // The payload is attacker-supplied (it rides in the URL), so every string from it must
+    // be escaped before it reaches innerHTML.
+    const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g,
+      c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    const money = (n) => (n < 0 ? "-$" : "$") + Math.abs(n).toLocaleString(undefined, { maximumFractionDigits: 2 });
+    const money0 = (n) => (n < 0 ? "-$" : "$") + Math.abs(n).toLocaleString(undefined, { maximumFractionDigits: 0 });
+    const px = (n) => "$" + Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const MONTHS = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    function expLabel(mo, dy, yr) { return mo && dy ? MONTHS[mo] + " " + dy + (yr ? ", " + yr : "") : null; }
+    function entryDTE(t) {
+      if (!t.expMonth || !t.expDay) return 30;
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const exp = new Date(t.expYear || now.getFullYear(), t.expMonth - 1, t.expDay);
+      return Math.max(Math.round((exp - today) / 86400000), 0);
+    }
+    function sentiment(kind) {
+      if (/Long Call|Call Debit|Put Credit|Cash-Secured Put|Covered Call/.test(kind)) return { label: "Bullish", color: "var(--green)" };
+      if (/Long Put|Put Debit|Call Credit/.test(kind)) return { label: "Bearish", color: "var(--red)" };
+      if (/Straddle|Strangle/.test(kind)) return { label: "Volatile", color: "var(--orange)" };
+      return { label: "Neutral", color: "var(--gray)" };
+    }
+
+    // ---------- app state (interactive) ----------
+    let S = null;   // shared trade state: { t, legs, r, q, spot, baseIV, entryDTE, offs,
+                    //                        dte, iv, scrub, zoom, zoomCenter, base }
+
+    function analyze(legs, spot) {
+      const strikes = legs.filter(l => l.strike != null).map(l => l.strike);
+      const refHi = Math.max(spot || 0, ...strikes, 1), hi = refHi * 2.5, N = 600, step = hi / N;
+      let prev = pnlExp(0, legs), maxP = prev, minP = prev; const bes = [];
+      for (let i = 1; i <= N; i++) { const s = i * step, y = pnlExp(s, legs);
+        if (y > maxP) maxP = y; if (y < minP) minP = y;
+        if ((prev <= 0 && y > 0) || (prev >= 0 && y < 0)) { const s0 = (i - 1) * step, be = s0 + (0 - prev) / (y - prev) * step; if (be > 0) bes.push(be); }
+        prev = y; }
+      const slopeUp = pnlExp(hi, legs) - pnlExp(hi - step, legs) > 1e-6;
+      return { breakevens: bes, maxProfit: maxP, maxLoss: minP, unlimitedProfit: slopeUp };
+    }
+
+    // The chart's default (pre-zoom) framing. The matrix ladder spans this rather than the
+    // zoomed window, matching the app's `basePriceRange`, so the grid stays put when the
+    // chart is zoomed.
+    function basePriceWindow() {
+      const { legs, spot, an } = S;
+      const strikes = legs.filter(l => l.strike != null).map(l => l.strike);
+      const refs = [...strikes, spot, ...an.breakevens].filter(v => v != null && isFinite(v));
+      return { lo: Math.max(0, Math.min(...refs) * 0.74), hi: Math.max(...refs) * 1.26 };
+    }
+
+    function priceWindow() {
+      const { zoom, zoomCenter } = S;
+      const { lo: lo0, hi: hi0 } = basePriceWindow();
+      const center = zoom === 1 ? (lo0 + hi0) / 2 : zoomCenter;
+      const half = (hi0 - lo0) / 2 / zoom;
+      return { lo: Math.max(0, center - half), hi: center + half };
+    }
+
+    function buildChartSVG() {
+      const { legs, spot, offs, iv, dte, r, q, scrub } = S;
+      const { lo, hi } = priceWindow();
+      const W = 430, H = 232, padL = 6, padR = 6, padT = 14, padB = 22, N = 200;
+      const live = [], exp = []; let yMin = Infinity, yMax = -Infinity;
+      for (let i = 0; i <= N; i++) {
+        const p = lo + (hi - lo) * i / N;
+        const yl = pnlAt(p, legs, offs, iv, dte, r, q), ye = pnlExp(p, legs);
+        live.push([p, yl]); exp.push([p, ye]);
+        yMin = Math.min(yMin, yl, ye); yMax = Math.max(yMax, yl, ye);
+      }
+      const padY = (yMax - yMin) * 0.12 || 1; yMin -= padY; yMax += padY;
+      const X = (p) => padL + (p - lo) / (hi - lo) * (W - padL - padR);
+      const Y = (y) => padT + (yMax - y) / (yMax - yMin) * (H - padT - padB);
+      const zeroY = Y(0);
+      const line = (pts) => pts.map((pt, i) => (i ? "L" : "M") + X(pt[0]).toFixed(1) + "," + Y(pt[1]).toFixed(1)).join(" ");
+      const liveD = line(live), expD = line(exp);
+      const area = liveD + ` L${X(hi).toFixed(1)},${zeroY.toFixed(1)} L${X(lo).toFixed(1)},${zeroY.toFixed(1)} Z`;
+      const strikes = legs.filter(l => l.strike != null).map(l => l.strike);
+      const marks = strikes.filter(k => k >= lo && k <= hi).map(k =>
+        `<line x1="${X(k).toFixed(1)}" y1="${padT}" x2="${X(k).toFixed(1)}" y2="${H - padB}" stroke="var(--panel-line)" stroke-dasharray="3 4"/>`).join("");
+      const sx = X(Math.min(Math.max(scrub, lo), hi));
+      const sPL = pnlAt(scrub, legs, offs, iv, dte, r, q);
+      const scrubMark = `<line x1="${sx.toFixed(1)}" y1="${padT}" x2="${sx.toFixed(1)}" y2="${H - padB}" stroke="var(--accent)" stroke-width="1.5"/>
+        <circle cx="${sx.toFixed(1)}" cy="${Y(sPL).toFixed(1)}" r="4" fill="var(--accent)" stroke="#0d0f1c" stroke-width="1.5"/>`;
+      return `<svg class="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Profit and loss">
+        <defs>
+          <clipPath id="above"><rect x="0" y="0" width="${W}" height="${zeroY.toFixed(1)}"/></clipPath>
+          <clipPath id="below"><rect x="0" y="${zeroY.toFixed(1)}" width="${W}" height="${(H - zeroY).toFixed(1)}"/></clipPath>
+        </defs>
+        ${marks}
+        <path d="${area}" fill="var(--green)" opacity="0.13" clip-path="url(#above)"/>
+        <path d="${area}" fill="var(--red)" opacity="0.13" clip-path="url(#below)"/>
+        <line x1="${padL}" y1="${zeroY.toFixed(1)}" x2="${W - padR}" y2="${zeroY.toFixed(1)}" stroke="var(--faint)"/>
+        <path d="${expD}" fill="none" stroke="var(--faint)" stroke-width="1.4" stroke-dasharray="4 4"/>
+        <path d="${liveD}" fill="none" stroke="var(--green)" stroke-width="2.5" clip-path="url(#above)"/>
+        <path d="${liveD}" fill="none" stroke="var(--red)" stroke-width="2.5" clip-path="url(#below)"/>
+        ${scrubMark}
+      </svg>`;
+    }
+
+    // Re-draw chart + readouts + slider bounds without rebuilding the whole DOM.
+    function update() {
+      const { legs, spot, offs, iv, dte, r, q } = S;
+      document.getElementById("chartSVG").innerHTML = buildChartSVG();
+      const { lo, hi } = priceWindow();
+      const sc = Math.min(Math.max(S.scrub, lo), hi); S.scrub = sc;
+      const pl = pnlAt(sc, legs, offs, iv, dte, r, q);
+      const pct = spot ? (sc - spot) / spot * 100 : 0;
+      document.getElementById("roPrice").textContent = px(sc);
+      const plEl = document.getElementById("roPL");
+      plEl.textContent = (pl >= 0 ? "+" : "") + money(pl); plEl.style.color = pl >= 0 ? "var(--green)" : "var(--red)";
+      document.getElementById("roPct").textContent = (pct >= 0 ? "+" : "") + pct.toFixed(1) + "% vs spot";
+      // sliders
+      const dteEl = document.getElementById("sDTE"), ivEl = document.getElementById("sIV"), prEl = document.getElementById("sPrice");
+      dteEl.value = dte; document.getElementById("vDTE").textContent = Math.round(dte) + (Math.round(dte) === 1 ? " day" : " days");
+      ivEl.value = iv; document.getElementById("vIV").textContent = (iv * 100).toFixed(1) + "%";
+      prEl.min = lo; prEl.max = hi; prEl.step = Math.max((hi - lo) / 500, 0.01); prEl.value = sc;
+      document.getElementById("vPrice").textContent = px(sc);
+      document.getElementById("zoomOut").disabled = S.zoom <= 0.5;
+      document.getElementById("zoomIn").disabled = S.zoom >= 6;
+    }
+
+    function scrubFromClientX(clientX) {
+      const svg = document.getElementById("chartSVG").firstElementChild;
+      const rect = svg.getBoundingClientRect();
+      const W = 430, padL = 6, padR = 6;
+      const fx = (clientX - rect.left) / rect.width * W;                  // into viewBox units
+      const t = (fx - padL) / (W - padL - padR);
+      const { lo, hi } = priceWindow();
+      S.scrub = Math.min(Math.max(lo + t * (hi - lo), lo), hi);
+      update();
+    }
+
+    // ---------- render (one-time DOM) ----------
+    function renderInteractive(t, legs) {
+      const app = document.getElementById("app");
+      const spot = t.spot, qty = Math.max(t.contracts || 1, 1);
+      const r = (t.riskFreeRate != null ? t.riskFreeRate : 0.043);
+      const q = (t.dividendYield != null ? t.dividendYield : (/^(SPX|SPXW|SPY|ES)$/i.test(t.symbol || "") ? 0.013 : 0));
+      const edte = entryDTE(t);
+      const baseIV = defaultIV(legs, spot, r, q, edte);
+      const offs = ivOffsets(legs, baseIV, spot, r, q, edte, t.perLegPremiums === true);
+      const an = analyze(legs, spot);
+      S = { t, legs, r, q, spot, baseIV, entryDTE: edte, offs, an,
+            dte: edte, iv: baseIV, scrub: spot, zoom: 1, zoomCenter: spot };
+
+      const sen = sentiment(t.kind || "");
+      const exp = expLabel(t.expMonth, t.expDay, t.expYear);
+      const beText = an.breakevens.length ? an.breakevens.map(px).join(" / ") : "—";
+      const mp = an.unlimitedProfit ? "Unlimited" : money0(an.maxProfit);
+
+      const legRows = legs.map(l => {
+        if (l.type === "share") return `<tr><td class="side-long">Long</td><td>${100 * qty} sh</td><td>Shares</td><td>—</td><td>${l.entry != null ? px(l.entry) : "—"}</td></tr>`;
+        const side = l.side > 0 ? `<span class="side-long">Buy</span>` : `<span class="side-short">Sell</span>`;
+        return `<tr><td>${side}</td><td>${l.qty}</td><td>${l.type === "call" ? "Call" : "Put"}</td><td>${px(l.strike)}</td><td>${px(l.entry)}</td></tr>`;
+      }).join("");
+
+      app.innerHTML = `
+        <div class="top">
+          <span class="sym">${esc((t.symbol || "—").toUpperCase())}</span>
+          <span class="tag" style="color:${sen.color}; background:color-mix(in srgb, ${sen.color} 18%, transparent)">${sen.label}</span>
+          <span class="spot">${spot != null ? px(spot) : ""}</span>
+          <span class="glyphs">
+            <span class="glyph" id="home" aria-label="Home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg></span>
+            <span class="glyph" id="edit" aria-label="Edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></span>
+          </span>
+        </div>
+        <div class="sub">${esc(t.kind || "Options trade")}${exp ? " · exp " + exp : ""} · ${qty} contract${qty > 1 ? "s" : ""}</div>
+
+        <div class="panel"><div class="figs">
+          <div class="fig"><div class="lbl">Max profit</div><div class="val pos">${mp}</div></div>
+          <div class="fig"><div class="lbl">${an.breakevens.length > 1 ? "Breakevens" : "Breakeven"}</div><div class="val">${beText}</div></div>
+          <div class="fig"><div class="lbl">Max loss</div><div class="val ${an.maxLoss < 0 ? "neg" : ""}">${money0(an.maxLoss)}</div></div>
+        </div></div>
+
+        <div class="panel">
+          <div class="readout">
+            <div><span class="price" id="roPrice"></span> <span class="pct" id="roPct"></span></div>
+            <div style="display:flex; align-items:center; gap:10px">
+              <span class="pl" id="roPL"></span>
+              <span class="zoombtns"><button class="zoombtn" id="zoomOut">−</button><button class="zoombtn" id="zoomIn">+</button></span>
+            </div>
+          </div>
+          <div class="chartwrap" id="chartWrap"><div id="chartSVG"></div></div>
+
+          <div class="slider-row">
+            <div class="slider-head"><span class="name">Days to Expiration</span><span class="v" id="vDTE"></span></div>
+            <input type="range" id="sDTE" min="0" max="${Math.max(edte, 1)}" step="1" value="${edte}">
+          </div>
+          <div class="slider-row">
+            <div class="slider-head"><span class="name">Implied Volatility</span><span class="v" id="vIV"></span></div>
+            <input type="range" id="sIV" min="${(baseIV * 0.5).toFixed(4)}" max="${(baseIV * 1.5).toFixed(4)}" step="0.0005" value="${baseIV.toFixed(4)}">
+          </div>
+          <div class="slider-row">
+            <div class="slider-head"><span class="name">Underlying Price</span><span class="v" id="vPrice"></span></div>
+            <input type="range" id="sPrice">
+          </div>
+          <div class="note">Solid line represents price at specified DTE and IV.<br/>Dashed line represents value at expiration.</div>
+        </div>
+
+        <button class="mxbtn" id="mxOpen" type="button">
+          <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M9 4v16M15 4v16"/></svg></span>
+          <span>Profit and Loss Matrix</span>
+          <span class="chev">&rsaquo;</span>
+        </button>
+
+        <div class="panel"><h2>Legs</h2><table>
+          <thead><tr><th>Side</th><th>Qty</th><th>Type</th><th>Strike</th><th>Price</th></tr></thead>
+          <tbody>${legRows}</tbody></table></div>
+
+        <div class="cta" id="cta">Open in OptionsVision</div>
+        <div class="foot">OptionsVision is an educational options visualizer and not investment advice.</div>
+      `;
+
+      wireInteractions();
+      update();
+    }
+
+    function renderSummaryOnly(t) {
+      // Calendars & anything without a single-expiration payoff: facts + a nudge to the app.
+      const app = document.getElementById("app");
+      const sen = sentiment(t.kind || "");
+      const near = expLabel(t.expMonth, t.expDay, t.expYear), far = expLabel(t.expMonth2, t.expDay2, t.expYear2);
+      app.innerHTML = `
+        <div class="top">
+          <span class="sym">${esc((t.symbol || "—").toUpperCase())}</span>
+          <span class="tag" style="color:${sen.color}; background:color-mix(in srgb, ${sen.color} 18%, transparent)">${sen.label}</span>
+          <span class="spot">${t.spot != null ? px(t.spot) : ""}</span>
+          <span class="glyphs">
+            <span class="glyph" id="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg></span>
+            <span class="glyph" id="edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></span>
+          </span>
+        </div>
+        <div class="sub">${esc(t.kind || "Options trade")}</div>
+        <div class="panel"><div class="note" style="font-size:14px;color:var(--dim)">
+          ${/Calendar/.test(t.kind || "") ? `Calendar spread at the ${t.strike ? px(t.strike) : ""} strike${near ? ", front " + near : ""}${far ? " / back " + far : ""}.` : "This trade type"}
+          Open it in OptionsVision for the full interactive payoff, sliders, and greeks.</div></div>
+        <div class="cta" id="cta">Open in OptionsVision</div>
+        <div class="foot">OptionsVision is an educational options visualizer and not investment advice.</div>`;
+      wireInteractions();
+    }
+
+    function renderEmpty() {
+      document.getElementById("app").innerHTML = `
+        <div class="empty">
+          <div class="big">Nothing to show</div>
+          <div>This link is missing its trade data. Get the app to create and share your own.</div>
+          <div class="cta" id="cta" style="margin-top:20px">Get OptionsVision</div>
+        </div>`;
+      wireInteractions();
+    }
+
+    // ---------- interactions ----------
+    function openModal() { document.getElementById("modalBg").classList.add("open"); }
+    function closeModal() { document.getElementById("modalBg").classList.remove("open"); }
+
+    // The open matrix's frozen grid model, and its $/% mode. Like the app's sheet, the
+    // inputs are captured at presentation, so the grid reflects the IV slider's position
+    // when it was opened and doesn't move underneath the reader.
+    let mxModel = null, mxPercent = false;
+
+    function renderMatrixGrid() {
+      const M = mxModel, cols = M.columns.length;
+      const grid = document.getElementById("mxGrid");
+      grid.style.gridTemplateColumns = `44px repeat(${cols}, 48px)`;
+      const out = [`<div class="px hd">${esc((S.t.symbol || "").toUpperCase())}</div>`];
+      M.columns.forEach((c, i) => {
+        out.push(`<div class="hd${i === cols - 1 ? " last" : ""}"><span>${c.month}</span><span>${c.day}</span>${c.yearSuffix ? `<span>${c.yearSuffix}</span>` : ""}</div>`);
+      });
+      M.prices.forEach((p, row) => {
+        // The spot rule sits on the top edge of the first rung at/below spot, and spans the
+        // frozen column and the dates alike.
+        const div = row === M.dividerRow ? " divide" : "";
+        out.push(`<div class="px${div}">${p.toFixed(M.decimals)}</div>`);
+        M.columns.forEach((_, col) => {
+          const pnl = M.cells[row][col];
+          out.push(`<div class="${div.trim()}" style="background:${mxFill(pnl, M)}">${mxText(pnl, M, mxPercent)}</div>`);
+        });
+      });
+      grid.innerHTML = out.join("");
+    }
+
+    function openMatrix() {
+      mxModel = buildMatrix();
+      const exp = expLabel(S.t.expMonth, S.t.expDay, S.t.expYear);
+      document.getElementById("mxSub").textContent =
+        (S.t.kind || "Options trade") + (exp ? " · exp " + exp : "");
+      document.getElementById("mxFoot").textContent =
+        `Uses the same Black-Scholes model as the chart at the current IV (${(mxDisplayIV() * 100).toFixed(1)}%), risk-free rate, and dividend settings.`;
+      renderMatrixGrid();
+      document.getElementById("mxBg").classList.add("open");
+    }
+    function closeMatrix() { document.getElementById("mxBg").classList.remove("open"); }
+
+    function wireInteractions() {
+      ["home", "edit", "cta"].forEach(id => { const el = document.getElementById(id); if (el) el.addEventListener("click", openModal); });
+      const mxo = document.getElementById("mxOpen");
+      if (mxo) mxo.addEventListener("click", openMatrix);
+      const dte = document.getElementById("sDTE"), iv = document.getElementById("sIV"), pr = document.getElementById("sPrice");
+      if (dte) dte.addEventListener("input", e => { S.dte = +e.target.value; update(); });
+      if (iv) iv.addEventListener("input", e => {
+        const snap = (S.baseIV * 1.5 - S.baseIV * 0.5) * 0.03;             // snap near default (mirrors ivBinding)
+        const v = +e.target.value; S.iv = Math.abs(v - S.baseIV) < snap ? S.baseIV : v; update();
+      });
+      if (pr) pr.addEventListener("input", e => { S.scrub = +e.target.value; update(); });
+      const zi = document.getElementById("zoomIn"), zo = document.getElementById("zoomOut");
+      if (zi) zi.addEventListener("click", () => { S.zoomCenter = S.scrub; S.zoom = Math.min(S.zoom * 1.4, 6); update(); });
+      if (zo) zo.addEventListener("click", () => { S.zoomCenter = S.scrub; S.zoom = Math.max(S.zoom / 1.4, 0.5); update(); });
+      // scrub by drag/tap on the chart
+      const wrap = document.getElementById("chartWrap");
+      if (wrap) {
+        let dragging = false;
+        const down = e => { dragging = true; scrubFromClientX((e.touches ? e.touches[0] : e).clientX); e.preventDefault(); };
+        const move = e => { if (dragging) scrubFromClientX((e.touches ? e.touches[0] : e).clientX); };
+        const up = () => { dragging = false; };
+        wrap.addEventListener("pointerdown", down); window.addEventListener("pointermove", move); window.addEventListener("pointerup", up);
+      }
+    }
+
+    // ---------- boot ----------
+    document.getElementById("banner").addEventListener("click", openModal);
+    document.getElementById("modalClose").addEventListener("click", closeModal);
+    document.getElementById("modalBg").addEventListener("click", e => { if (e.target.id === "modalBg") closeModal(); });
+    document.getElementById("modalGet").setAttribute("href", APP_STORE_URL);
+
+    // Matrix sheet: close via the X, the backdrop, or Escape. The $/% pair is formatting
+    // only — the grid holds dollar P&L either way, so switching just re-renders.
+    document.getElementById("mxClose").addEventListener("click", closeMatrix);
+    document.getElementById("mxBg").addEventListener("click", e => { if (e.target.id === "mxBg") closeMatrix(); });
+    document.addEventListener("keydown", e => { if (e.key === "Escape") closeMatrix(); });
+    document.getElementById("mxToggle").addEventListener("click", e => {
+      const btn = e.target.closest("button"); if (!btn || !mxModel) return;
+      mxPercent = !!btn.dataset.pct;
+      [...e.currentTarget.children].forEach(b => b.classList.toggle("on", b === btn));
+      renderMatrixGrid();
+    });
+
+    if (!window.matchMedia("(pointer: coarse)").matches) document.body.classList.add("is-desktop");
+
+    const trade = decodeTrade();
+    if (!trade || !(trade.symbol || trade.kind || trade.strike != null)) { renderEmpty(); }
+    else { const legs = legsFor(trade); if (legs && trade.spot) renderInteractive(trade, legs); else renderSummaryOnly(trade); }
+  </script>
+</body>
+</html>

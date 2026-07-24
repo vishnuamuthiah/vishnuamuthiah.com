@@ -3,6 +3,34 @@
 // two can't drift. Regenerate after editing the Swift, never edit the JS.
 import { LEGAL_DOCS, LEGAL_INFO, LEGAL_FINE_PRINT } from './legal-content.js';
 
+// The share-link fallback page, served at optionsvision.app/p/<payload>. Synced
+// from the iOS repo by tools/sync-share-page.py -- it decodes the exact payload
+// TradeShare encodes, so the app is the source of truth. Imported as a Text
+// module (see the "rules" entry in wrangler.jsonc), not inlined.
+import SHARE_PAGE from './share-page.html';
+
+// Universal Links: Apple fetches this to learn which app owns which paths on
+// this domain. Must be served over HTTPS with no redirect. The appID is
+// <Team ID>.<bundle ID>, and the /p/* component matches TradeShare.pathPrefix.
+// Mirrors web/.well-known/apple-app-site-association in the iOS repo, which the
+// legacy tradevision-web.pages.dev host still serves for links shared before the
+// domain move -- both files must keep working, forever.
+const APPLE_APP_SITE_ASSOCIATION = {
+  applinks: {
+    details: [
+      {
+        appIDs: ['GGXR6KH9J7.VishnuMuthiah.TradeVision'],
+        components: [
+          {
+            '/': '/p/*',
+            comment: 'Share links open the app directly; the path segment carries the trade.',
+          },
+        ],
+      },
+    ],
+  },
+};
+
 // Hostname of the OptionsVision product site. One Worker serves both sites; the
 // router branches on this so the app domain gets the app's navy theme and a
 // product homepage, while vishnumuthiah.com stays the light portfolio.
@@ -22,6 +50,28 @@ export default {
 
     // ===== optionsvision.app — the product site =====
     if (isAppSite) {
+      // ---- Universal Links ----
+      // Apple requires HTTPS and no redirect here. Serve it as application/json
+      // (the legacy Pages host serves application/octet-stream, which iOS also
+      // accepts, but there is no reason to be loose about it).
+      if (path === '/.well-known/apple-app-site-association') {
+        return new Response(JSON.stringify(APPLE_APP_SITE_ASSOCIATION, null, 2), {
+          headers: {
+            'content-type': 'application/json',
+            // Apple's CDN caches this; keep it short so a change propagates.
+            'cache-control': 'public, max-age=3600',
+          },
+        });
+      }
+
+      // Share links. The payload is the single path segment after /p/ and is
+      // read client-side from location.pathname, so every /p/<payload> serves
+      // the same page -- this is a rewrite, never a redirect, or the payload
+      // would be lost.
+      if (path.startsWith('/p/')) {
+        return html(SHARE_PAGE);
+      }
+
       // The legal pages here are OptionsVision's own, generated from the app.
       // They are deliberately NOT the portfolio's same-named routes, which
       // document the Sources Tracker Google Slides add-on.

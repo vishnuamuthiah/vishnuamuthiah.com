@@ -84,7 +84,7 @@ export const LEGAL_DOCS = [
       },
       {
         "heading": "Sharing a Trade",
-        "body": "Sharing is optional and happens only when you tap Share. When you do, that trade\u2019s details \u2014 such as the symbol, strikes, expiration, and premiums \u2014 are encoded directly into the link so the recipient can open the same chart. If they have the App installed, the link opens in it and nothing is sent to us. If they do not, their browser loads our web page at tradevision-web.pages.dev to draw the trade, which means the encoded trade is part of that web request and may appear in ordinary server logs kept by us or our hosting provider. We do not save shared trades to a database, link them to you, or require an account to view one. A share link can be opened by anyone who has it, so send it only to people you want to see the trade."
+        "body": "Sharing is optional and happens only when you tap Share. When you do, that trade\u2019s details \u2014 such as the symbol, strikes, expiration, and premiums \u2014 are encoded directly into the link so the recipient can open the same chart. If they have the App installed, the link opens in it and nothing is sent to us. If they do not, their browser loads our web page at optionsvision.app to draw the trade, which means the encoded trade is part of that web request and may appear in ordinary server logs kept by us or our hosting provider. We do not save shared trades to a database, link them to you, or require an account to view one. A share link can be opened by anyone who has it, so send it only to people you want to see the trade."
       },
       {
         "heading": "Photos Access",

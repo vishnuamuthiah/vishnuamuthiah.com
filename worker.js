@@ -1,3 +1,8 @@
+// OptionsVision's Privacy Policy, Terms of Use and Financial Disclaimer,
+// generated from the app's own LegalView.swift by tools/extract-legal.py so the
+// two can't drift. Regenerate after editing the Swift, never edit the JS.
+import { LEGAL_DOCS, LEGAL_INFO, LEGAL_FINE_PRINT } from './legal-content.js';
+
 // Hostname of the OptionsVision product site. One Worker serves both sites; the
 // router branches on this so the app domain gets the app's navy theme and a
 // product homepage, while vishnumuthiah.com stays the light portfolio.
@@ -17,13 +22,16 @@ export default {
 
     // ===== optionsvision.app — the product site =====
     if (isAppSite) {
-      // NOTE: /privacy-policy and /terms-of-service are deliberately NOT routed
-      // here. Those pages document the Sources Tracker Google Slides add-on;
-      // OptionsVision has its own Privacy Policy and Terms of Use (shipped in
-      // the app's LegalView.swift) which still need mirroring to this domain.
-      // Until then they fall through to the catch-all redirect rather than
-      // serving a policy about a different product.
-      if (path === '/') {
+      // The legal pages here are OptionsVision's own, generated from the app.
+      // They are deliberately NOT the portfolio's same-named routes, which
+      // document the Sources Tracker Google Slides add-on.
+      if (APP_LEGAL_ROUTES[path]) {
+        return html(getAppLegalHTML(APP_LEGAL_ROUTES[path]));
+
+      } else if (path === '/support') {
+        return html(getAppSupportHTML());
+
+      } else if (path === '/') {
         return html(getTradeVisionHTML({ app: true }));
 
       } else {
@@ -1519,6 +1527,118 @@ function getDemoVideosScript() {
 // `app: true` renders this as the standalone product site at optionsvision.app
 // (navy theme, no portfolio chrome). Called with no options it is the light
 // page on vishnumuthiah.com.
+// ===== OPTIONSVISION LEGAL PAGES (optionsvision.app) =====
+// One renderer for all three generated documents. These are what App Store
+// Connect's privacy-policy URL should point at -- the portfolio's /privacy-policy
+// and /terms-of-service cover the Sources Tracker add-on and are unrelated.
+
+function escapeHTML(s) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// path -> generated document key
+const APP_LEGAL_ROUTES = {
+  '/privacy-policy': 'privacy',
+  '/terms-of-service': 'terms',
+  '/disclaimer': 'disclaimer',
+};
+
+function getAppLegalHTML(key) {
+  const doc = LEGAL_DOCS.find((d) => d.key === key);
+  const others = LEGAL_DOCS.filter((d) => d.key !== key);
+  const pathFor = (k) => Object.keys(APP_LEGAL_ROUTES).find((p) => APP_LEGAL_ROUTES[p] === k);
+
+  const sections = doc.sections.map((s) => `
+        ${s.heading ? `<h2>${escapeHTML(s.heading)}</h2>` : ''}
+        <p>${escapeHTML(s.body)}</p>`).join('\n');
+
+  return getLayout(`${doc.title} — ${LEGAL_INFO.appName}`, `
+    <div class="container">
+      <a href="/" class="back-link">← Back to ${LEGAL_INFO.appName}</a>
+
+      <h1>${escapeHTML(doc.title)}</h1>
+      <p class="tagline">${escapeHTML(doc.summary)}</p>
+      <p class="updated">Effective ${escapeHTML(LEGAL_INFO.effectiveDate)}</p>
+
+      <section class="tv-copy">
+${sections}
+
+        <p class="tv-disclaimer">${escapeHTML(LEGAL_FINE_PRINT)}</p>
+      </section>
+
+      <footer>
+        <p>&copy; 2026 ${escapeHTML(LEGAL_INFO.provider)}. All rights reserved.</p>
+        <p style="margin-top: 10px;">
+          <a href="/">Home</a> |
+          <a href="/support">Support</a> |
+          ${others.map((d) => `<a href="${pathFor(d.key)}">${escapeHTML(d.title)}</a>`).join(' |\n          ')}
+        </p>
+      </footer>
+    </div>
+  `, getLegalPageStyles(), {
+    description: escapeHTML(doc.summary),
+    url: `https://${APP_HOST}${pathFor(key)}`,
+    app: true,
+  });
+}
+
+// ===== OPTIONSVISION SUPPORT (optionsvision.app/support) =====
+function getAppSupportHTML() {
+  return getLayout(`Support — ${LEGAL_INFO.appName}`, `
+    <div class="container">
+      <a href="/" class="back-link">← Back to ${LEGAL_INFO.appName}</a>
+
+      <h1>Support</h1>
+      <p class="tagline">Questions, bugs, and feature requests for ${LEGAL_INFO.appName}.</p>
+
+      <section class="tv-copy">
+        <div class="contact-info">
+          <ul>
+            <li><strong>Email:</strong> <a href="mailto:${LEGAL_INFO.contactEmail}">${LEGAL_INFO.contactEmail}</a></li>
+            <li><strong>Response time:</strong> 48–72 hours</li>
+          </ul>
+        </div>
+
+        <h2>Reporting a bug</h2>
+        <p>Email the address above with as much of this as you have — it makes a problem far quicker to pin down:</p>
+        <ul>
+          <li>What you expected to happen, and what happened instead</li>
+          <li>The steps that produce it</li>
+          <li>The strategy involved (for example, a call debit spread or a calendar)</li>
+          <li>Your app version and iOS version, both listed under Settings in the app</li>
+          <li>A screenshot, if the problem is something you can see</li>
+        </ul>
+        <p>Please don't send account numbers, brokerage credentials, or anything else sensitive — none of it is needed to diagnose an issue.</p>
+
+        <h2>Feature requests</h2>
+        <p>Put <strong>Feature Request</strong> in the subject line and describe what you're trying to do and where the app gets in the way. Requests framed around the decision you're trying to make are the most useful ones.</p>
+
+        <h2>Why don't my Greeks match my broker?</h2>
+        <p>${LEGAL_INFO.appName} solves each leg's implied volatility from the entry price you gave it, so the Greeks describe the position as you actually opened it. Your broker computes its Greeks from the option's current market price instead. Both are correct; they answer slightly different questions, and the two will diverge as the market moves away from your entry.</p>
+
+        <h2>Does the app see my brokerage account?</h2>
+        <p>No. ${LEGAL_INFO.appName} never connects to a brokerage, cannot place or modify orders, and has no account to sign into. Screenshots you import are read on your device and are not uploaded. See the <a href="/privacy-policy">Privacy Policy</a> for the detail.</p>
+
+        <p class="tv-disclaimer">${escapeHTML(LEGAL_FINE_PRINT)}</p>
+      </section>
+
+      <footer>
+        <p>&copy; 2026 ${escapeHTML(LEGAL_INFO.provider)}. All rights reserved.</p>
+        <p style="margin-top: 10px;">
+          <a href="/">Home</a> |
+          <a href="/privacy-policy">Privacy Policy</a> |
+          <a href="/terms-of-service">Terms of Use</a> |
+          <a href="/disclaimer">Financial Disclaimer</a>
+        </p>
+      </footer>
+    </div>
+  `, getLegalPageStyles(), {
+    description: `Support for ${LEGAL_INFO.appName} — how to report a bug, request a feature, or get in touch.`,
+    url: `https://${APP_HOST}/support`,
+    app: true,
+  });
+}
+
 // ===== PORTFOLIO CASE STUDY (vishnumuthiah.com/optionsvision) =====
 // The product pitch lives on optionsvision.app; this page is the engineering
 // write-up for the same project and stays in the portfolio's light theme.
@@ -1713,10 +1833,11 @@ function getTradeVisionHTML({ app = false } = {}) {
         <p>&copy; 2026 Vishnu Muthiah. All rights reserved.</p>
         <p style="margin-top: 10px;">
           ${app
-            // The portfolio's legal pages cover the Sources Tracker add-on, not
-            // this app, so the product site links only what is true here until
-            // OptionsVision's own Privacy Policy and Terms are mirrored across.
-            ? '<a href="https://vishnumuthiah.com/optionsvision">About the Developer</a>'
+            ? `<a href="/support">Support</a> |
+          <a href="/privacy-policy">Privacy Policy</a> |
+          <a href="/terms-of-service">Terms of Use</a> |
+          <a href="/disclaimer">Disclaimer</a> |
+          <a href="https://vishnumuthiah.com/optionsvision">About the Developer</a>`
             : `<a href="/">Home</a> |
           <a href="/privacy-policy">Privacy Policy</a> |
           <a href="/terms-of-service">Terms of Service</a>`}

@@ -639,18 +639,28 @@ function getAppThemeStyles() {
 function getLayout(title, content, additionalStyles = '', meta = {}) {
   // Optional SEO / social tags — only emitted when a value is supplied, so
   // pages that don't pass `meta` render exactly as before.
+  // The <title> tag is written for a browser tab and a search result, which makes
+  // it too long for a link preview. `socialTitle` is the short headline that sits
+  // under the card image; it falls back to the page title when not supplied.
+  const social = meta.socialTitle || title;
   const metaTags = [
     meta.description ? `<meta name="description" content="${meta.description}">` : '',
     meta.url ? `<link rel="canonical" href="${meta.url}">` : '',
     `<meta property="og:type" content="website">`,
-    `<meta property="og:title" content="${title}">`,
+    `<meta property="og:title" content="${social}">`,
     meta.description ? `<meta property="og:description" content="${meta.description}">` : '',
     meta.url ? `<meta property="og:url" content="${meta.url}">` : '',
     meta.image ? `<meta property="og:image" content="${meta.image}">` : '',
+    // Declaring the intrinsic size lets clients reserve the wide card slot before
+    // the image finishes downloading, instead of guessing and falling back small.
+    meta.image ? `<meta property="og:image:width" content="1200">` : '',
+    meta.image ? `<meta property="og:image:height" content="630">` : '',
+    meta.imageAlt ? `<meta property="og:image:alt" content="${meta.imageAlt}">` : '',
     meta.image ? `<meta name="twitter:card" content="summary_large_image">` : `<meta name="twitter:card" content="summary">`,
-    `<meta name="twitter:title" content="${title}">`,
+    `<meta name="twitter:title" content="${social}">`,
     meta.description ? `<meta name="twitter:description" content="${meta.description}">` : '',
     meta.image ? `<meta name="twitter:image" content="${meta.image}">` : '',
+    meta.imageAlt ? `<meta name="twitter:image:alt" content="${meta.imageAlt}">` : '',
     // Tints mobile browser chrome to match the navy ground.
     meta.app ? `<meta name="theme-color" content="#0E1B33">` : '',
   ].filter(Boolean).join('\n    ');
@@ -1897,8 +1907,12 @@ function getTradeVisionHTML({ app = false } = {}) {
 
     ${getDemoVideosScript()}
   `, getTradeVisionPageStyles(), {
+    socialTitle: 'OptionsVision: Visualize any option in seconds',
     description: 'Turn a Robinhood options screenshot into an interactive P&L chart. Model days-to-expiration and implied volatility, then read your Greeks and break-evens — all privately on your iPhone.',
-    image: 'https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/payoff-chart.png',
+    // Purpose-built 1200x630 card. The old og:image was a portrait screenshot,
+    // which every client cropped to a thin strip out of its middle.
+    image: 'https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/og-card.png',
+    imageAlt: 'OptionsVision — an options payoff curve rising across a navy background',
     // The product domain is the canonical home for this content; the portfolio
     // copy points here too (step 4 turns that one into a case study).
     url: app ? 'https://optionsvision.app/' : 'https://vishnumuthiah.com/optionsvision',

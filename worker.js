@@ -55,9 +55,9 @@ export default {
       });
 
     } else if (path === '/optionsvision') {
-      return new Response(getTradeVisionHTML(), {
-        headers: { "content-type": "text/html;charset=UTF-8" },
-      });
+      // The portfolio keeps the engineering write-up; the product pitch moved
+      // to optionsvision.app, so these two are no longer the same page.
+      return html(getOptionsVisionCaseStudyHTML());
 
     } else if (path === '/tradevision') {
       // Old app-name URL — permanently redirect to /optionsvision so existing
@@ -987,7 +987,8 @@ function getHomepageHTML() {
           </div>
 
           <div class="project-links">
-            <a href="/optionsvision">Learn More →</a>
+            <a href="/optionsvision">Case Study →</a>
+            <a href="https://optionsvision.app" target="_blank" rel="noopener noreferrer">Visit optionsvision.app →</a>
           </div>
         </div>
 
@@ -1518,6 +1519,85 @@ function getDemoVideosScript() {
 // `app: true` renders this as the standalone product site at optionsvision.app
 // (navy theme, no portfolio chrome). Called with no options it is the light
 // page on vishnumuthiah.com.
+// ===== PORTFOLIO CASE STUDY (vishnumuthiah.com/optionsvision) =====
+// The product pitch lives on optionsvision.app; this page is the engineering
+// write-up for the same project and stays in the portfolio's light theme.
+//
+// Every figure below is measured, and the framing is deliberate: the scrub
+// numbers are compared against a reconstructed naive implementation, not a
+// slower version that ever shipped, because the isolation landed inside the
+// original feature commits. Don't reword these into "optimized from X".
+function getOptionsVisionCaseStudyHTML() {
+  return getLayout('OptionsVision — Case Study | Vishnu Muthiah', `
+    <div class="container">
+      <a href="/" class="back-link">← Back to Home</a>
+
+      <h1>OptionsVision</h1>
+      <p class="tagline">An iOS app that turns a screenshot of an options trade into an interactive payoff chart. Swift and SwiftUI, on-device OCR, an options pricing engine written from scratch, and a weekly market-data pipeline.</p>
+
+      <div class="tv-cta">
+        <a class="appstore-badge" href="https://optionsvision.app" target="_blank" rel="noopener noreferrer" aria-label="Visit the OptionsVision product site">
+          <span class="appstore-badge__text">
+            <span class="appstore-badge__small">Visit the product site</span>
+            <span class="appstore-badge__big">optionsvision.app</span>
+          </span>
+        </a>
+      </div>
+
+      ${getDemoVideosHTML()}
+
+      <section class="tv-copy">
+        <h2>The problem</h2>
+        <p>Brokerages show you an options payoff at expiration and nothing else. The questions that actually matter before then — what this position is worth if the stock drops 5% with three days left, whether the option is cheap or expensive, where the trade breaks even if volatility moves — need a model, and retail tools either don't answer them or bury the answer behind a subscription and a live quote feed.</p>
+        <p>OptionsVision answers them on-device, offline, from a screenshot.</p>
+
+        <h2>Engineering notes</h2>
+
+        <h3>Import by screenshot, parsed on-device</h3>
+        <p>Apple's Vision text recognition reads a Robinhood order ticket and reconstructs a structured trade: strategy, strikes, expiration, spot price, per-leg premiums. Multi-leg positions combine two screenshots — the order ticket plus the per-leg premium view — which is what makes it possible to recover true per-leg implied volatilities and the separate expirations a calendar spread needs. No image or trade leaves the device.</p>
+
+        <h3>A pricing engine, not a quote feed</h3>
+        <p>Implied volatility is solved per leg from the entry price by bisection, so every leg reprices exactly at its own strike and days-to-expiration rather than sharing one blended number. Greeks, break-evens and probability of profit are all computed locally, which is what lets the whole chart stay interactive with no network in the loop.</p>
+
+        <h3>Why Black–Scholes holds up here</h3>
+        <p>The alternative is a binomial tree, which handles American early exercise correctly. I benchmarked one to find out what that costs: a single Black–Scholes price runs 18 ns against 19.5 µs for a 200-step American CRR tree, roughly a thousandfold. Across the 241-point break-even scan the chart depends on, that is 8.6 µs versus 11.8 ms — 71% of a 60 fps frame budget, for a scan that has to finish between frames while the user drags a slider.</p>
+        <p>What Black–Scholes gives up is the early-exercise premium: about 1.3% to 3% on in-the-money puts and essentially nothing on calls. So the tree costs three orders of magnitude more compute to correct ITM puts by a couple of percent. Worth being precise about the limit — at 100 steps a tree is 19% of a frame, which is not impossible, just enough to eat the headroom that interactive scrubbing runs on.</p>
+
+        <h3>Keeping the scrub inside a frame</h3>
+        <p>The expensive path is the break-even scan: 241 price points evaluated against every leg, every time the user moves the days-to-expiration or volatility slider. It costs 1.4 ms for a single-leg call and 5.8 ms for a four-leg iron condor — a third of a frame on its own.</p>
+        <p>Isolating the views that depend on it and passing anchor-independent break-evens down precomputed keeps that scan out of the per-tick path entirely, leaving 0.09 ms to 0.17 ms per tick. Measured against a reconstructed naive implementation that rescans on every tick — what an unisolated SwiftUI body does by default — that is a 33–35× difference, or 35% of a frame budget down to 1%. Release build, iPhone 17 simulator; a physical device would be slower in absolute terms, which makes the frame-budget argument stronger rather than weaker.</p>
+
+        <h3>Offline-first market data</h3>
+        <p>Tickers, earnings dates, dividends and 52-week implied-volatility history come from a separate Python pipeline that pulls from Cboe and treasury.gov and publishes versioned data files. The app fetches them in the background about once a week and works completely offline in between. Refreshing the data never requires shipping an app update.</p>
+
+        <h3>Ported to Android by porting the math first</h3>
+        <p>The pricing core is a standalone Kotlin module validated against a golden JSON fixture generated from the iOS implementation — identical inputs asserted to identical outputs, case by case, before any Android UI existed. Getting the numerical parity settled first means later UI work can't quietly introduce a pricing discrepancy between the two platforms.</p>
+
+        <h3>Analytics without a third-party SDK</h3>
+        <p>Feature usage reports to a Cloudflare Worker I run myself, backed by Analytics Engine. It records which features get used and nothing else — no trades, symbols, strikes, amounts or screenshots — against a random install identifier that is erased with the app, and it can be turned off in-app.</p>
+
+        <h2>Stack</h2>
+        <p>Swift · SwiftUI · Vision · StoreKit 2 · XCTest — Kotlin (pricing core ported and parity-tested, Compose UI in progress) — Python data pipeline — Cloudflare Workers, R2 and Analytics Engine</p>
+      </section>
+
+      <footer>
+        <p>&copy; 2026 Vishnu Muthiah. All rights reserved.</p>
+        <p style="margin-top: 10px;">
+          <a href="/">Home</a> |
+          <a href="https://optionsvision.app">OptionsVision</a> |
+          <a href="/privacy-policy">Privacy Policy</a> |
+          <a href="/terms-of-service">Terms of Service</a>
+        </p>
+      </footer>
+    </div>
+
+    ${getDemoVideosScript()}
+  `, getTradeVisionPageStyles(), {
+    description: 'Case study: building OptionsVision — on-device screenshot OCR, an options pricing engine, and keeping a 241-point break-even scan inside a 60 fps frame budget.',
+    url: 'https://vishnumuthiah.com/optionsvision',
+  });
+}
+
 function getTradeVisionHTML({ app = false } = {}) {
   return getLayout('OptionsVision — Options Payoff Charts from a Robinhood Screenshot', `
     <div class="container">

@@ -699,13 +699,11 @@ function getAppThemeStyles() {
       .tv-play-overlay:hover { background: rgba(244, 241, 234, 0.98); }
       .tv-play-overlay svg { fill: #0E1B33; }
 
-      /* --- App Store badge: Apple's black badge sinks into the navy, so use
-             the launch screen's off-white bar with a navy label instead. --- */
-      .appstore-badge {
-        background: #EBE6DA;
-        color: #0E1B33;
-        border-color: #EBE6DA;
-      }
+      /* --- App Store badge: Apple's standard black badge, same as everywhere
+             else. It reads as a dark shape against the navy, which is how it
+             sits on Apple's own dark pages -- the white lockup carries it. An
+             earlier revision recoloured this to the launch screen's off-white
+             bar; that drifted from Apple's artwork, so it's back to black. --- */
       .appstore-badge:hover {
         box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
       }

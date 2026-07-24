@@ -1912,7 +1912,9 @@ function getTradeVisionHTML({ app = false } = {}) {
     ${getDemoVideosScript()}
   `, getTradeVisionPageStyles(), {
     socialTitle: 'See any options trade before you place it',
-    description: 'Turn a Robinhood options screenshot into an interactive P&L chart. Model days-to-expiration and implied volatility, then read your Greeks and break-evens — all privately on your iPhone.',
+    // Kept under ~100 chars so it survives the truncation most link-preview
+    // clients apply; the old 187-char version was cut mid-sentence.
+    description: 'Screenshot your trade and see the P&L payoff, Greeks, and break-evens privately on your phone.',
     // Purpose-built 1200x630 card. The old og:image was a portrait screenshot,
     // which every client cropped to a thin strip out of its middle.
     image: 'https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/og-card.png',

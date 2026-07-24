@@ -42,6 +42,84 @@ function html(body) {
   });
 }
 
+// ===== PER-TRADE LINK PREVIEWS =====
+// A /p/ link carries the whole trade in its path, so the Worker can decode it and
+// write a headline naming the actual trade instead of a generic one. Everything
+// below treats the payload as hostile: it is attacker-controlled input that ends
+// up inside an HTML attribute, so every value is type-checked, clamped, and
+// escaped, and any failure falls back to the page's static tags rather than
+// throwing. Only optionsvision.app gets this -- the legacy Pages host is static.
+
+/// The static headline in share-page.html, swapped out when a trade decodes.
+const SHARE_DEFAULT_HEADLINE = 'See any options trade before you place it';
+
+/// Longest payload worth attempting; a real trade is a few hundred bytes.
+const MAX_SHARE_PAYLOAD = 4096;
+
+function decodeSharePayload(payload) {
+  if (!payload || payload.length > MAX_SHARE_PAYLOAD) return null;
+  // base64url -> base64, restoring the padding TradeShare strips.
+  let b64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+  while (b64.length % 4 !== 0) b64 += '=';
+  try {
+    const json = atob(b64);
+    const trade = JSON.parse(json);
+    return trade && typeof trade === 'object' && !Array.isArray(trade) ? trade : null;
+  } catch {
+    return null;                       // truncated, re-encoded, or just not ours
+  }
+}
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+/// "AAPL $227.50 Long Call · Aug 15" — facts carried in the link, nothing computed.
+/// Deliberately no P&L: max profit depends on the pricing engine, and a number that
+/// disagrees with what the page then draws is worse than no number.
+function shareHeadline(trade) {
+  if (!trade) return null;
+
+  // Validate rather than scrub. Stripping bad characters out of a hostile symbol
+  // leaves a plausible-looking headline built from an attack string; refusing it
+  // outright falls back to the generic card, which is the right outcome.
+  const raw = typeof trade.symbol === 'string' ? trade.symbol.trim().toUpperCase() : '';
+  const symbol = /^[A-Z]{1,6}(\.[A-Z]{1,2})?$/.test(raw) ? raw : '';
+
+  const strikeText = (v) =>
+    typeof v === 'number' && isFinite(v) && v > 0 && v < 1e7
+      ? '$' + (Number.isInteger(v) ? v.toString() : v.toFixed(2))
+      : null;
+  const s1 = strikeText(trade.strike);
+  const s2 = strikeText(trade.strike2);
+  const strikes = s1 && s2 ? `${s1}/${s2}` : (s1 || '');
+
+  // TradeKind encodes as its Swift raw value -- "Long Call", "Cash-Secured Put",
+  // "Call Debit Spread". Anything that isn't shaped like one is dropped rather
+  // than scrubbed, for the same reason as the symbol above.
+  const rawKind = typeof trade.kind === 'string' ? trade.kind.trim() : '';
+  const kind = /^[A-Za-z][A-Za-z -]{0,31}$/.test(rawKind) ? rawKind : '';
+
+  const m = trade.expMonth, d = trade.expDay;
+  const expiry = Number.isInteger(m) && m >= 1 && m <= 12 && Number.isInteger(d) && d >= 1 && d <= 31
+    ? `${MONTHS[m - 1]} ${d}`
+    : '';
+
+  // Need at least a symbol and something describing the position to beat the
+  // generic headline.
+  if (!symbol || (!kind && !strikes)) return null;
+
+  const lead = [symbol, strikes, kind].filter(Boolean).join(' ');
+  return expiry ? `${lead} · ${expiry}` : lead;
+}
+
+/// The share page with its headline personalised, or untouched if we can't do better.
+function sharePageFor(path) {
+  const headline = shareHeadline(decodeSharePayload(path.slice('/p/'.length)));
+  if (!headline) return SHARE_PAGE;
+  return SHARE_PAGE.split(`content="${SHARE_DEFAULT_HEADLINE}"`)
+                   .join(`content="${escapeHTML(headline).replace(/"/g, '&quot;')}"`);
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -69,7 +147,7 @@ export default {
       // the same page -- this is a rewrite, never a redirect, or the payload
       // would be lost.
       if (path.startsWith('/p/')) {
-        return html(SHARE_PAGE);
+        return html(sharePageFor(path));
       }
 
       // The legal pages here are OptionsVision's own, generated from the app.

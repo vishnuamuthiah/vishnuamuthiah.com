@@ -17,13 +17,13 @@ export default {
 
     // ===== optionsvision.app — the product site =====
     if (isAppSite) {
-      if (path === '/privacy-policy') {
-        return html(getPrivacyPolicyHTML({ app: true }));
-
-      } else if (path === '/terms-of-service') {
-        return html(getTermsOfServiceHTML({ app: true }));
-
-      } else if (path === '/') {
+      // NOTE: /privacy-policy and /terms-of-service are deliberately NOT routed
+      // here. Those pages document the Sources Tracker Google Slides add-on;
+      // OptionsVision has its own Privacy Policy and Terms of Use (shipped in
+      // the app's LegalView.swift) which still need mirroring to this domain.
+      // Until then they fall through to the catch-all redirect rather than
+      // serving a policy about a different product.
+      if (path === '/') {
         return html(getTradeVisionHTML({ app: true }));
 
       } else {
@@ -489,6 +489,94 @@ function getTradeVisionPageStyles() {
   `;
 }
 
+// ===== OPTIONSVISION APP THEME (optionsvision.app only) =====
+// Loaded after the page styles so it wins on order, and only for pages served
+// on the app host. Two halves: the token block, which recolors everything that
+// went through the tokenization pass, and a short list of restatements for the
+// surfaces whose colors are still literal (the carousel and the CTA badge).
+//
+// Values are lifted from the app's own Theme.swift so the site and the app read
+// as one product: launchNavy #0E1B33, wellFill #16233F, boxFill #1A263D,
+// accent #6BCCF5, gold #D9AE57, and the launch screen's off-white #EBE6DA.
+function getAppThemeStyles() {
+  return `
+    <style>
+      :root {
+        --bg: #0E1B33;
+        --text: #EBE6DA;
+        --text-body: #C7D3E6;
+        --text-muted: #AABBD8;
+        --accent: #6BCCF5;
+        --accent-hover: #9BDDF8;
+        /* Navy label on the bright accent -- the inverse of the light theme. */
+        --on-accent: #0E1B33;
+        --surface: #1A263D;
+        --surface-alt: #16233F;
+        --surface-code: #16233F;
+        --border: #26364A;
+        --panel: #16233F;
+        --shadow: rgba(0, 0, 0, 0.45);
+        /* Gold is the app's Pro accent; here it marks section chrome only, so
+           it never competes with the blue that signals "this is a link". */
+        --gold: #D9AE57;
+      }
+
+      /* --- Tinted bands: the light #f4f6f8/#e6e9ec pair has no token --- */
+      .tv-band,
+      .portfolio-embed {
+        background: var(--surface);
+        border-color: var(--border);
+      }
+      /* Both band titles ("Demo Videos" and "Demo Walkthrough") take gold; the
+         walkthrough one is an h3 inside .tv-copy, so it needs the two-class
+         selector to outrank the accent color on .tv-copy h3 below. */
+      .tv-band-title,
+      .tv-copy .tv-walkthrough h3 { color: var(--gold); }
+      .tv-copy h3 { color: var(--accent); }
+
+      /* --- Media frames and captions --- */
+      .tv-gallery img,
+      .tv-short-frame { border-color: var(--border); }
+      .tv-gallery figcaption,
+      .tv-carousel-caption { color: var(--text-muted); }
+      .tv-disclaimer {
+        color: var(--text-muted);
+        border-top-color: var(--border);
+      }
+
+      /* --- Carousel controls: white pills punch holes in the navy ground --- */
+      .tv-carousel-arrow {
+        background: var(--surface);
+        border-color: var(--border);
+        color: var(--accent);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+      }
+      .tv-carousel-arrow:hover {
+        background: #22314D;
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.5);
+      }
+      .tv-carousel-dot { background: #33445F; }
+      .tv-carousel-dot.active { background: var(--accent); }
+
+      /* --- Play button keeps the launch screen's off-white-on-navy pairing --- */
+      .tv-play-overlay { background: rgba(235, 230, 218, 0.92); }
+      .tv-play-overlay:hover { background: rgba(244, 241, 234, 0.98); }
+      .tv-play-overlay svg { fill: #0E1B33; }
+
+      /* --- App Store badge: Apple's black badge sinks into the navy, so use
+             the launch screen's off-white bar with a navy label instead. --- */
+      .appstore-badge {
+        background: #EBE6DA;
+        color: #0E1B33;
+        border-color: #EBE6DA;
+      }
+      .appstore-badge:hover {
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+      }
+    </style>
+  `;
+}
+
 // ===== LAYOUT WRAPPER =====
 function getLayout(title, content, additionalStyles = '', meta = {}) {
   // Optional SEO / social tags — only emitted when a value is supplied, so
@@ -505,6 +593,8 @@ function getLayout(title, content, additionalStyles = '', meta = {}) {
     `<meta name="twitter:title" content="${title}">`,
     meta.description ? `<meta name="twitter:description" content="${meta.description}">` : '',
     meta.image ? `<meta name="twitter:image" content="${meta.image}">` : '',
+    // Tints mobile browser chrome to match the navy ground.
+    meta.app ? `<meta name="theme-color" content="#0E1B33">` : '',
   ].filter(Boolean).join('\n    ');
 
   return `<!DOCTYPE html>
@@ -516,6 +606,7 @@ function getLayout(title, content, additionalStyles = '', meta = {}) {
     ${metaTags}
     ${getSharedStyles()}
     ${additionalStyles}
+    ${meta.app ? getAppThemeStyles() : ''}
     ${getMobileStyles()}
 </head>
 <body>
@@ -1542,10 +1633,13 @@ function getTradeVisionHTML({ app = false } = {}) {
         <p>&copy; 2026 Vishnu Muthiah. All rights reserved.</p>
         <p style="margin-top: 10px;">
           ${app
+            // The portfolio's legal pages cover the Sources Tracker add-on, not
+            // this app, so the product site links only what is true here until
+            // OptionsVision's own Privacy Policy and Terms are mirrored across.
             ? '<a href="https://vishnumuthiah.com/optionsvision">About the Developer</a>'
-            : '<a href="/">Home</a>'} |
+            : `<a href="/">Home</a> |
           <a href="/privacy-policy">Privacy Policy</a> |
-          <a href="/terms-of-service">Terms of Service</a>
+          <a href="/terms-of-service">Terms of Service</a>`}
         </p>
       </footer>
     </div>
@@ -1557,6 +1651,7 @@ function getTradeVisionHTML({ app = false } = {}) {
     // The product domain is the canonical home for this content; the portfolio
     // copy points here too (step 4 turns that one into a case study).
     url: app ? 'https://optionsvision.app/' : 'https://vishnumuthiah.com/optionsvision',
+    app,
   });
 }
 

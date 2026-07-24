@@ -77,6 +77,26 @@ export default {
 function getSharedStyles() {
   return `
     <style>
+      /* ===== THEME TOKENS =====
+         Defaults below are the portfolio's original palette, literal for
+         literal, so vishnumuthiah.com renders exactly as it always has.
+         getAppThemeStyles() redefines the same names for optionsvision.app,
+         which is why every rule below reads a variable and never a hex. */
+      :root {
+        --bg: #ffffff;
+        --text: #202124;
+        --text-body: #3c4043;
+        --text-muted: #5f6368;
+        --accent: #1a73e8;
+        --accent-hover: #1557b0;
+        --on-accent: #fff;
+        --surface: #f8f9fa;
+        --surface-alt: #e8f0fe;
+        --surface-code: #f1f3f4;
+        --border: #dadce0;
+        --panel: #fff;
+        --shadow: rgba(0,0,0,0.1);
+      }
       * {
         margin: 0;
         padding: 0;
@@ -85,8 +105,8 @@ function getSharedStyles() {
       body {
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
         line-height: 1.6;
-        color: #202124;
-        background: #ffffff;
+        color: var(--text);
+        background: var(--bg);
       }
       .container {
         max-width: 900px;
@@ -95,52 +115,52 @@ function getSharedStyles() {
       }
       header {
         margin-bottom: 22px;
-        border-bottom: 3px solid #1a73e8;
+        border-bottom: 3px solid var(--accent);
         padding-bottom: 12px;
       }
       h1 {
         font-size: 48px;
         margin-bottom: 4px;
-        color: #202124;
+        color: var(--text);
       }
       h2 {
         font-size: 32px;
         margin-top: 0;
         margin-bottom: 8px;
-        color: #202124;
+        color: var(--text);
       }
       h3 {
         font-size: 20px;
         margin-bottom: 8px;
-        color: #202124;
+        color: var(--text);
       }
       p, li {
         margin-bottom: 10px;
-        color: #3c4043;
+        color: var(--text-body);
       }
       ul {
         margin-left: 20px;
         margin-bottom: 15px;
       }
       a {
-        color: #1a73e8;
+        color: var(--accent);
         text-decoration: none;
       }
       a:hover {
         text-decoration: underline;
       }
       strong {
-        color: #202124;
+        color: var(--text);
       }
       code {
-        background: #f1f3f4;
+        background: var(--surface-code);
         padding: 2px 6px;
         border-radius: 3px;
         font-size: 14px;
       }
       .tagline {
         font-size: 20px;
-        color: #5f6368;
+        color: var(--text-muted);
         margin-bottom: 6px;
       }
       .contact-links {
@@ -155,7 +175,7 @@ function getSharedStyles() {
       .about {
         font-size: 18px;
         line-height: 1.8;
-        color: #3c4043;
+        color: var(--text-body);
       }
       .project-grid {
         display: grid;
@@ -163,23 +183,23 @@ function getSharedStyles() {
         margin-top: 16px;
       }
       .project-card {
-        border: 1px solid #dadce0;
+        border: 1px solid var(--border);
         border-radius: 8px;
         padding: 18px 24px;
-        background: #f8f9fa;
+        background: var(--surface);
         transition: transform 0.2s, box-shadow 0.2s;
       }
       .project-card:hover {
         transform: translateY(-4px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 12px var(--shadow);
       }
       .project-card h3 {
         font-size: 24px;
         margin-bottom: 10px;
-        color: #1a73e8;
+        color: var(--accent);
       }
       .project-card p {
-        color: #5f6368;
+        color: var(--text-muted);
         margin-bottom: 15px;
       }
       .project-card .tags {
@@ -189,8 +209,8 @@ function getSharedStyles() {
         margin-bottom: 15px;
       }
       .tag {
-        background: #e8f0fe;
-        color: #1a73e8;
+        background: var(--surface-alt);
+        color: var(--accent);
         padding: 4px 12px;
         border-radius: 12px;
         font-size: 12px;
@@ -202,7 +222,7 @@ function getSharedStyles() {
         font-weight: 500;
       }
       .experience {
-        background: #f8f9fa;
+        background: var(--surface);
         padding: 18px 24px;
         border-radius: 8px;
         margin-top: 12px;
@@ -217,7 +237,7 @@ function getSharedStyles() {
       }
       .experience li:before {
         content: "→ ";
-        color: #1a73e8;
+        color: var(--accent);
         font-weight: bold;
       }
       .back-link {
@@ -225,47 +245,47 @@ function getSharedStyles() {
         margin-bottom: 30px;
       }
       .updated {
-        color: #5f6368;
+        color: var(--text-muted);
         font-size: 14px;
         margin-bottom: 30px;
       }
       .contact-info {
-        background: #e8f0fe;
+        background: var(--surface-alt);
         padding: 20px;
         border-radius: 8px;
         margin: 20px 0;
       }
       .contact-info strong {
-        color: #1a73e8;
+        color: var(--accent);
       }
       footer {
         margin-top: 80px;
         padding-top: 30px;
-        border-top: 1px solid #dadce0;
-        color: #5f6368;
+        border-top: 1px solid var(--border);
+        color: var(--text-muted);
         font-size: 14px;
         text-align: center;
       }
 
       /* ===== PDF Portfolio Embed ===== */
       .portfolio-embed {
-        border: 1px solid #dadce0;
+        border: 1px solid var(--border);
         border-radius: 8px;
         padding: 18px 24px;
-        background: #f8f9fa;
+        background: var(--surface);
         transition: transform 0.2s, box-shadow 0.2s;
       }
       .portfolio-embed:hover {
         transform: translateY(-4px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 12px var(--shadow);
       }
       .portfolio-embed h3 {
         font-size: 24px;
         margin-bottom: 10px;
-        color: #1a73e8;
+        color: var(--accent);
       }
       .portfolio-embed p {
-        color: #5f6368;
+        color: var(--text-muted);
         margin-bottom: 15px;
       }
       .portfolio-embed .pdf-viewer-wrapper {
@@ -275,8 +295,8 @@ function getSharedStyles() {
         margin: 15px 0;
         border-radius: 8px;
         overflow: hidden;
-        border: 1px solid #dadce0;
-        background: #fff;
+        border: 1px solid var(--border);
+        background: var(--panel);
       }
       .portfolio-embed .pdf-viewer-wrapper iframe {
         position: absolute;
@@ -290,27 +310,27 @@ function getSharedStyles() {
         display: none;
         text-align: center;
         padding: 40px 20px;
-        background: #fff;
+        background: var(--panel);
         border-radius: 8px;
-        border: 1px solid #dadce0;
+        border: 1px solid var(--border);
         margin: 15px 0;
       }
       .portfolio-embed .pdf-fallback p {
         margin-bottom: 15px;
-        color: #5f6368;
+        color: var(--text-muted);
       }
       .portfolio-embed .pdf-download-btn {
         display: inline-block;
         padding: 10px 24px;
-        background: #1a73e8;
-        color: #fff;
+        background: var(--accent);
+        color: var(--on-accent);
         border-radius: 6px;
         font-weight: 500;
         text-decoration: none;
         transition: background 0.2s;
       }
       .portfolio-embed .pdf-download-btn:hover {
-        background: #1557b0;
+        background: var(--accent-hover);
         text-decoration: none;
       }
     </style>
@@ -372,7 +392,7 @@ function getLegalPageStyles() {
         font-size: 24px;
         margin-top: 30px;
         margin-bottom: 15px;
-        color: #1a73e8;
+        color: var(--accent);
       }
       h3 {
         font-size: 18px;

@@ -653,8 +653,11 @@ function getLayout(title, content, additionalStyles = '', meta = {}) {
     meta.image ? `<meta property="og:image" content="${meta.image}">` : '',
     // Declaring the intrinsic size lets clients reserve the wide card slot before
     // the image finishes downloading, instead of guessing and falling back small.
-    meta.image ? `<meta property="og:image:width" content="1200">` : '',
-    meta.image ? `<meta property="og:image:height" content="630">` : '',
+    // These MUST match the real file -- a client that trusts a wrong value and
+    // then gets something else can drop back to the small card. Currently
+    // tradevision/og-card.jpeg is 720x378 (1.905:1, same ratio as 1200x630).
+    meta.imageWidth ? `<meta property="og:image:width" content="${meta.imageWidth}">` : '',
+    meta.imageHeight ? `<meta property="og:image:height" content="${meta.imageHeight}">` : '',
     meta.imageAlt ? `<meta property="og:image:alt" content="${meta.imageAlt}">` : '',
     meta.image ? `<meta name="twitter:card" content="summary_large_image">` : `<meta name="twitter:card" content="summary">`,
     `<meta name="twitter:title" content="${social}">`,
@@ -1911,7 +1914,9 @@ function getTradeVisionHTML({ app = false } = {}) {
     description: 'Turn a Robinhood options screenshot into an interactive P&L chart. Model days-to-expiration and implied volatility, then read your Greeks and break-evens — all privately on your iPhone.',
     // Purpose-built 1200x630 card. The old og:image was a portrait screenshot,
     // which every client cropped to a thin strip out of its middle.
-    image: 'https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/og-card.png',
+    image: 'https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/og-card.jpeg',
+    imageWidth: 720,
+    imageHeight: 378,
     imageAlt: 'OptionsVision — an options payoff curve rising across a navy background',
     // The product domain is the canonical home for this content; the portfolio
     // copy points here too (step 4 turns that one into a case study).

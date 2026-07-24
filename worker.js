@@ -1,9 +1,39 @@
+// Hostname of the OptionsVision product site. One Worker serves both sites; the
+// router branches on this so the app domain gets the app's navy theme and a
+// product homepage, while vishnumuthiah.com stays the light portfolio.
+const APP_HOST = 'optionsvision.app';
+
+function html(body) {
+  return new Response(body, {
+    headers: { "content-type": "text/html;charset=UTF-8" },
+  });
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const path = url.pathname;
+    const isAppSite = url.hostname === APP_HOST || url.hostname.endsWith('.' + APP_HOST);
 
-    // Route handling
+    // ===== optionsvision.app — the product site =====
+    if (isAppSite) {
+      if (path === '/privacy-policy') {
+        return html(getPrivacyPolicyHTML({ app: true }));
+
+      } else if (path === '/terms-of-service') {
+        return html(getTermsOfServiceHTML({ app: true }));
+
+      } else if (path === '/') {
+        return html(getTradeVisionHTML({ app: true }));
+
+      } else {
+        // The product site is a single page for now, so /optionsvision,
+        // /tradevision and anything else land on the root instead of 404ing.
+        return Response.redirect(url.origin + '/', 301);
+      }
+    }
+
+    // ===== vishnumuthiah.com — the portfolio =====
     if (path === '/privacy-policy') {
       return new Response(getPrivacyPolicyHTML(), {
         headers: { "content-type": "text/html;charset=UTF-8" },
@@ -1374,10 +1404,13 @@ function getDemoVideosScript() {
     </script>`;
 }
 
-function getTradeVisionHTML() {
+// `app: true` renders this as the standalone product site at optionsvision.app
+// (navy theme, no portfolio chrome). Called with no options it is the light
+// page on vishnumuthiah.com.
+function getTradeVisionHTML({ app = false } = {}) {
   return getLayout('OptionsVision — Options Payoff Charts from a Robinhood Screenshot', `
     <div class="container">
-      <a href="/" class="back-link">← Back to Home</a>
+      ${app ? '' : '<a href="/" class="back-link">← Back to Home</a>'}
 
       <h1>OptionsVision</h1>
       <p class="tagline">Take a screenshot from Robinhood and watch it become an interactive P&amp;L chart. Model different scenarios by adjusting your days to expiration and your implied volatility. Then analyze your Greeks and break-evens, all privately on your device.</p>
@@ -1488,7 +1521,9 @@ function getTradeVisionHTML() {
       <footer>
         <p>&copy; 2026 Vishnu Muthiah. All rights reserved.</p>
         <p style="margin-top: 10px;">
-          <a href="/">Home</a> |
+          ${app
+            ? '<a href="https://vishnumuthiah.com/optionsvision">About the Developer</a>'
+            : '<a href="/">Home</a>'} |
           <a href="/privacy-policy">Privacy Policy</a> |
           <a href="/terms-of-service">Terms of Service</a>
         </p>
@@ -1499,7 +1534,9 @@ function getTradeVisionHTML() {
   `, getTradeVisionPageStyles(), {
     description: 'Turn a Robinhood options screenshot into an interactive P&L chart. Model days-to-expiration and implied volatility, then read your Greeks and break-evens — all privately on your iPhone.',
     image: 'https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/payoff-chart.png',
-    url: 'https://vishnumuthiah.com/optionsvision',
+    // The product domain is the canonical home for this content; the portfolio
+    // copy points here too (step 4 turns that one into a case study).
+    url: app ? 'https://optionsvision.app/' : 'https://vishnumuthiah.com/optionsvision',
   });
 }
 
@@ -1540,7 +1577,8 @@ function getSupportHTML() {
   `, getSupportPageStyles());
 }
 
-function getPrivacyPolicyHTML() {
+// Shared by both sites; `app: true` renders it in the navy product theme.
+function getPrivacyPolicyHTML({ app = false } = {}) {
   return getLayout('Privacy Policy - Vishnu Muthiah', `
     <div class="container">
       <a href="/" class="back-link">← Back to Home</a>
@@ -1882,7 +1920,8 @@ function getPrivacyPolicyHTML() {
   `, getLegalPageStyles());
 }
 
-function getTermsOfServiceHTML() {
+// Shared by both sites; `app: true` renders it in the navy product theme.
+function getTermsOfServiceHTML({ app = false } = {}) {
   return getLayout('Terms of Service - Vishnu Muthiah', `
     <div class="container">
       <a href="/" class="back-link">← Back to Home</a>

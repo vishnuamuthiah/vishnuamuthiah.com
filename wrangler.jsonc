@@ -7,8 +7,15 @@
   "compatibility_date": "2026-07-22",
   "observability": {
     "enabled": true
-  }
-  // The custom domain (vishnumuthiah.com) is already attached to the Worker in
-  // the dashboard, so no "routes" are needed here -- deploying by the correct
-  // name updates the code and the existing domain binding stays put.
+  },
+  // One Worker serves two sites, split by hostname in the fetch router:
+  //   vishnumuthiah.com -> personal portfolio (light theme)
+  //   optionsvision.app -> OptionsVision product site (navy app theme)
+  // vishnumuthiah.com was originally attached in the dashboard; it is listed
+  // here too so both bindings are declared in one place and a deploy can never
+  // leave the portfolio domain unasserted.
+  "routes": [
+    { "pattern": "vishnumuthiah.com", "custom_domain": true },
+    { "pattern": "optionsvision.app", "custom_domain": true }
+  ]
 }

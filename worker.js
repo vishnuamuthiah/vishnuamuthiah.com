@@ -799,6 +799,8 @@ function getMotionStyles() {
       }
       .tv-stickybar__cta {
         flex: none;
+        display: inline-flex;
+        align-items: center;
         background: var(--accent);
         color: var(--on-accent);
         text-decoration: none;
@@ -815,11 +817,18 @@ function getMotionStyles() {
         .tv-stickybar, .tv-stickybar__cta { transition: none; }
       }
 
-      /* Phones: the bar has to stay one line next to a 44px-tall tap target. */
+      /* Phones. The pill is the one thing here anybody taps, so it gets an
+         explicit 44px minimum -- Apple's floor for a touch target. Padding alone
+         left it around 34px, comfortably under. The name is allowed to ellipsis
+         so the pill never gets squeezed on a narrow screen. */
       @media (max-width: 600px) {
-        .tv-stickybar { padding: 8px 14px; gap: 10px; }
+        .tv-stickybar { padding: 6px 14px; gap: 10px; }
         .tv-stickybar__name { font-size: 0.95rem; }
-        .tv-stickybar__cta { font-size: 0.85rem; padding: 8px 14px; }
+        .tv-stickybar__cta {
+          font-size: 0.85rem;
+          padding: 8px 16px;
+          min-height: 44px;
+        }
       }
     </style>`;
 }

@@ -1729,11 +1729,9 @@ function getCarouselCSS() {
       .tv-carousel--images .tv-carousel-viewport {
         max-width: 380px;
       }
-      /* Set by the script; only the narrow-screen slider reads it, since the
-         stacked layout would drag its whole stage sideways. */
-      .tv-carousel--images .tv-carousel-track {
-        transform: translateX(var(--slide-offset, 0));
-      }
+      /* The narrow-screen slider is translated by the script rather than from
+         here: the stacked layout above 760px must keep an untransformed track,
+         or the whole stage slides sideways with it. */
       /* An arrow at either end of the run has nowhere to go -- the first slide
          has no left neighbour and the last has no right one. */
       .tv-carousel--images .tv-carousel-arrow.is-disabled {
@@ -2048,9 +2046,22 @@ function getDemoVideosScript() {
           if (!track || !slides.length) return;
           var count = slides.length;
           var index = 0;
-          // The image carousel stacks its slides coverflow-style instead of
-          // sliding a track, so it is placed by class rather than by transform.
+          // The image carousel has two layouts. Narrow screens keep the original
+          // slider -- one screenshot at a time, translated into view. Wider ones
+          // stack the slides coverflow-style, placed by class, where the track
+          // must stay untransformed or the whole stage travels with it.
           var stacked = carousel.classList.contains('tv-carousel--images');
+          var narrow = window.matchMedia('(max-width: 760px)');
+          function placeTrack() {
+            track.style.transform = narrow.matches
+              ? 'translateX(-' + (index * 100) + '%)'
+              : '';
+          }
+          if (stacked) {
+            var onBreakpoint = function () { placeTrack(); };
+            if (narrow.addEventListener) narrow.addEventListener('change', onBreakpoint);
+            else if (narrow.addListener) narrow.addListener(onBreakpoint);
+          }
 
           function pauseAll() {
             carousel.querySelectorAll('video').forEach(function (v) {
@@ -2072,8 +2083,7 @@ function getDemoVideosScript() {
               });
               if (prev) prev.classList.toggle('is-disabled', index === 0);
               if (next) next.classList.toggle('is-disabled', index === count - 1);
-              // Phones keep the sliding track, which translates by this.
-              track.style.setProperty('--slide-offset', (index * -100) + '%');
+              placeTrack();
             } else {
               index = (i + count) % count;
               track.style.transform = 'translateX(-' + (index * 100) + '%)';

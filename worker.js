@@ -1761,7 +1761,7 @@ ${sections}
         <p>&copy; 2026 ${escapeHTML(LEGAL_INFO.provider)}. All rights reserved.</p>
         <p style="margin-top: 10px;">
           <a href="/">Home</a> |
-          <a href="/support">Support</a> |
+          <a href="/support">Application Support</a> |
           ${others.map((d) => `<a href="${pathFor(d.key)}">${escapeHTML(d.title)}</a>`).join(' |\n          ')}
         </p>
       </footer>
@@ -1985,11 +1985,11 @@ function getTradeVisionHTML({ app = false } = {}) {
         <p>&copy; 2026 Vishnu Muthiah. All rights reserved.</p>
         <p style="margin-top: 10px;">
           ${app
-            ? `<a href="/support">Support</a> |
+            ? `<a href="/support">Application Support</a> |
           <a href="/privacy-policy">Privacy Policy</a> |
           <a href="/terms-of-service">Terms of Use</a> |
           <a href="/disclaimer">Disclaimer</a> |
-          <a href="https://vishnumuthiah.com/optionsvision">About the Developer</a>`
+          <a href="https://vishnumuthiah.com/">About the Developer</a>`
             : `<a href="/">Home</a> |
           <a href="/privacy-policy">Privacy Policy</a> |
           <a href="/terms-of-service">Terms of Service</a>`}

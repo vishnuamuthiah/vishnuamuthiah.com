@@ -2583,14 +2583,14 @@ ${getStickyBarHTML('Get the App', 'https://apps.apple.com/app/id6786063635')}
           <li>Override any assumption including rate, dividend yield, IV</li>
         </ul>
 
-        <h3>Supports 31 Options Strategies</h3>
+        <h3>Supports 32 Options Strategies</h3>
         <p>OptionsVision is built to handle each option strategy with context-aware inputs and a clear explanation of how the trade makes and loses money. Supported strategies include:</p>
         <ul>
           <li><strong>Single Leg Options:</strong> Long calls, long puts, covered calls, and cash-secured puts</li>
           <li><strong>2-Leg Vertical Spreads:</strong> Call debit spreads, call credit spreads, put debit spreads, and put credit spreads</li>
           <li><strong>Long Straddles and Strangles</strong></li>
           <li><strong>Calendar Spreads:</strong> Long call calendar spreads, long put calendar spreads, and short put calendar spreads</li>
-          <li><strong>Diagonals:</strong> Long call diagonal, long put diagonal, and short put diagonal</li>
+          <li><strong>Diagonals:</strong> Long call diagonal, long put diagonal, short put diagonal, and short call diagonal (covered)</li>
           <li><strong>4-Leg Condors:</strong> Long call condor, short call condor, long put condor, short put condor, long iron condor, and short iron condor</li>
           <li><strong>4-Leg Butterflies:</strong> Long call butterfly, short call butterfly, long put butterfly, short put butterfly, long iron butterfly, and short iron butterfly</li>
           <li><strong>Unbalanced Ratios:</strong> Put front ratio, call back ratio, and put back ratio</li>

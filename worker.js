@@ -1633,7 +1633,8 @@ function getCarouselCSS() {
         /* Was inheriting the 20px h3 default; bumped 2px. These are the accent
            headings -- cyan on optionsvision.app, blue here -- and the size is set
            on the shared rule so both sites stay in step. The gold walkthrough
-           heading is unaffected: `.tv-copy .tv-walkthrough h3` is more specific. */
+           heading is unaffected: the .tv-walkthrough h3 rule is more specific.
+           (No backticks in here: this whole stylesheet is a JS template literal.) */
         font-size: 22px;
         color: #1a73e8;
       }

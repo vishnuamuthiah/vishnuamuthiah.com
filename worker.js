@@ -1722,68 +1722,83 @@ function getCarouselCSS() {
         margin: 12px 0 0;
       }
       /* Image-carousel variant (app screenshots, no fixed 9:16 frame).
-         Laid out like the Demo Videos coverflow: the current slide sits centre
-         stage in full colour, its two neighbours sit behind it scaled down and
-         grayed, and clicking one brings it forward. The slides are absolutely
-         positioned, so the track carries the height. */
+         Phones keep the original one-at-a-time slider. From 761px up the slides
+         stack like the Demo Videos coverflow instead: the current one centre
+         stage in full colour, its neighbours behind it scaled down and grayed,
+         and clicking one brings it forward. */
       .tv-carousel--images .tv-carousel-viewport {
-        max-width: none;
-        overflow: visible;
-        border-radius: 0;
+        max-width: 380px;
       }
+      /* Set by the script; only the narrow-screen slider reads it, since the
+         stacked layout would drag its whole stage sideways. */
       .tv-carousel--images .tv-carousel-track {
-        position: relative;
-        display: block;
-        width: 300px;
-        margin: 0 auto;
-        /* Matches the 751x1560 slide exports, so the stage is exactly as tall as
-           the active image without hardcoding a pixel height. */
-        aspect-ratio: 751 / 1560;
-        transition: none;
+        transform: translateX(var(--slide-offset, 0));
       }
-      .tv-carousel--images .tv-carousel-slide {
-        position: absolute;
-        top: 0;
-        left: 50%;
-        width: 100%;
-        transform: translateX(-50%) scale(0.8);
-        opacity: 0;
-        /* Slides further out than the immediate neighbours are invisible; keep
-           them from swallowing clicks aimed at what is on top of them. */
+      /* An arrow at either end of the run has nowhere to go -- the first slide
+         has no left neighbour and the last has no right one. */
+      .tv-carousel--images .tv-carousel-arrow.is-disabled {
+        opacity: 0.3;
         pointer-events: none;
-        transition: transform 0.4s ease, opacity 0.4s ease, filter 0.4s ease;
-        z-index: 1;
       }
-      .tv-carousel--images .tv-carousel-slide.is-active {
-        transform: translateX(-50%) scale(1);
-        opacity: 1;
-        filter: none;
-        z-index: 3;
-      }
-      .tv-carousel--images .tv-carousel-slide.is-prev,
-      .tv-carousel--images .tv-carousel-slide.is-next {
-        opacity: 0.6;
-        filter: grayscale(0.9) brightness(0.75);
-        z-index: 2;
-        cursor: pointer;
-        pointer-events: auto;
-      }
-      .tv-carousel--images .tv-carousel-slide.is-prev {
-        transform: translateX(calc(-50% - 190px)) scale(0.8);
-      }
-      .tv-carousel--images .tv-carousel-slide.is-next {
-        transform: translateX(calc(-50% + 190px)) scale(0.8);
-      }
-      .tv-carousel--images .tv-carousel-arrow { z-index: 4; }
       @media (max-width: 760px) {
-        /* Tighter fanning on narrow screens, same as the coverflow */
-        .tv-carousel--images .tv-carousel-track { width: 56vw; }
+        /* A little more room for the screenshots. The band's side padding is the
+           binding constraint at this width, not the viewport's max-width. */
+        .tv-walkthrough {
+          padding-left: 10px;
+          padding-right: 10px;
+        }
+      }
+      @media (min-width: 761px) {
+        .tv-carousel--images .tv-carousel-viewport {
+          max-width: none;
+          overflow: visible;
+          border-radius: 0;
+        }
+        .tv-carousel--images .tv-carousel-track {
+          position: relative;
+          display: block;
+          width: 300px;
+          margin: 0 auto;
+          /* Matches the 751x1560 slide exports, so the stage is exactly as tall
+             as the active image without hardcoding a pixel height. */
+          aspect-ratio: 751 / 1560;
+          transform: none;
+          transition: none;
+        }
+        .tv-carousel--images .tv-carousel-slide {
+          position: absolute;
+          top: 0;
+          left: 50%;
+          width: 100%;
+          transform: translateX(-50%) scale(0.8);
+          opacity: 0;
+          /* Slides beyond the immediate neighbours are invisible; keep them from
+             swallowing clicks aimed at what is on top of them. */
+          pointer-events: none;
+          transition: transform 0.4s ease, opacity 0.4s ease, filter 0.4s ease;
+          z-index: 1;
+        }
+        .tv-carousel--images .tv-carousel-slide.is-active {
+          transform: translateX(-50%) scale(1);
+          opacity: 1;
+          filter: none;
+          z-index: 3;
+        }
+        .tv-carousel--images .tv-carousel-slide.is-prev,
+        .tv-carousel--images .tv-carousel-slide.is-next {
+          opacity: 0.6;
+          filter: grayscale(0.9) brightness(0.75);
+          z-index: 2;
+          cursor: pointer;
+          pointer-events: auto;
+        }
         .tv-carousel--images .tv-carousel-slide.is-prev {
-          transform: translateX(calc(-50% - 36vw)) scale(0.8);
+          transform: translateX(calc(-50% - 190px)) scale(0.8);
         }
         .tv-carousel--images .tv-carousel-slide.is-next {
-          transform: translateX(calc(-50% + 36vw)) scale(0.8);
+          transform: translateX(calc(-50% + 190px)) scale(0.8);
         }
+        .tv-carousel--images .tv-carousel-arrow { z-index: 4; }
       }
       .tv-carousel-img {
         display: block;
@@ -2045,16 +2060,22 @@ function getDemoVideosScript() {
 
           function go(i) {
             pauseAll();
-            index = (i + count) % count;
             if (stacked) {
+              // The run does not wrap: the first slide has no left neighbour and
+              // the last has no right one, so stepping stops at either end.
+              index = Math.max(0, Math.min(count - 1, i));
               slides.forEach(function (s, si) {
-                var rel = (si - index + count) % count;
                 s.classList.remove('is-active', 'is-prev', 'is-next');
-                if (rel === 0) s.classList.add('is-active');
-                else if (rel === 1) s.classList.add('is-next');
-                else if (rel === count - 1) s.classList.add('is-prev');
+                if (si === index) s.classList.add('is-active');
+                else if (si === index - 1) s.classList.add('is-prev');
+                else if (si === index + 1) s.classList.add('is-next');
               });
+              if (prev) prev.classList.toggle('is-disabled', index === 0);
+              if (next) next.classList.toggle('is-disabled', index === count - 1);
+              // Phones keep the sliding track, which translates by this.
+              track.style.setProperty('--slide-offset', (index * -100) + '%');
             } else {
+              index = (i + count) % count;
               track.style.transform = 'translateX(-' + (index * 100) + '%)';
             }
             dots.forEach(function (d, di) { d.classList.toggle('active', di === index); });

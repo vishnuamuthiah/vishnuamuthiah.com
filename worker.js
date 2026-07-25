@@ -245,6 +245,9 @@ function getSharedStyles() {
         --border: #dadce0;
         --panel: #fff;
         --shadow: rgba(0,0,0,0.1);
+        /* The sticky bar reads as its own surface rather than as more page, so
+           it gets the tinted blue instead of the white ground. */
+        --stickybar-bg: var(--surface-alt);
       }
       * {
         margin: 0;
@@ -668,6 +671,10 @@ function getAppThemeStyles() {
         /* Gold is the app's Pro accent; here it marks section chrome only, so
            it never competes with the blue that signals "this is a link". */
         --gold: #D9AE57;
+        /* Held at the page ground here. The portfolio tints its sticky bar, but
+           on navy that separation is unnecessary -- and inheriting the light
+           theme's --surface-alt would shift this to a second, paler navy. */
+        --stickybar-bg: var(--bg);
       }
 
       /* --- Tinted bands: the light #f4f6f8/#e6e9ec pair has no token --- */
@@ -792,7 +799,7 @@ function getMotionStyles() {
         padding: 10px 20px;
         padding-left: max(20px, env(safe-area-inset-left));
         padding-right: max(20px, env(safe-area-inset-right));
-        background: var(--bg);
+        background: var(--stickybar-bg);
         border-bottom: 1px solid var(--border);
         transform: translateY(-100%);
         visibility: hidden;
@@ -802,7 +809,7 @@ function getMotionStyles() {
          where not. Declared after the solid fill so older engines keep that one. */
       @supports (backdrop-filter: blur(12px)) or (-webkit-backdrop-filter: blur(12px)) {
         .tv-stickybar {
-          background: color-mix(in srgb, var(--bg) 86%, transparent);
+          background: color-mix(in srgb, var(--stickybar-bg) 86%, transparent);
           -webkit-backdrop-filter: saturate(180%) blur(12px);
           backdrop-filter: saturate(180%) blur(12px);
         }

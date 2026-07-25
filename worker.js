@@ -801,7 +801,10 @@ function getMotionStyles() {
       }
       .tv-stickybar__name {
         font-weight: 700;
-        font-size: 1.05rem;
+        /* 1.05rem -> 1.3rem: 4px up from where this started. The name is allowed to
+           ellipsis and the pill is flex:none, so growing this can never squeeze the
+           tap target on a narrow screen. */
+        font-size: 1.3rem;
         color: var(--text);
         letter-spacing: -0.01em;
         white-space: nowrap;
@@ -834,7 +837,7 @@ function getMotionStyles() {
          so the pill never gets squeezed on a narrow screen. */
       @media (max-width: 600px) {
         .tv-stickybar { padding: 6px 14px; gap: 10px; }
-        .tv-stickybar__name { font-size: 0.95rem; }
+        .tv-stickybar__name { font-size: 1.2rem; }
         .tv-stickybar__cta {
           font-size: 0.85rem;
           padding: 8px 16px;
@@ -1627,6 +1630,11 @@ function getCarouselCSS() {
       .tv-copy h3 {
         margin-top: 30px;
         margin-bottom: 8px;
+        /* Was inheriting the 20px h3 default; bumped 2px. These are the accent
+           headings -- cyan on optionsvision.app, blue here -- and the size is set
+           on the shared rule so both sites stay in step. The gold walkthrough
+           heading is unaffected: `.tv-copy .tv-walkthrough h3` is more specific. */
+        font-size: 22px;
         color: #1a73e8;
       }
       .tv-copy p {
@@ -2246,7 +2254,7 @@ ${getStickyBarHTML('Get the App', 'https://apps.apple.com/app/id6786063635')}
         <ul>
           <li><strong>Single Leg Options:</strong> Long calls, long puts, covered calls, and cash-secured puts</li>
           <li><strong>2-Leg Vertical Spreads:</strong> Call debit spreads, call credit spreads, put debit spreads, and put credit spreads</li>
-          <li><strong>Long Straddles and Long Strangles</strong></li>
+          <li><strong>Long Straddles and Strangles</strong></li>
           <li><strong>Calendar Spreads:</strong> Long call calendar spreads, long put calendar spreads, and short put calendar spreads</li>
           <li><strong>4-Leg Condors:</strong> Long call condor, short call condor, long put condor, short put condor, long iron condor, and short iron condor</li>
           <li><strong>4-Leg Butterflies:</strong> Long call butterfly, short call butterfly, long put butterfly, short put butterfly, long iron butterfly, and short iron butterfly</li>

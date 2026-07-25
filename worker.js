@@ -964,33 +964,9 @@ function getMotionScript() {
         update();
       }
 
-      // --- One-time walkthrough nudge ---
-      // Steps the slide carousel forward twice the first time it comes into view,
-      // so it reads as something you can page through rather than a static image.
-      // Any interaction cancels it immediately.
-      var carousel = document.getElementById('walkthroughCarousel');
-      if (motion && carousel && hasIO) {
-        var fired = false;
-        var nudge = new IntersectionObserver(function (entries, obs) {
-          entries.forEach(function (e) {
-            if (!e.isIntersecting || fired) return;
-            fired = true;
-            obs.disconnect();
-            var next = carousel.querySelector('.tv-carousel-next');
-            if (!next) return;
-            var steps = 0;
-            var timer = setInterval(function () {
-              if (steps++ >= 2) { clearInterval(timer); return; }
-              next.click();
-            }, 1500);
-            var stop = function () { clearInterval(timer); };
-            ['pointerdown', 'keydown', 'touchstart'].forEach(function (evt) {
-              carousel.addEventListener(evt, stop, { once: true, passive: true });
-            });
-          });
-        }, { threshold: 0.5 });
-        nudge.observe(carousel);
-      }
+      // The walkthrough carousel used to step itself forward twice the first time
+      // it scrolled into view. It now advances only when the reader asks it to --
+      // arrows, dots, or clicking a grayed neighbour.
     })();
     </script>`;
 }
@@ -1745,14 +1721,77 @@ function getCarouselCSS() {
         line-height: 1.4;
         margin: 12px 0 0;
       }
-      /* Image-carousel variant (app screenshots, no fixed 9:16 frame) */
+      /* Image-carousel variant (app screenshots, no fixed 9:16 frame).
+         Laid out like the Demo Videos coverflow: the current slide sits centre
+         stage in full colour, its two neighbours sit behind it scaled down and
+         grayed, and clicking one brings it forward. The slides are absolutely
+         positioned, so the track carries the height. */
       .tv-carousel--images .tv-carousel-viewport {
-        max-width: 360px;
+        max-width: none;
+        overflow: visible;
+        border-radius: 0;
+      }
+      .tv-carousel--images .tv-carousel-track {
+        position: relative;
+        display: block;
+        width: 300px;
+        margin: 0 auto;
+        /* Matches the 751x1560 slide exports, so the stage is exactly as tall as
+           the active image without hardcoding a pixel height. */
+        aspect-ratio: 751 / 1560;
+        transition: none;
+      }
+      .tv-carousel--images .tv-carousel-slide {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        width: 100%;
+        transform: translateX(-50%) scale(0.8);
+        opacity: 0;
+        /* Slides further out than the immediate neighbours are invisible; keep
+           them from swallowing clicks aimed at what is on top of them. */
+        pointer-events: none;
+        transition: transform 0.4s ease, opacity 0.4s ease, filter 0.4s ease;
+        z-index: 1;
+      }
+      .tv-carousel--images .tv-carousel-slide.is-active {
+        transform: translateX(-50%) scale(1);
+        opacity: 1;
+        filter: none;
+        z-index: 3;
+      }
+      .tv-carousel--images .tv-carousel-slide.is-prev,
+      .tv-carousel--images .tv-carousel-slide.is-next {
+        opacity: 0.6;
+        filter: grayscale(0.9) brightness(0.75);
+        z-index: 2;
+        cursor: pointer;
+        pointer-events: auto;
+      }
+      .tv-carousel--images .tv-carousel-slide.is-prev {
+        transform: translateX(calc(-50% - 190px)) scale(0.8);
+      }
+      .tv-carousel--images .tv-carousel-slide.is-next {
+        transform: translateX(calc(-50% + 190px)) scale(0.8);
+      }
+      .tv-carousel--images .tv-carousel-arrow { z-index: 4; }
+      @media (max-width: 760px) {
+        /* Tighter fanning on narrow screens, same as the coverflow */
+        .tv-carousel--images .tv-carousel-track { width: 56vw; }
+        .tv-carousel--images .tv-carousel-slide.is-prev {
+          transform: translateX(calc(-50% - 36vw)) scale(0.8);
+        }
+        .tv-carousel--images .tv-carousel-slide.is-next {
+          transform: translateX(calc(-50% + 36vw)) scale(0.8);
+        }
       }
       .tv-carousel-img {
         display: block;
         width: 100%;
         height: auto;
+        /* The slides are lazy-loaded; declaring the export ratio means a
+           neighbour occupies its space before the bytes arrive. */
+        aspect-ratio: 751 / 1560;
         border-radius: 12px;
       }
       /* --- Learning Library cards ---
@@ -1994,6 +2033,9 @@ function getDemoVideosScript() {
           if (!track || !slides.length) return;
           var count = slides.length;
           var index = 0;
+          // The image carousel stacks its slides coverflow-style instead of
+          // sliding a track, so it is placed by class rather than by transform.
+          var stacked = carousel.classList.contains('tv-carousel--images');
 
           function pauseAll() {
             carousel.querySelectorAll('video').forEach(function (v) {
@@ -2004,7 +2046,17 @@ function getDemoVideosScript() {
           function go(i) {
             pauseAll();
             index = (i + count) % count;
-            track.style.transform = 'translateX(-' + (index * 100) + '%)';
+            if (stacked) {
+              slides.forEach(function (s, si) {
+                var rel = (si - index + count) % count;
+                s.classList.remove('is-active', 'is-prev', 'is-next');
+                if (rel === 0) s.classList.add('is-active');
+                else if (rel === 1) s.classList.add('is-next');
+                else if (rel === count - 1) s.classList.add('is-prev');
+              });
+            } else {
+              track.style.transform = 'translateX(-' + (index * 100) + '%)';
+            }
             dots.forEach(function (d, di) { d.classList.toggle('active', di === index); });
           }
 
@@ -2013,6 +2065,14 @@ function getDemoVideosScript() {
           dots.forEach(function (d, di) {
             d.addEventListener('click', function () { go(di); });
           });
+          // A grayed neighbour is a click target that brings it forward.
+          if (stacked) {
+            slides.forEach(function (s, si) {
+              s.addEventListener('click', function (e) {
+                if (si !== index) { e.preventDefault(); go(si); }
+              });
+            });
+          }
 
           go(0);
         }

@@ -712,6 +712,224 @@ function getAppThemeStyles() {
 }
 
 // ===== LAYOUT WRAPPER =====
+// ===== Motion =====
+// Scroll reveal, the sticky CTA bar, and the one-time carousel nudge. Three rules
+// govern all of it:
+//   1. Nothing is hidden unless JS is running. Every reveal rule is gated on
+//      html.motion-ready, which the inline head script adds. JS off -> the page
+//      renders exactly as it did before, with no content stuck at opacity 0.
+//   2. prefers-reduced-motion: reduce turns the whole thing off, at the same gate.
+//   3. The hidden state is expressed in CSS, not applied by JS after load, so an
+//      element is never painted visible and then yanked to transparent.
+
+/// The elements that fade+rise into view. Shared by the stylesheet and the observer
+/// so the two lists can't drift. Deliberately excludes h1, the tagline and .tv-cta:
+/// the headline and the App Store button are above the fold and must never depend on
+/// a script having run.
+const REVEAL_TARGETS = [
+  '.project-card',
+  '.portfolio-embed',
+  '.tv-band',
+  '.tv-copy h2',
+  '.tv-copy h3',
+];
+
+function getMotionStyles() {
+  const transitions = REVEAL_TARGETS.map((s) => `html.motion-ready ${s}`).join(',\n      ');
+  const hidden = REVEAL_TARGETS.map((s) => `html.motion-ready ${s}:not(.is-visible)`).join(',\n      ');
+  return `
+    <style>
+      /* --- Scroll reveal --- */
+      ${transitions} {
+        transition: opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1),
+                    transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      ${hidden} {
+        opacity: 0;
+        transform: translateY(18px);
+      }
+
+      /* --- Sticky CTA bar -----------------------------------------------------
+         Slides down once the hero CTA has scrolled past. Not gated on
+         motion-ready: it starts off-screen and only JS ever reveals it, so with
+         JS off it simply never appears. Colours come from the theme tokens, so
+         the same markup reads navy on optionsvision.app and light on the
+         portfolio without a second stylesheet. */
+      .tv-stickybar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 50;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 10px 20px;
+        padding-left: max(20px, env(safe-area-inset-left));
+        padding-right: max(20px, env(safe-area-inset-right));
+        background: var(--bg);
+        border-bottom: 1px solid var(--border);
+        transform: translateY(-100%);
+        visibility: hidden;
+        transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s 0.28s;
+      }
+      /* Progressive enhancement: translucent + blurred where supported, opaque
+         where not. Declared after the solid fill so older engines keep that one. */
+      @supports (backdrop-filter: blur(12px)) or (-webkit-backdrop-filter: blur(12px)) {
+        .tv-stickybar {
+          background: color-mix(in srgb, var(--bg) 86%, transparent);
+          -webkit-backdrop-filter: saturate(180%) blur(12px);
+          backdrop-filter: saturate(180%) blur(12px);
+        }
+      }
+      .tv-stickybar.is-stuck {
+        transform: none;
+        visibility: visible;
+        transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s;
+      }
+      .tv-stickybar__name {
+        font-weight: 700;
+        font-size: 1.05rem;
+        color: var(--text);
+        letter-spacing: -0.01em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .tv-stickybar__cta {
+        flex: none;
+        background: var(--accent);
+        color: var(--on-accent);
+        text-decoration: none;
+        font-size: 0.9rem;
+        font-weight: 600;
+        padding: 9px 16px;
+        border-radius: 999px;
+        white-space: nowrap;
+        transition: background 0.2s ease;
+      }
+      .tv-stickybar__cta:hover { background: var(--accent-hover); }
+
+      @media (prefers-reduced-motion: reduce) {
+        .tv-stickybar, .tv-stickybar__cta { transition: none; }
+      }
+
+      /* Phones: the bar has to stay one line next to a 44px-tall tap target. */
+      @media (max-width: 600px) {
+        .tv-stickybar { padding: 8px 14px; gap: 10px; }
+        .tv-stickybar__name { font-size: 0.95rem; }
+        .tv-stickybar__cta { font-size: 0.85rem; padding: 8px 14px; }
+      }
+    </style>`;
+}
+
+/// Markup for the sticky bar. Only emitted on the two pages with a real call to
+/// action; the legal and support pages deliberately have none.
+function getStickyBarHTML(label, href) {
+  return `    <div class="tv-stickybar" id="tvStickyBar" aria-hidden="true">
+      <span class="tv-stickybar__name">OptionsVision</span>
+      <a class="tv-stickybar__cta" href="${href}" target="_blank" rel="noopener noreferrer">${label}</a>
+    </div>`;
+}
+
+function getMotionScript() {
+  return `
+    <script>
+    (function () {
+      var reveal = ${JSON.stringify(REVEAL_TARGETS.join(', '))};
+      var motion = document.documentElement.classList.contains('motion-ready');
+      var hasIO = 'IntersectionObserver' in window;
+
+      // --- Scroll reveal ---
+      if (motion) {
+        var nodes = [].slice.call(document.querySelectorAll(reveal));
+        var showAll = function () {
+          nodes.forEach(function (n) { n.classList.add('is-visible'); });
+        };
+        if (!hasIO) {
+          showAll();
+        } else {
+          // An observer delivers an initial callback for everything it observes,
+          // intersecting or not, almost immediately. So "no callback at all" is a
+          // precise signal that it is dead -- and the only case where we should
+          // force everything visible. A blind timer would be wrong here: on this
+          // page nothing is in view at scroll 0, so a visitor who reads the hero
+          // for a few seconds would have the whole reveal fire behind their back.
+          var delivered = false;
+          var io = new IntersectionObserver(function (entries, obs) {
+            delivered = true;
+            entries.forEach(function (e) {
+              if (!e.isIntersecting) return;
+              e.target.classList.add('is-visible');
+              obs.unobserve(e.target);
+            });
+          }, { rootMargin: '0px 0px -8% 0px', threshold: 0.05 });
+          nodes.forEach(function (n) { io.observe(n); });
+          setTimeout(function () { if (!delivered) showAll(); }, 4000);
+        }
+      }
+
+      // --- Sticky CTA bar ---
+      var bar = document.getElementById('tvStickyBar');
+      var heroCTA = document.querySelector('.tv-cta');
+      if (bar && heroCTA) {
+        // A scroll listener rather than an observer, on purpose. This is a single
+        // boolean derived from one element's position, the read is rAF-throttled so
+        // it costs one getBoundingClientRect per frame at most, and unlike an
+        // observer it can be verified anywhere. Comparing against the current class
+        // first means no style write happens on the vast majority of frames.
+        var ticking = false;
+        var update = function () {
+          ticking = false;
+          // Stick only once the hero CTA has fully passed the top edge -- never
+          // while it is still below the fold on a short viewport.
+          var stuck = heroCTA.getBoundingClientRect().bottom < 0;
+          if (bar.classList.contains('is-stuck') === stuck) return;
+          bar.classList.toggle('is-stuck', stuck);
+          bar.setAttribute('aria-hidden', stuck ? 'false' : 'true');
+        };
+        var onScroll = function () {
+          if (ticking) return;
+          ticking = true;
+          requestAnimationFrame(update);
+        };
+        window.addEventListener('scroll', onScroll, { passive: true });
+        window.addEventListener('resize', onScroll, { passive: true });
+        update();
+      }
+
+      // --- One-time walkthrough nudge ---
+      // Steps the slide carousel forward twice the first time it comes into view,
+      // so it reads as something you can page through rather than a static image.
+      // Any interaction cancels it immediately.
+      var carousel = document.getElementById('walkthroughCarousel');
+      if (motion && carousel && hasIO) {
+        var fired = false;
+        var nudge = new IntersectionObserver(function (entries, obs) {
+          entries.forEach(function (e) {
+            if (!e.isIntersecting || fired) return;
+            fired = true;
+            obs.disconnect();
+            var next = carousel.querySelector('.tv-carousel-next');
+            if (!next) return;
+            var steps = 0;
+            var timer = setInterval(function () {
+              if (steps++ >= 2) { clearInterval(timer); return; }
+              next.click();
+            }, 1500);
+            var stop = function () { clearInterval(timer); };
+            ['pointerdown', 'keydown', 'touchstart'].forEach(function (evt) {
+              carousel.addEventListener(evt, stop, { once: true, passive: true });
+            });
+          });
+        }, { threshold: 0.5 });
+        nudge.observe(carousel);
+      }
+    })();
+    </script>`;
+}
+
 function getLayout(title, content, additionalStyles = '', meta = {}) {
   // Optional SEO / social tags — only emitted when a value is supplied, so
   // pages that don't pass `meta` render exactly as before.
@@ -755,10 +973,22 @@ function getLayout(title, content, additionalStyles = '', meta = {}) {
     ${getSharedStyles()}
     ${additionalStyles}
     ${meta.app ? getAppThemeStyles() : ''}
+    ${getMotionStyles()}
     ${getMobileStyles()}
+    <script>
+      // Opt in to motion before the first paint, so the reveal rules apply to the
+      // initial render instead of flashing content in and then hiding it. Anything
+      // that would leave content invisible is gated on this class, so a visitor
+      // with JS off -- or one who has asked for reduced motion -- gets the plain,
+      // fully visible page.
+      if (!window.matchMedia || !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        document.documentElement.classList.add('motion-ready');
+      }
+    </script>
 </head>
 <body>
     ${content}
+    ${getMotionScript()}
 </body>
 </html>`;
 }
@@ -1840,6 +2070,7 @@ function getAppSupportHTML() {
 // original feature commits. Don't reword these into "optimized from X".
 function getOptionsVisionCaseStudyHTML() {
   return getLayout('OptionsVision — Case Study | Vishnu Muthiah', `
+${getStickyBarHTML('Visit optionsvision.app', 'https://optionsvision.app')}
     <div class="container">
       <a href="/" class="back-link">← Back to Home</a>
 
@@ -1913,6 +2144,7 @@ function getOptionsVisionCaseStudyHTML() {
 
 function getTradeVisionHTML({ app = false } = {}) {
   return getLayout('OptionsVision — Options Payoff Charts from a Robinhood Screenshot', `
+${getStickyBarHTML('Get the App', 'https://apps.apple.com/app/id6786063635')}
     <div class="container">
       ${app ? '' : '<a href="/" class="back-link">← Back to Home</a>'}
 

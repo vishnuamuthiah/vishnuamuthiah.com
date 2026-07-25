@@ -202,9 +202,11 @@ export default {
       });
 
     } else if (path === '/optionsvision') {
-      // The portfolio keeps the engineering write-up; the product pitch moved
-      // to optionsvision.app, so these two are no longer the same page.
-      return html(getOptionsVisionCaseStudyHTML());
+      // A mirror of optionsvision.app: same content, same order, same motion.
+      // `app: false` is the only difference -- it skips getAppThemeStyles(), so
+      // the page renders in the portfolio's light palette, and swaps the footer
+      // and back-link for the portfolio's own.
+      return html(getTradeVisionHTML({ app: false }));
 
     } else if (path === '/tradevision') {
       // Old app-name URL — permanently redirect to /optionsvision so existing
@@ -1431,7 +1433,7 @@ function getHomepageHTML() {
           </div>
 
           <div class="project-links">
-            <a href="/optionsvision">Case Study →</a>
+            <a href="/optionsvision">Learn More →</a>
             <a href="https://optionsvision.app" target="_blank" rel="noopener noreferrer">Visit optionsvision.app →</a>
           </div>
         </div>
@@ -2341,12 +2343,15 @@ const publishedGuides = () => GUIDES.filter((g) => g.published && g.body.length)
 /// Card carousel for the bottom of the product page. Reuses initCarousel, which
 /// wires any .tv-carousel generically. Returns nothing while no guide is published,
 /// so the section simply does not exist yet.
-function getGuidesCarouselHTML() {
+function getGuidesCarouselHTML(app = false) {
   const live = publishedGuides();
   if (!live.length) return '';
+  // The /learn routes exist on the product host only, so the portfolio mirror
+  // links out to them absolutely rather than at paths it does not serve.
+  const base = app ? '/learn/' : 'https://' + APP_HOST + '/learn/';
   const slides = live.map((g) => `
               <div class="tv-carousel-slide">
-                <a class="tv-guide-card" href="/learn/${g.slug}">
+                <a class="tv-guide-card" href="${base}${g.slug}">
                   <span class="tv-guide-card__kicker">Strategy guide</span>
                   <span class="tv-guide-card__title">${escapeHTML(g.title)}</span>
                   <span class="tv-guide-card__dek">${escapeHTML(g.dek)}</span>
@@ -2502,7 +2507,7 @@ ${getStickyBarHTML('Get the App', 'https://apps.apple.com/app/id6786063635')}
         <p class="tv-disclaimer">OptionsVision is an educational tool and is not investment advice, not a broker, and never touches your brokerage account. Figures are theoretical model estimates, not live quotes. Options involve substantial risk and are not suitable for every investor.</p>
       </section>
 
-${getGuidesCarouselHTML()}
+${getGuidesCarouselHTML(app)}
 
       <footer>
         <p>&copy; 2026 Vishnu Muthiah. All rights reserved.</p>
@@ -2513,9 +2518,15 @@ ${getGuidesCarouselHTML()}
           <a href="/terms-of-service">Terms of Use</a> |
           <a href="/disclaimer">Disclaimer</a> |
           <a href="https://vishnumuthiah.com/">About the Developer</a>`
+            // Same links on the mirror, pointed at the product host. The
+            // portfolio's own /support, /privacy-policy and /terms-of-service
+            // document the Sources Tracker Slides add-on, so linking them from
+            // a page about OptionsVision would show a visitor the wrong policy.
             : `<a href="/">Home</a> |
-          <a href="/privacy-policy">Privacy Policy</a> |
-          <a href="/terms-of-service">Terms of Service</a>`}
+          <a href="https://${APP_HOST}/support">Application Support</a> |
+          <a href="https://${APP_HOST}/privacy-policy">Privacy Policy</a> |
+          <a href="https://${APP_HOST}/terms-of-service">Terms of Use</a> |
+          <a href="https://${APP_HOST}/disclaimer">Disclaimer</a>`}
         </p>
       </footer>
     </div>

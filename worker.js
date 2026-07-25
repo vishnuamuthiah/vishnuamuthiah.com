@@ -162,6 +162,17 @@ export default {
       } else if (path === '/') {
         return html(getTradeVisionHTML({ app: true }));
 
+      } else if (path === '/learn' || path === '/learn/') {
+        return html(getLearningLibraryHTML());
+
+      } else if (path.startsWith('/learn/')) {
+        // An unknown slug is not a guide; fall through to the root redirect below
+        // rather than serving an empty page for anything under /learn/.
+        const slug = path.slice('/learn/'.length).replace(/\/+$/, '');
+        const guide = GUIDES.find((g) => g.slug === slug);
+        if (guide) return html(getGuideHTML(guide));
+        return Response.redirect(url.origin + '/learn', 302);
+
       } else {
         // The product site is a single page for now, so /optionsvision,
         // /tradevision and anything else land on the root instead of 404ing.
@@ -1013,6 +1024,9 @@ function getLayout(title, content, additionalStyles = '', meta = {}) {
     meta.imageAlt ? `<meta name="twitter:image:alt" content="${meta.imageAlt}">` : '',
     // Tints mobile browser chrome to match the navy ground.
     meta.app ? `<meta name="theme-color" content="#0E1B33">` : '',
+    // Keeps unfinished pages out of search results. Draft strategy guides must not
+    // be indexed under this domain before they have been edited and sourced.
+    meta.noindex ? `<meta name="robots" content="noindex, nofollow">` : '',
   ].filter(Boolean).join('\n    ');
 
   return `<!DOCTYPE html>
@@ -1739,6 +1753,74 @@ function getCarouselCSS() {
         height: auto;
         border-radius: 12px;
       }
+      /* --- Learning Library cards ---
+         The cards carousel is wider than the phone-shaped image one, since a card
+         is text rather than a screenshot. */
+      .tv-carousel--cards .tv-carousel-viewport { max-width: 460px; }
+      .tv-guide-card {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        min-height: 190px;
+        padding: 22px;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: var(--panel);
+        text-decoration: none;
+        transition: border-color 0.2s ease, transform 0.2s ease;
+      }
+      .tv-guide-card:hover {
+        border-color: var(--accent);
+        transform: translateY(-2px);
+      }
+      .tv-guide-card__kicker {
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+      }
+      .tv-guide-card__title {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: var(--text);
+      }
+      .tv-guide-card__dek {
+        font-size: 0.95rem;
+        line-height: 1.5;
+        color: var(--text-body);
+        flex: 1;
+      }
+      .tv-guide-card__more {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--accent);
+      }
+      .tv-guides-intro {
+        color: var(--text-muted);
+        font-size: 0.95rem;
+        margin-bottom: 6px;
+      }
+      /* --- Learning Library index --- */
+      .tv-guide-list { display: flex; flex-direction: column; gap: 12px; margin: 24px 0 40px; }
+      .tv-guide-row {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        padding: 18px 20px;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--panel);
+        text-decoration: none;
+        transition: border-color 0.2s ease;
+      }
+      .tv-guide-row:hover { border-color: var(--accent); }
+      .tv-guide-row__title { font-size: 1.15rem; font-weight: 700; color: var(--text); }
+      .tv-guide-row__dek { font-size: 0.95rem; color: var(--text-body); }
+      @media (max-width: 600px) {
+        .tv-carousel--cards .tv-carousel-viewport { max-width: 300px; }
+        .tv-guide-card { min-height: 0; padding: 18px; }
+      }
       .tv-carousel-arrow {
         position: absolute;
         top: 40%;
@@ -2200,6 +2282,154 @@ ${getStickyBarHTML('Visit optionsvision.app', 'https://optionsvision.app')}
   });
 }
 
+// ===== Learning Library =====
+// Five strategy guides, each its own page at /learn/<slug> on optionsvision.app,
+// surfaced by a card carousel at the bottom of the product page.
+//
+// Content is written per-guide in its own session, edited by hand, and given real
+// screenshots and citations before it goes anywhere. So each entry carries a
+// `published` flag and this file treats it strictly:
+//   published: false -> the page renders a draft notice and is marked noindex, and
+//                       the guide is left OUT of the carousel entirely.
+//   published: true  -> normal page, indexable, appears in the carousel.
+// The carousel renders nothing at all while every guide is a draft, so the live
+// site is unchanged until there is something worth reading. Half-finished
+// financial explainers must never be publicly linked or indexed under this domain.
+//
+// To publish one: fill `dek` and `body`, flip `published`, deploy.
+// `body` is a list of { h, p } -- a heading and its paragraphs.
+const GUIDES = [
+  {
+    slug: 'long-call',
+    title: 'Long Calls',
+    dek: '',
+    published: false,
+    body: [],
+  },
+  {
+    slug: 'covered-call',
+    title: 'Covered Calls',
+    dek: '',
+    published: false,
+    body: [],
+  },
+  {
+    slug: 'cash-secured-put',
+    title: 'Cash-Secured Puts',
+    dek: '',
+    published: false,
+    body: [],
+  },
+  {
+    slug: 'vertical-spreads',
+    title: 'Vertical Spreads',
+    dek: '',
+    published: false,
+    body: [],
+  },
+  {
+    slug: 'iron-condors',
+    title: 'Iron Condors',
+    dek: '',
+    published: false,
+    body: [],
+  },
+];
+
+const publishedGuides = () => GUIDES.filter((g) => g.published && g.body.length);
+
+/// Card carousel for the bottom of the product page. Reuses initCarousel, which
+/// wires any .tv-carousel generically. Returns nothing while no guide is published,
+/// so the section simply does not exist yet.
+function getGuidesCarouselHTML() {
+  const live = publishedGuides();
+  if (!live.length) return '';
+  const slides = live.map((g) => `
+              <div class="tv-carousel-slide">
+                <a class="tv-guide-card" href="/learn/${g.slug}">
+                  <span class="tv-guide-card__kicker">Strategy guide</span>
+                  <span class="tv-guide-card__title">${escapeHTML(g.title)}</span>
+                  <span class="tv-guide-card__dek">${escapeHTML(g.dek)}</span>
+                  <span class="tv-guide-card__more">Read the guide &rarr;</span>
+                </a>
+              </div>`).join('');
+  const dots = live.map((g, i) =>
+    `            <button class="tv-carousel-dot" type="button" aria-label="Go to guide ${i + 1}"></button>`).join('\n');
+  return `      <div class="portfolio-embed tv-walkthrough">
+        <h3>Learning Library</h3>
+        <p class="tv-guides-intro">Plain-English guides to the strategies OptionsVision charts.</p>
+        <div class="tv-carousel tv-carousel--cards" id="guidesCarousel">
+          <button class="tv-carousel-arrow tv-carousel-prev" type="button" aria-label="Previous guide">&#8249;</button>
+          <div class="tv-carousel-viewport">
+            <div class="tv-carousel-track">${slides}
+            </div>
+          </div>
+          <button class="tv-carousel-arrow tv-carousel-next" type="button" aria-label="Next guide">&#8250;</button>
+          <div class="tv-carousel-dots">
+${dots}
+          </div>
+        </div>
+      </div>`;
+}
+
+/// The /learn index. Lists published guides; says so plainly when there are none.
+function getLearningLibraryHTML() {
+  const live = publishedGuides();
+  const list = live.length
+    ? live.map((g) => `        <a class="tv-guide-row" href="/learn/${g.slug}">
+          <span class="tv-guide-row__title">${escapeHTML(g.title)}</span>
+          <span class="tv-guide-row__dek">${escapeHTML(g.dek)}</span>
+        </a>`).join('\n')
+    : `        <p class="tv-guides-intro">The first guides are being written. Check back shortly.</p>`;
+
+  return getLayout('Learning Library — OptionsVision', `
+${getStickyBarHTML('Get the App', 'https://apps.apple.com/app/id6786063635')}
+    <div class="container">
+      <h1>Learning Library</h1>
+      <p class="tagline">Plain-English guides to the options strategies OptionsVision charts. Educational only &mdash; none of this is financial advice or a recommendation to trade.</p>
+      <div class="tv-guide-list">
+${list}
+      </div>
+    </div>
+  `, getTradeVisionPageStyles(), {
+    description: 'Plain-English guides to the options strategies OptionsVision charts.',
+    url: 'https://' + APP_HOST + '/learn',
+    app: true,
+    noindex: live.length === 0,
+  });
+}
+
+/// One guide page. An unpublished guide renders an honest placeholder rather than
+/// a half-written explainer, and is never indexed.
+function getGuideHTML(guide) {
+  const draft = !guide.published || !guide.body.length;
+  const body = draft
+    ? `      <section class="tv-copy">
+        <h2>Not published yet</h2>
+        <p>This guide is still being written. In the meantime, the app itself is the fastest way to see how this strategy behaves &mdash; import a trade and move the days-to-expiration and volatility sliders.</p>
+      </section>`
+    : `      <section class="tv-copy">
+${guide.body.map((s) => `        <h2>${escapeHTML(s.h)}</h2>
+${s.p.map((p) => `        <p>${escapeHTML(p)}</p>`).join('\n')}`).join('\n')}
+      </section>`;
+
+  return getLayout(escapeHTML(guide.title) + ' — OptionsVision', `
+${getStickyBarHTML('Get the App', 'https://apps.apple.com/app/id6786063635')}
+    <div class="container">
+      <a href="/learn" class="back-link">&larr; Learning Library</a>
+      <h1>${escapeHTML(guide.title)}</h1>
+      ${guide.dek ? `<p class="tagline">${escapeHTML(guide.dek)}</p>` : ''}
+${body}
+      <p class="tv-disclaimer">${escapeHTML(LEGAL_FINE_PRINT)}</p>
+    </div>
+  `, getTradeVisionPageStyles(), {
+    description: guide.dek || (guide.title + ' — a plain-English strategy guide from OptionsVision.'),
+    url: 'https://' + APP_HOST + '/learn/' + guide.slug,
+    app: true,
+    noindex: draft,
+  });
+}
+
 function getTradeVisionHTML({ app = false } = {}) {
   return getLayout('OptionsVision — Options Payoff Charts from a Robinhood Screenshot', `
 ${getStickyBarHTML('Get the App', 'https://apps.apple.com/app/id6786063635')}
@@ -2270,6 +2500,8 @@ ${getStickyBarHTML('Get the App', 'https://apps.apple.com/app/id6786063635')}
 
         <p class="tv-disclaimer">OptionsVision is an educational tool and is not investment advice, not a broker, and never touches your brokerage account. Figures are theoretical model estimates, not live quotes. Options involve substantial risk and are not suitable for every investor.</p>
       </section>
+
+${getGuidesCarouselHTML()}
 
       <footer>
         <p>&copy; 2026 Vishnu Muthiah. All rights reserved.</p>

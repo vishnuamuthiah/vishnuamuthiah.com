@@ -722,17 +722,25 @@ function getAppThemeStyles() {
 //   3. The hidden state is expressed in CSS, not applied by JS after load, so an
 //      element is never painted visible and then yanked to transparent.
 
-/// The elements that fade+rise into view. Shared by the stylesheet and the observer
-/// so the two lists can't drift. Deliberately excludes h1, the tagline and .tv-cta:
-/// the headline and the App Store button are above the fold and must never depend on
-/// a script having run.
+/// What fades+rises into view, as CSS selectors. Deliberately excludes h1, the
+/// tagline and .tv-cta: the headline and the App Store button are above the fold and
+/// must never depend on a script having run.
+///
+/// `.tv-copy > *` covers every direct child -- headings, paragraphs, lists alike --
+/// rather than headings only. Animating just the headings meant each one slid in over
+/// body text that was already sitting there at full opacity, which read as a glitch
+/// rather than an effect. The script pairs each heading with the copy beneath it so a
+/// block arrives as one piece; see getMotionScript.
 const REVEAL_TARGETS = [
   '.project-card',
   '.portfolio-embed',
   '.tv-band',
-  '.tv-copy h2',
-  '.tv-copy h3',
+  '.tv-copy > *',
 ];
+
+/// The subset the script observes one-by-one. Everything inside `.tv-copy` is handled
+/// separately, grouped under its heading, so it is not listed here.
+const REVEAL_STANDALONE = '.project-card, .portfolio-embed, .tv-band';
 
 function getMotionStyles() {
   const transitions = REVEAL_TARGETS.map((s) => `html.motion-ready ${s}`).join(',\n      ');
@@ -740,9 +748,12 @@ function getMotionStyles() {
   return `
     <style>
       /* --- Scroll reveal --- */
+      /* 0.8s rather than the 0.55s this started at -- the quicker version read as a
+         snap rather than a settle, especially on a desktop viewport where several
+         blocks arrive at once. */
       ${transitions} {
-        transition: opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1),
-                    transform 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+        transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+                    transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
       }
       ${hidden} {
         opacity: 0;
@@ -846,16 +857,44 @@ function getMotionScript() {
   return `
     <script>
     (function () {
-      var reveal = ${JSON.stringify(REVEAL_TARGETS.join(', '))};
+      var standalone = ${JSON.stringify(REVEAL_STANDALONE)};
       var motion = document.documentElement.classList.contains('motion-ready');
       var hasIO = 'IntersectionObserver' in window;
 
       // --- Scroll reveal ---
       if (motion) {
-        var nodes = [].slice.call(document.querySelectorAll(reveal));
-        var showAll = function () {
-          nodes.forEach(function (n) { n.classList.add('is-visible'); });
+        // A "unit" is one thing that arrives at once: a trigger element that gets
+        // observed, plus every element revealed alongside it. Most units are a single
+        // element. Inside .tv-copy a unit is a heading plus the paragraphs and lists
+        // under it, up to the next heading -- so the block lands as one piece instead
+        // of a heading animating over already-visible body text.
+        var units = [];
+        var attach = function (unit) {
+          unit.trigger.__revealUnit = unit;
+          units.push(unit);
         };
+
+        [].slice.call(document.querySelectorAll(standalone)).forEach(function (n) {
+          attach({ trigger: n, members: [n] });
+        });
+
+        [].slice.call(document.querySelectorAll('.tv-copy')).forEach(function (section) {
+          var current = null;
+          [].slice.call(section.children).forEach(function (el) {
+            var startsBlock = el.tagName === 'H2' || el.tagName === 'H3';
+            // Copy before the first heading (the intro paragraphs) forms its own unit.
+            if (startsBlock || !current) {
+              current = { trigger: el, members: [] };
+              attach(current);
+            }
+            current.members.push(el);
+          });
+        });
+
+        var showUnit = function (unit) {
+          unit.members.forEach(function (n) { n.classList.add('is-visible'); });
+        };
+        var showAll = function () { units.forEach(showUnit); };
         if (!hasIO) {
           showAll();
         } else {
@@ -870,11 +909,12 @@ function getMotionScript() {
             delivered = true;
             entries.forEach(function (e) {
               if (!e.isIntersecting) return;
-              e.target.classList.add('is-visible');
+              var unit = e.target.__revealUnit;
+              if (unit) showUnit(unit);
               obs.unobserve(e.target);
             });
           }, { rootMargin: '0px 0px -8% 0px', threshold: 0.05 });
-          nodes.forEach(function (n) { io.observe(n); });
+          units.forEach(function (u) { io.observe(u.trigger); });
           setTimeout(function () { if (!delivered) showAll(); }, 4000);
         }
       }

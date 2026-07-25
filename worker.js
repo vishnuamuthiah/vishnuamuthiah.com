@@ -1513,6 +1513,57 @@ function getCarouselCSS() {
       }`;
 }
 
+function getWalkthroughCarouselHTML() {
+  // The seven intro slides -- the same images the app ships in
+  // Assets.xcassets/WalkthroughN.imageset and shows on first launch and from the
+  // Walkthrough Library's "Intro Walkthrough" row. Regenerate all three copies
+  // together from Walkthrough_Slides_Clean.pdf so the app and both sites never drift.
+  // Served from raw.githubusercontent.com at 751x1560 (2x the 360px carousel viewport).
+  return `      <!-- Demo Walkthrough: seven intro slides, shared by optionsvision.app and the portfolio case study. -->
+      <div class="portfolio-embed tv-walkthrough">
+        <h3>Demo Walkthrough</h3>
+        <div class="tv-carousel tv-carousel--images" id="walkthroughCarousel">
+          <button class="tv-carousel-arrow tv-carousel-prev" type="button" aria-label="Previous slide">&#8249;</button>
+          <div class="tv-carousel-viewport">
+            <div class="tv-carousel-track">
+              <div class="tv-carousel-slide">
+                <img class="tv-carousel-img" src="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/walkthrough/1.png" alt="OptionsVision walkthrough slide 1" loading="lazy" />
+              </div>
+              <div class="tv-carousel-slide">
+                <img class="tv-carousel-img" src="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/walkthrough/2.png" alt="OptionsVision walkthrough slide 2" loading="lazy" />
+              </div>
+              <div class="tv-carousel-slide">
+                <img class="tv-carousel-img" src="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/walkthrough/3.png" alt="OptionsVision walkthrough slide 3" loading="lazy" />
+              </div>
+              <div class="tv-carousel-slide">
+                <img class="tv-carousel-img" src="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/walkthrough/4.png" alt="OptionsVision walkthrough slide 4" loading="lazy" />
+              </div>
+              <div class="tv-carousel-slide">
+                <img class="tv-carousel-img" src="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/walkthrough/5.png" alt="OptionsVision walkthrough slide 5" loading="lazy" />
+              </div>
+              <div class="tv-carousel-slide">
+                <img class="tv-carousel-img" src="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/walkthrough/6.png" alt="OptionsVision walkthrough slide 6" loading="lazy" />
+              </div>
+              <div class="tv-carousel-slide">
+                <img class="tv-carousel-img" src="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/walkthrough/7.png" alt="OptionsVision walkthrough slide 7" loading="lazy" />
+              </div>
+            </div>
+          </div>
+          <button class="tv-carousel-arrow tv-carousel-next" type="button" aria-label="Next slide">&#8250;</button>
+          <div class="tv-carousel-dots">
+            <button class="tv-carousel-dot" type="button" aria-label="Go to slide 1"></button>
+            <button class="tv-carousel-dot" type="button" aria-label="Go to slide 2"></button>
+            <button class="tv-carousel-dot" type="button" aria-label="Go to slide 3"></button>
+            <button class="tv-carousel-dot" type="button" aria-label="Go to slide 4"></button>
+            <button class="tv-carousel-dot" type="button" aria-label="Go to slide 5"></button>
+            <button class="tv-carousel-dot" type="button" aria-label="Go to slide 6"></button>
+            <button class="tv-carousel-dot" type="button" aria-label="Go to slide 7"></button>
+          </div>
+        </div>
+      </div>
+`;
+}
+
 function getDemoVideosHTML() {
   return `      <!-- Demo Videos: three R2-hosted MP4s (videos.vishnumuthiah.com/v2/) in a coverflow. -->
       <!-- One active/centered; neighbors sit behind, scaled + grayed. Click a neighbor to bring it forward. -->
@@ -1806,6 +1857,8 @@ function getOptionsVisionCaseStudyHTML() {
 
       ${getDemoVideosHTML()}
 
+      ${getWalkthroughCarouselHTML()}
+
       <section class="tv-copy">
         <h2>The problem</h2>
         <p>Brokerages show you an options payoff at expiration and nothing else. The questions that actually matter before then — what this position is worth if the stock drops 5% with three days left, whether the option is cheap or expensive, where the trade breaks even if volatility moves — need a model, and retail tools either don't answer them or bury the answer behind a subscription and a live quote feed.</p>
@@ -1887,48 +1940,7 @@ function getTradeVisionHTML({ app = false } = {}) {
 
         <h2>How It Works: Screenshot to Interactive Chart in Seconds</h2>
 
-      <!-- Demo Walkthrough carousel: moved to the top of How It Works -->
-      <div class="portfolio-embed tv-walkthrough">
-        <h3>Demo Walkthrough</h3>
-        <div class="tv-carousel tv-carousel--images" id="walkthroughCarousel">
-          <button class="tv-carousel-arrow tv-carousel-prev" type="button" aria-label="Previous slide">&#8249;</button>
-          <div class="tv-carousel-viewport">
-            <div class="tv-carousel-track">
-              <div class="tv-carousel-slide">
-                <img class="tv-carousel-img" src="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/walkthrough/1.png" alt="OptionsVision walkthrough slide 1" loading="lazy" />
-              </div>
-              <div class="tv-carousel-slide">
-                <img class="tv-carousel-img" src="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/walkthrough/2.png" alt="OptionsVision walkthrough slide 2" loading="lazy" />
-              </div>
-              <div class="tv-carousel-slide">
-                <img class="tv-carousel-img" src="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/walkthrough/3.png" alt="OptionsVision walkthrough slide 3" loading="lazy" />
-              </div>
-              <div class="tv-carousel-slide">
-                <img class="tv-carousel-img" src="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/walkthrough/4.png" alt="OptionsVision walkthrough slide 4" loading="lazy" />
-              </div>
-              <div class="tv-carousel-slide">
-                <img class="tv-carousel-img" src="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/walkthrough/5.png" alt="OptionsVision walkthrough slide 5" loading="lazy" />
-              </div>
-              <div class="tv-carousel-slide">
-                <img class="tv-carousel-img" src="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/walkthrough/6.png" alt="OptionsVision walkthrough slide 6" loading="lazy" />
-              </div>
-              <div class="tv-carousel-slide">
-                <img class="tv-carousel-img" src="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/walkthrough/7.png" alt="OptionsVision walkthrough slide 7" loading="lazy" />
-              </div>
-            </div>
-          </div>
-          <button class="tv-carousel-arrow tv-carousel-next" type="button" aria-label="Next slide">&#8250;</button>
-          <div class="tv-carousel-dots">
-            <button class="tv-carousel-dot" type="button" aria-label="Go to slide 1"></button>
-            <button class="tv-carousel-dot" type="button" aria-label="Go to slide 2"></button>
-            <button class="tv-carousel-dot" type="button" aria-label="Go to slide 3"></button>
-            <button class="tv-carousel-dot" type="button" aria-label="Go to slide 4"></button>
-            <button class="tv-carousel-dot" type="button" aria-label="Go to slide 5"></button>
-            <button class="tv-carousel-dot" type="button" aria-label="Go to slide 6"></button>
-            <button class="tv-carousel-dot" type="button" aria-label="Go to slide 7"></button>
-          </div>
-        </div>
-      </div>
+      ${getWalkthroughCarouselHTML()}
 
         <h3>Import in Seconds</h3>
         <p>Take a screenshot of your Robinhood order ticket and OptionsVision reads it with Apple's on-device text recognition and automatically pre-populates the strategy, strikes, expiration, spot price, and premiums. Multi-leg trades import from two screenshots (order ticket + per-leg premium) to capture real per-leg IVs as well as multiple expiration dates for calendar spreads. Prefer to skip the screenshot? Enter any trade by hand in a few taps.</p>

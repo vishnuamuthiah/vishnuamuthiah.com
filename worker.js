@@ -1030,7 +1030,13 @@ function getLayout(title, content, additionalStyles = '', meta = {}) {
     ${metaTags}
     ${getSharedStyles()}
     ${additionalStyles}
+    ${getPortfolioHomeStyles()}
     ${getNavyComponentStyles()}
+    ${/* After the navy component sheet on purpose: both define .tv-copy h3 at
+         equal specificity, and the editorial eyebrow is the one that should
+         win. Loaded before it, the sub-headings came out accent-cyan instead
+         of gold, competing with the links around them. */''}
+    ${getEditorialCopyStyles()}
     ${getMotionStyles()}
     ${getMobileStyles()}
     <script>
@@ -1264,7 +1270,7 @@ function getSourcesTrackerHomepageHTML() {
         <p><a href="/">Home</a> &nbsp;&middot;&nbsp; <a href="/privacy-policy">Privacy Policy</a> &nbsp;&middot;&nbsp; <a href="/terms-of-service">Terms of Service</a></p>
       </footer>
     </div>
-  `, getPortfolioHomeStyles() + getSourcesTrackerStyles(), {
+  `, '', {
     description: 'Automatically track every source, citation, and link in your Google Slides presentations.',
     url: 'https://vishnumuthiah.com/sources-tracker',
   });
@@ -1273,9 +1279,68 @@ function getSourcesTrackerHomepageHTML() {
 /// Typographic treatment for the Sources Tracker page, matching the home page:
 /// serif headings, gold sub-eyebrows, accent list markers. Scoped under
 /// `.st-page` so it cannot reach the product site's own `.tv-copy` pages.
-function getSourcesTrackerStyles() {
+/// Editorial typography for long-form copy: serif headings over a hairline,
+/// gold sub-headings that read as eyebrows, accent list markers. Scoped to
+/// .tv-copy, which every optionsvision.app page and the Sources Tracker page
+/// already wrap their prose in -- so this is what makes the product site match
+/// the portfolio without touching each page's markup. Injected from getLayout,
+/// and inert on any page with no .tv-copy.
+function getEditorialCopyStyles() {
   return `
     <style>
+      .tv-copy h1,
+      .tv-copy h2 {
+        font-family: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", ui-serif, Georgia, serif;
+        font-weight: 400;
+        color: var(--text);
+        text-wrap: balance;
+      }
+      .tv-copy h1 {
+        font-size: clamp(2rem, 5vw, 3.15rem);
+        line-height: 1.1;
+        letter-spacing: -0.018em;
+        margin: 0 0 28px;
+      }
+      .tv-copy h2 {
+        font-size: clamp(1.4rem, 3.2vw, 1.85rem);
+        line-height: 1.25;
+        letter-spacing: -0.012em;
+        margin: 42px 0 13px;
+        padding-top: 22px;
+        border-top: 1px solid var(--border);
+      }
+      /* Sub-headings read as eyebrows rather than smaller titles. Gold keeps
+         them clear of the accent, which on these pages means "this is a link". */
+      .tv-copy h3 {
+        font-size: 0.6875rem;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        font-weight: 600;
+        color: var(--gold);
+        margin: 27px 0 10px;
+      }
+      .tv-copy p { margin: 0 0 15px; max-width: 34rem; }
+      .tv-copy ul,
+      .tv-copy ol { margin: 0 0 20px 0; padding-left: 18px; max-width: 34rem; }
+      .tv-copy li { margin-bottom: 6px; }
+      .tv-copy li::marker { color: var(--accent); }
+      .tv-copy img {
+        display: block;
+        max-width: 100%;
+        height: auto;
+        margin: 20px 0 22px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+      }
+      /* The band titles inside .tv-copy are component chrome, not prose --
+         exempt them from the eyebrow treatment above. */
+      .tv-copy .tv-walkthrough h3,
+      .tv-copy .tv-band-title {
+        font-size: 1.05rem;
+        letter-spacing: 0.01em;
+        text-transform: none;
+      }
+
       .st-back {
         display: inline-block;
         margin: 32px 0 34px;
@@ -1285,49 +1350,6 @@ function getSourcesTrackerStyles() {
         color: var(--text-muted);
       }
       .st-back:hover { color: var(--accent); }
-
-      .st-page .tv-copy h1 {
-        font-family: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", ui-serif, Georgia, serif;
-        font-size: clamp(2rem, 5vw, 3.15rem);
-        line-height: 1.1;
-        letter-spacing: -0.018em;
-        font-weight: 400;
-        margin: 0 0 28px;
-        text-wrap: balance;
-      }
-      .st-page .tv-copy h2 {
-        font-family: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", ui-serif, Georgia, serif;
-        font-size: clamp(1.4rem, 3.2vw, 1.85rem);
-        line-height: 1.25;
-        letter-spacing: -0.012em;
-        font-weight: 400;
-        margin: 42px 0 13px;
-        padding-top: 22px;
-        border-top: 1px solid var(--border);
-      }
-      /* Sub-headings read as eyebrows here, not as smaller titles -- the gold
-         keeps them clear of the accent, which on this page means "link". */
-      .st-page .tv-copy h3 {
-        font-size: 0.6875rem;
-        letter-spacing: 0.16em;
-        text-transform: uppercase;
-        font-weight: 600;
-        color: var(--gold);
-        margin: 27px 0 10px;
-      }
-      .st-page .tv-copy p { margin: 0 0 15px; max-width: 544px; }
-      .st-page .tv-copy ul,
-      .st-page .tv-copy ol { margin: 0 0 20px; padding-left: 18px; margin-left: 0; max-width: 544px; }
-      .st-page .tv-copy li { margin-bottom: 6px; }
-      .st-page .tv-copy li::marker { color: var(--accent); }
-      .st-page .tv-copy img {
-        display: block;
-        max-width: 100%;
-        height: auto;
-        margin: 20px 0 22px;
-        border: 1px solid var(--border);
-        border-radius: 8px;
-      }
       .st-page .pf-foot { margin-top: 36px; }
     </style>
   `;
@@ -1473,7 +1495,7 @@ ${getDemoVideosHTML()}
       });
     </script>
     ${getDemoVideosScript()}
-  `, getPortfolioHomeStyles() + `<style>${getCarouselCSS()}</style>`);
+  `, `<style>${getCarouselCSS()}</style>`);
 }
 
 /// Layout for the redesigned portfolio home (2026-07-26). Everything here is
@@ -1537,6 +1559,27 @@ function getPortfolioHomeStyles() {
         color: var(--text-body);
         font-size: 1.0625rem;
       }
+      /* optionsvision.app leads with a four-sentence pitch rather than the
+         portfolio's two lines, so it gets the full measure. */
+      .pf-sub--wide { max-width: 34rem; }
+
+      /* ---- optionsvision.app ----
+         getTradeVisionPageStyles() widens .container to 1000px and pads it for
+         the old layout. That page is a .pf-page now, so those rules no longer
+         reach it; these are the pieces it still needs. */
+      .ov-page .tv-cta { margin: 30px 0 0; }
+      .ov-page .tv-band { margin-top: 34px; }
+      .ov-page .tv-copy { margin-top: 34px; }
+      .ov-page .tv-copy > p:first-child { margin-top: 0; }
+      .ov-page .tv-disclaimer {
+        margin-top: 26px;
+        padding-top: 18px;
+        border-top: 1px solid var(--border);
+        font-size: 0.8125rem;
+        color: var(--text-muted);
+        max-width: none;
+      }
+      .ov-page .portfolio-embed { margin-top: 34px; }
       .pf-actions {
         display: flex;
         align-items: center;
@@ -2667,9 +2710,10 @@ ${body}
 function getTradeVisionHTML() {
   return getLayout('OptionsVision — Options Payoff Charts from a Robinhood Screenshot', `
 ${getStickyBarHTML('Get the App', 'https://apps.apple.com/app/id6786063635')}
-    <div class="container">
-      <h1>OptionsVision</h1>
-      <p class="tagline">Take a screenshot from Robinhood and watch it become an interactive P&amp;L chart. Model different scenarios by adjusting your days to expiration and your implied volatility. Then analyze your Greeks and break-evens, all privately on your device.</p>
+    <div class="pf-page ov-page">
+      <header class="pf-hero">
+        <h1 class="pf-serif">OptionsVision</h1>
+        <p class="pf-sub pf-sub--wide">Take a screenshot from Robinhood and watch it become an interactive P&amp;L chart. Model different scenarios by adjusting your days to expiration and your implied volatility. Then analyze your Greeks and break-evens, all privately on your device.</p>
 
       <div class="tv-cta">
         <a class="appstore-badge" href="https://apps.apple.com/app/id6786063635" target="_blank" rel="noopener noreferrer" aria-label="Download OptionsVision on the App Store">
@@ -2680,6 +2724,7 @@ ${getStickyBarHTML('Get the App', 'https://apps.apple.com/app/id6786063635')}
           </span>
         </a>
       </div>
+      </header>
 
       ${getDemoVideosHTML()}
 
@@ -2736,13 +2781,13 @@ ${getStickyBarHTML('Get the App', 'https://apps.apple.com/app/id6786063635')}
 
 ${getGuidesCarouselHTML()}
 
-      <footer>
+      <footer class="pf-foot">
         <p>&copy; 2026 Vishnu Muthiah. All rights reserved.</p>
-        <p style="margin-top: 10px;">
-          <a href="/support">Application Support</a> |
-          <a href="/privacy-policy">Privacy Policy</a> |
-          <a href="/terms-of-service">Terms of Use</a> |
-          <a href="/disclaimer">Disclaimer</a> |
+        <p>
+          <a href="/support">Application Support</a> &nbsp;&middot;&nbsp;
+          <a href="/privacy-policy">Privacy Policy</a> &nbsp;&middot;&nbsp;
+          <a href="/terms-of-service">Terms of Use</a> &nbsp;&middot;&nbsp;
+          <a href="/disclaimer">Disclaimer</a> &nbsp;&middot;&nbsp;
           <a href="https://vishnumuthiah.com/">About the Developer</a>
         </p>
       </footer>

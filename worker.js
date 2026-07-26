@@ -845,6 +845,23 @@ function getMotionStyles() {
     </style>`;
 }
 
+/// The app's brand mark, ported from TrendMark / TrendArrowHead in
+/// LaunchView.swift rather than traced from a screenshot -- both are pure
+/// geometry over a 94x69 frame, so the coordinates below are the same numbers
+/// the app computes at runtime. Stroke is 6pt with round caps and joins, in the
+/// accent, exactly as the launch screen strokes it.
+///
+/// The viewBox is padded by 3 on every side because the stroke straddles the
+/// path: half of a 6pt line hangs outside the 94x69 box at the start point, the
+/// dip and the arrow tip. SwiftUI does not clip it there, and neither should
+/// this -- without the padding the mark loses its outer edges.
+const OV_TREND_MARK_SVG = `<svg class="ov-mark" viewBox="-3 -3 100 75" aria-hidden="true" focusable="false">
+            <path d="M 0 37.95 L 31.02 69 L 58.28 22.08 L 74.81 11.862"
+                  fill="none" stroke="var(--accent)" stroke-width="6"
+                  stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M 94 0 L 80.978 21.841 L 68.642 1.883 Z" fill="var(--accent)" />
+          </svg>`;
+
 /// Apple's official "Download on the App Store" badge, black, US/UK, pulled from
 /// toolbox.marketingtools.apple.com. Apple asks that the badge be used as
 /// supplied, so the paths are untouched -- the only edits are removing their
@@ -1756,6 +1773,28 @@ function getPortfolioHomeStyles() {
         color: var(--text-body);
         font-size: 1.0625rem;
       }
+      /* Wordmark left, brand mark flushed to the right edge of the column, both
+         on one row. Baseline-aligned rather than centred: the mark's visual
+         weight sits low, so centring it against a 72px serif left it floating. */
+      .ov-lockup {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 24px;
+      }
+      .ov-lockup h1 { margin: 0; }
+      .ov-mark {
+        flex: 0 0 auto;
+        width: 94px;
+        height: auto;
+        /* Nudged off the baseline so the arrow tip clears the cap height. */
+        margin-bottom: 6px;
+      }
+      @media (max-width: 600px) {
+        .ov-mark { width: 68px; margin-bottom: 4px; }
+        .ov-lockup { gap: 14px; }
+      }
+
       /* Retained as a no-op hook: every block now runs the full column width,
          so there is nothing left for this to widen. */
       .pf-sub--wide { max-width: none; }
@@ -2927,7 +2966,10 @@ function getTradeVisionHTML() {
 ${getStickyBarHTML('Get the App', 'https://apps.apple.com/app/id6786063635')}
     <div class="pf-page ov-page">
       <header class="pf-hero">
-        <h1 class="pf-serif">OptionsVision</h1>
+        <div class="ov-lockup">
+          <h1 class="pf-serif">OptionsVision</h1>
+          ${OV_TREND_MARK_SVG}
+        </div>
         <p class="pf-sub pf-sub--wide">Take a screenshot from Robinhood and watch it become an interactive P&amp;L chart. Model different scenarios by adjusting your days to expiration and your implied volatility. Then analyze your Greeks and break-evens, all privately on your device.</p>
 
       <div class="tv-cta">

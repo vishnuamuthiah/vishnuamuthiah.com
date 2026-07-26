@@ -856,10 +856,11 @@ function getMotionStyles() {
 /// dip and the arrow tip. SwiftUI does not clip it there, and neither should
 /// this -- without the padding the mark loses its outer edges.
 const OV_TREND_MARK_SVG = `<svg class="ov-mark" viewBox="-3 -3 100 75" aria-hidden="true" focusable="false">
-            <path d="M 0 37.95 L 31.02 69 L 58.28 22.08 L 74.81 11.862"
+            <path class="ov-mark__line" pathLength="1"
+                  d="M 0 37.95 L 31.02 69 L 58.28 22.08 L 74.81 11.862"
                   fill="none" stroke="var(--accent)" stroke-width="6"
                   stroke-linecap="round" stroke-linejoin="round" />
-            <path d="M 94 0 L 80.978 21.841 L 68.642 1.883 Z" fill="var(--accent)" />
+            <path class="ov-mark__arrow" d="M 94 0 L 80.978 21.841 L 68.642 1.883 Z" fill="var(--accent)" />
           </svg>`;
 
 /// Apple's official "Download on the App Store" badge, black, US/UK, pulled from
@@ -1793,6 +1794,50 @@ function getPortfolioHomeStyles() {
       @media (max-width: 600px) {
         .ov-mark { width: 68px; margin-bottom: 4px; }
         .ov-lockup { gap: 14px; }
+      }
+
+      /* ---- Mark animation, ported from LaunchView.swift onAppear ----
+         Three steps on the app's own curves and clocks:
+           the mark fades in while rising 10pt   easeOut 0.26s, no delay
+           the line strokes itself in            easeOut 0.8s  after 0.05s
+           the arrowhead pops in at the tip      easeOut 0.15s after 0.85s
+         In SwiftUI the line is a trim(from:to:) sweep; here it is a dash
+         offset, with pathLength="1" on the path so the sweep is expressed in
+         0..1 and needs no measured length.
+
+         The arrowhead scales from 0.6 anchored .topTrailing. On this artwork
+         that corner IS the arrow tip -- the triangle's bbox top-right is
+         (94, 0), the tip itself -- so fill-box with a top-right origin
+         reproduces it: the tip holds still and the head grows out of it.
+
+         Gated on html.motion-ready, the class getLayout only adds when the
+         visitor has not asked for reduced motion. So reduced motion, or no
+         JS, gets the finished mark with no dash offset and no transform --
+         which is exactly what the app does on its reduceMotion branch. */
+      html.motion-ready .ov-mark {
+        animation: ov-mark-in 0.26s ease-out both;
+      }
+      html.motion-ready .ov-mark__line {
+        stroke-dasharray: 1;
+        stroke-dashoffset: 1;
+        animation: ov-mark-draw 0.8s ease-out 0.05s forwards;
+      }
+      html.motion-ready .ov-mark__arrow {
+        opacity: 0;
+        transform: scale(0.6);
+        transform-box: fill-box;
+        transform-origin: 100% 0%;
+        animation: ov-mark-arrow 0.15s ease-out 0.85s forwards;
+      }
+      @keyframes ov-mark-in {
+        from { opacity: 0; transform: translateY(10px); }
+        to   { opacity: 1; transform: none; }
+      }
+      @keyframes ov-mark-draw {
+        to { stroke-dashoffset: 0; }
+      }
+      @keyframes ov-mark-arrow {
+        to { opacity: 1; transform: scale(1); }
       }
 
       /* Retained as a no-op hook: every block now runs the full column width,

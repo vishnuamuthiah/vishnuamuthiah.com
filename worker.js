@@ -160,7 +160,7 @@ export default {
         return html(getAppSupportHTML());
 
       } else if (path === '/') {
-        return html(getTradeVisionHTML({ app: true }));
+        return html(getTradeVisionHTML());
 
       } else if (path === '/learn' || path === '/learn/') {
         return html(getLearningLibraryHTML());
@@ -201,17 +201,13 @@ export default {
         headers: { "content-type": "text/html;charset=UTF-8" },
       });
 
-    } else if (path === '/optionsvision') {
-      // A mirror of optionsvision.app: same content, same order, same motion.
-      // `app: false` is the only difference -- it skips getAppThemeStyles(), so
-      // the page renders in the portfolio's light palette, and swaps the footer
-      // and back-link for the portfolio's own.
-      return html(getTradeVisionHTML({ app: false }));
-
-    } else if (path === '/tradevision') {
-      // Old app-name URL — permanently redirect to /optionsvision so existing
-      // links (App Store listing, previously shared links) keep working.
-      return Response.redirect(url.origin + '/optionsvision', 301);
+    } else if (path === '/optionsvision' || path === '/tradevision') {
+      // Both retired 2026-07-25. /optionsvision used to serve a light-theme
+      // mirror of optionsvision.app -- the same content twice, on two domains,
+      // which is the duplication this removes. They stay as 301s rather than
+      // 404s because neither can be recalled: /tradevision is the old app-name
+      // URL, and both have been shared and indexed.
+      return Response.redirect('https://optionsvision.app/', 301);
 
     } else {
       return new Response(getHomepageHTML(), {
@@ -1408,7 +1404,7 @@ function getHomepageHTML() {
 
         <!-- OptionsVision -->
         <div class="project-card">
-          <h3><a href="/optionsvision" target="_blank" rel="noopener noreferrer">OptionsVision</a></h3>
+          <h3><a href="https://optionsvision.app" target="_blank" rel="noopener noreferrer">OptionsVision</a></h3>
           <p>Take a screenshot of your Robinhood order and watch it become an interactive P&amp;L chart. Model different scenarios by adjusting your days to expiration and your implied volatility. Then analyze your Greeks and break-evens, all privately on your device.</p>
 
           <div style="margin: 8px 0 0;">
@@ -1416,7 +1412,6 @@ function getHomepageHTML() {
           </div>
 
           <div class="project-links">
-            <a href="/optionsvision">Learn More →</a>
             <a href="https://optionsvision.app" target="_blank" rel="noopener noreferrer">Visit optionsvision.app →</a>
           </div>
         </div>
@@ -1541,7 +1536,22 @@ function getCarouselCSS() {
       /* (2) Demo Videos coverflow: active clip centered, neighbors behind + grayed */
       .tv-coverflow {
         position: relative;
-        max-width: 880px;
+        /* The two numbers the whole coverflow is built from: where a neighbour
+           rests relative to centre, and half a neighbour's width once it is
+           scaled down (365 * 0.8 / 2). The box below and the fan on the stage
+           both derive from these, so they cannot drift apart again -- a fixed
+           235px fan inside a 880px box is exactly how the cards ended up
+           outside the band in the first place. */
+        --tv-fan-max: 235px;
+        --tv-card-half: 146px;
+        /* Exactly as wide as a fully fanned row (762px), nothing more. Was
+           880px, which was 118px wider than anything ever drawn: dead space on
+           optionsvision.app, whose container is 1000px and where the 880 really
+           did apply, and unreachable on the portfolio, whose 900px container
+           caps this at 762 regardless. The cards are centred on the stage and
+           the stage is centred in the band, so tightening the box does not
+           move them -- it just stops the box claiming room it never uses. */
+        max-width: calc(2 * (var(--tv-fan-max) + var(--tv-card-half)));
         margin: 0 auto;
       }
       .tv-cf-stage {
@@ -1550,19 +1560,21 @@ function getCarouselCSS() {
         /* Hard guarantee that nothing escapes the band, at any width. This used
            to live only in the phone stylesheet, which left 601-905px unprotected.
            clip (not hidden) so the other axis stays visible and no scroll
-           container is created. */
+           container is created. The margin is slack: at full width the outer
+           cards now sit flush against this edge, and their scaled 1px border
+           would otherwise be at the mercy of rounding. */
         overflow-x: clip;
+        overflow-clip-margin: 2px;
         /* The stage is the reference for the fan-out below. */
         container-type: inline-size;
         /* How far the neighbours sit from centre. It has to track the stage,
-           not be a constant: the cards are a fixed 365px, so a fixed 235px push
-           needs 235 + 146 of room on each side and threw them clear out of the
-           band on any stage narrower than ~762px. 50cqw is half the stage and
-           146px is the scaled neighbour's half-width (365 * 0.8 / 2), so the
-           neighbour lands flush against the inside edge of the box and only
-           caps at the original 235px once the stage can afford it (~905px
-           viewport and up) -- leaving the desktop layout exactly as it was. */
-        --tv-fan: min(235px, max(0px, calc(50cqw - 146px)));
+           not be a constant: the cards are a fixed 365px, so a fixed push threw
+           them clear out of the band on any stage narrower than the full 762px.
+           50cqw is half the stage, so subtracting the neighbour's scaled
+           half-width lands it flush against the inside edge of the box, capped
+           at the resting offset once the stage can afford it -- which, now the
+           box is the width of a fanned row, is exactly at full width. */
+        --tv-fan: min(var(--tv-fan-max), max(0px, calc(50cqw - var(--tv-card-half))));
       }
       .tv-cf-item {
         position: absolute;
@@ -2321,88 +2333,6 @@ function getAppSupportHTML() {
   });
 }
 
-// ===== PORTFOLIO CASE STUDY (vishnumuthiah.com/optionsvision) =====
-// The product pitch lives on optionsvision.app; this page is the engineering
-// write-up for the same project and stays in the portfolio's light theme.
-//
-// Every figure below is measured, and the framing is deliberate: the scrub
-// numbers are compared against a reconstructed naive implementation, not a
-// slower version that ever shipped, because the isolation landed inside the
-// original feature commits. Don't reword these into "optimized from X".
-function getOptionsVisionCaseStudyHTML() {
-  return getLayout('OptionsVision — Case Study | Vishnu Muthiah', `
-${getStickyBarHTML('Visit optionsvision.app', 'https://optionsvision.app')}
-    <div class="container">
-      <a href="/" class="back-link">← Back to Home</a>
-
-      <h1>OptionsVision</h1>
-      <p class="tagline">An iOS app that turns a screenshot of an options trade into an interactive payoff chart. Swift and SwiftUI, on-device OCR, an options pricing engine written from scratch, and a weekly market-data pipeline.</p>
-
-      <div class="tv-cta">
-        <a class="appstore-badge" href="https://optionsvision.app" target="_blank" rel="noopener noreferrer" aria-label="Visit the OptionsVision product site">
-          <span class="appstore-badge__text">
-            <span class="appstore-badge__small">Visit the product site</span>
-            <span class="appstore-badge__big">optionsvision.app</span>
-          </span>
-        </a>
-      </div>
-
-      ${getDemoVideosHTML()}
-
-      ${getWalkthroughCarouselHTML()}
-
-      <section class="tv-copy">
-        <h2>The problem</h2>
-        <p>Brokerages show you an options payoff at expiration and nothing else. The questions that actually matter before then — what this position is worth if the stock drops 5% with three days left, whether the option is cheap or expensive, where the trade breaks even if volatility moves — need a model, and retail tools either don't answer them or bury the answer behind a subscription and a live quote feed.</p>
-        <p>OptionsVision answers them on-device, offline, from a screenshot.</p>
-
-        <h2>Engineering notes</h2>
-
-        <h3>Import by screenshot, parsed on-device</h3>
-        <p>Apple's Vision text recognition reads a Robinhood order ticket and reconstructs a structured trade: strategy, strikes, expiration, spot price, per-leg premiums. Multi-leg positions combine two screenshots — the order ticket plus the per-leg premium view — which is what makes it possible to recover true per-leg implied volatilities and the separate expirations a calendar spread needs. No image or trade leaves the device.</p>
-
-        <h3>A pricing engine, not a quote feed</h3>
-        <p>Implied volatility is solved per leg from the entry price by bisection, so every leg reprices exactly at its own strike and days-to-expiration rather than sharing one blended number. Greeks, break-evens and probability of profit are all computed locally, which is what lets the whole chart stay interactive with no network in the loop.</p>
-
-        <h3>Why Black–Scholes holds up here</h3>
-        <p>The alternative is a binomial tree, which handles American early exercise correctly. I benchmarked one to find out what that costs: a single Black–Scholes price runs 18 ns against 19.5 µs for a 200-step American CRR tree, roughly a thousandfold. Across the 241-point break-even scan the chart depends on, that is 8.6 µs versus 11.8 ms — 71% of a 60 fps frame budget, for a scan that has to finish between frames while the user drags a slider.</p>
-        <p>What Black–Scholes gives up is the early-exercise premium: about 1.3% to 3% on in-the-money puts and essentially nothing on calls. So the tree costs three orders of magnitude more compute to correct ITM puts by a couple of percent. Worth being precise about the limit — at 100 steps a tree is 19% of a frame, which is not impossible, just enough to eat the headroom that interactive scrubbing runs on.</p>
-
-        <h3>Keeping the scrub inside a frame</h3>
-        <p>The expensive path is the break-even scan: 241 price points evaluated against every leg, every time the user moves the days-to-expiration or volatility slider. It costs 1.4 ms for a single-leg call and 5.8 ms for a four-leg iron condor — a third of a frame on its own.</p>
-        <p>Isolating the views that depend on it and passing anchor-independent break-evens down precomputed keeps that scan out of the per-tick path entirely, leaving 0.09 ms to 0.17 ms per tick. Measured against a reconstructed naive implementation that rescans on every tick — what an unisolated SwiftUI body does by default — that is a 33–35× difference, or 35% of a frame budget down to 1%. Release build, iPhone 17 simulator; a physical device would be slower in absolute terms, which makes the frame-budget argument stronger rather than weaker.</p>
-
-        <h3>Offline-first market data</h3>
-        <p>Tickers, earnings dates, dividends and 52-week implied-volatility history come from a separate Python pipeline that pulls from Cboe and treasury.gov and publishes versioned data files. The app fetches them in the background about once a week and works completely offline in between. Refreshing the data never requires shipping an app update.</p>
-
-        <h3>Ported to Android by porting the math first</h3>
-        <p>The pricing core is a standalone Kotlin module validated against a golden JSON fixture generated from the iOS implementation — identical inputs asserted to identical outputs, case by case, before any Android UI existed. Getting the numerical parity settled first means later UI work can't quietly introduce a pricing discrepancy between the two platforms.</p>
-
-        <h3>Analytics without a third-party SDK</h3>
-        <p>Feature usage reports to a Cloudflare Worker I run myself, backed by Analytics Engine. It records which features get used and nothing else — no trades, symbols, strikes, amounts or screenshots — against a random install identifier that is erased with the app, and it can be turned off in-app.</p>
-
-        <h2>Stack</h2>
-        <p>Swift · SwiftUI · Vision · StoreKit 2 · XCTest — Kotlin (pricing core ported and parity-tested, Compose UI in progress) — Python data pipeline — Cloudflare Workers, R2 and Analytics Engine</p>
-      </section>
-
-      <footer>
-        <p>&copy; 2026 Vishnu Muthiah. All rights reserved.</p>
-        <p style="margin-top: 10px;">
-          <a href="/">Home</a> |
-          <a href="https://optionsvision.app">OptionsVision</a> |
-          <a href="/privacy-policy">Privacy Policy</a> |
-          <a href="/terms-of-service">Terms of Service</a>
-        </p>
-      </footer>
-    </div>
-
-    ${getDemoVideosScript()}
-  `, getTradeVisionPageStyles(), {
-    description: 'Case study: building OptionsVision — on-device screenshot OCR, an options pricing engine, and keeping a 241-point break-even scan inside a 60 fps frame budget.',
-    url: 'https://vishnumuthiah.com/optionsvision',
-  });
-}
-
 // ===== Learning Library =====
 // Five strategy guides, each its own page at /learn/<slug> on optionsvision.app,
 // surfaced by a card carousel at the bottom of the product page.
@@ -2462,12 +2392,12 @@ const publishedGuides = () => GUIDES.filter((g) => g.published && g.body.length)
 /// Card carousel for the bottom of the product page. Reuses initCarousel, which
 /// wires any .tv-carousel generically. Returns nothing while no guide is published,
 /// so the section simply does not exist yet.
-function getGuidesCarouselHTML(app = false) {
+function getGuidesCarouselHTML() {
   const live = publishedGuides();
   if (!live.length) return '';
-  // The /learn routes exist on the product host only, so the portfolio mirror
-  // links out to them absolutely rather than at paths it does not serve.
-  const base = app ? '/learn/' : 'https://' + APP_HOST + '/learn/';
+  // Product host only, so these are same-origin paths. The absolute-URL variant
+  // existed for the portfolio mirror at /optionsvision, retired 2026-07-26.
+  const base = '/learn/';
   const slides = live.map((g) => `
               <div class="tv-carousel-slide">
                 <a class="tv-guide-card" href="${base}${g.slug}">
@@ -2554,12 +2484,12 @@ ${body}
   });
 }
 
-function getTradeVisionHTML({ app = false } = {}) {
+/// The optionsvision.app landing page. Served on the product host only -- the
+/// light-theme portfolio mirror this used to double as was retired 2026-07-26.
+function getTradeVisionHTML() {
   return getLayout('OptionsVision — Options Payoff Charts from a Robinhood Screenshot', `
 ${getStickyBarHTML('Get the App', 'https://apps.apple.com/app/id6786063635')}
     <div class="container">
-      ${app ? '' : '<a href="/" class="back-link">← Back to Home</a>'}
-
       <h1>OptionsVision</h1>
       <p class="tagline">Take a screenshot from Robinhood and watch it become an interactive P&amp;L chart. Model different scenarios by adjusting your days to expiration and your implied volatility. Then analyze your Greeks and break-evens, all privately on your device.</p>
 
@@ -2626,26 +2556,16 @@ ${getStickyBarHTML('Get the App', 'https://apps.apple.com/app/id6786063635')}
         <p class="tv-disclaimer">OptionsVision is an educational tool and is not investment advice, not a broker, and never touches your brokerage account. Figures are theoretical model estimates, not live quotes. Options involve substantial risk and are not suitable for every investor.</p>
       </section>
 
-${getGuidesCarouselHTML(app)}
+${getGuidesCarouselHTML()}
 
       <footer>
         <p>&copy; 2026 Vishnu Muthiah. All rights reserved.</p>
         <p style="margin-top: 10px;">
-          ${app
-            ? `<a href="/support">Application Support</a> |
+          <a href="/support">Application Support</a> |
           <a href="/privacy-policy">Privacy Policy</a> |
           <a href="/terms-of-service">Terms of Use</a> |
           <a href="/disclaimer">Disclaimer</a> |
-          <a href="https://vishnumuthiah.com/">About the Developer</a>`
-            // Same links on the mirror, pointed at the product host. The
-            // portfolio's own /support, /privacy-policy and /terms-of-service
-            // document the Sources Tracker Slides add-on, so linking them from
-            // a page about OptionsVision would show a visitor the wrong policy.
-            : `<a href="/">Home</a> |
-          <a href="https://${APP_HOST}/support">Application Support</a> |
-          <a href="https://${APP_HOST}/privacy-policy">Privacy Policy</a> |
-          <a href="https://${APP_HOST}/terms-of-service">Terms of Use</a> |
-          <a href="https://${APP_HOST}/disclaimer">Disclaimer</a>`}
+          <a href="https://vishnumuthiah.com/">About the Developer</a>
         </p>
       </footer>
     </div>
@@ -2662,10 +2582,8 @@ ${getGuidesCarouselHTML(app)}
     imageWidth: 1200,
     imageHeight: 630,
     imageAlt: 'OptionsVision — an options payoff curve rising across a navy background',
-    // The product domain is the canonical home for this content; the portfolio
-    // copy points here too (step 4 turns that one into a case study).
-    url: app ? 'https://optionsvision.app/' : 'https://vishnumuthiah.com/optionsvision',
-    app,
+    url: 'https://optionsvision.app/',
+    app: true,
   });
 }
 

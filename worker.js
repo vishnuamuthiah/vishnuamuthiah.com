@@ -863,13 +863,149 @@ function getMotionStyles() {
     </style>`;
 }
 
-/// Markup for the sticky bar. Only emitted on the two pages with a real call to
-/// action; the legal and support pages deliberately have none.
+/// A QR of APP_STORE_URL, lifted verbatim from share-page.html so the two
+/// surfaces can never disagree. Static: regenerate both if that URL changes.
+const APP_STORE_QR_SVG = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 37 37\"><path stroke=\"#000\" d=\"M4 4.5h7m1 0h1m2 0h2m1 0h1m2 0h3m2 0h7m-29 1h1m5 0h1m1 0h6m2 0h1m1 0h1m3 0h1m5 0h1m-29 1h1m1 0h3m1 0h1m5 0h2m1 0h2m1 0h3m1 0h1m1 0h3m1 0h1m-29 1h1m1 0h3m1 0h1m1 0h1m1 0h1m2 0h1m1 0h3m1 0h1m2 0h1m1 0h3m1 0h1m-29 1h1m1 0h3m1 0h1m5 0h1m2 0h1m1 0h1m1 0h1m2 0h1m1 0h3m1 0h1m-29 1h1m5 0h1m2 0h4m3 0h1m2 0h2m1 0h1m5 0h1m-29 1h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7m-21 1h1m6 0h5m-20 1h1m1 0h2m1 0h3m3 0h2m4 0h2m3 0h1m2 0h1m1 0h2m-28 1h1m1 0h2m2 0h1m1 0h2m3 0h1m4 0h4m1 0h1m3 0h1m-29 1h2m1 0h5m1 0h1m1 0h2m4 0h1m3 0h2m1 0h1m1 0h2m-25 1h1m1 0h1m1 0h1m5 0h2m1 0h1m11 0h1m-28 1h2m1 0h4m1 0h1m2 0h1m2 0h3m5 0h1m1 0h2m-25 1h2m4 0h1m3 0h1m1 0h2m1 0h3m2 0h1m3 0h3m-29 1h4m2 0h1m1 0h2m1 0h1m1 0h1m2 0h1m2 0h1m2 0h1m3 0h3m-29 1h3m2 0h1m1 0h1m2 0h1m1 0h1m3 0h1m1 0h3m3 0h1m2 0h1m-28 1h2m1 0h2m1 0h2m6 0h1m1 0h1m2 0h3m2 0h2m1 0h1m-25 1h3m2 0h1m1 0h1m4 0h3m3 0h1m1 0h1m1 0h3m-28 1h1m4 0h3m3 0h1m1 0h3m1 0h1m2 0h2m2 0h1m1 0h1m-25 1h1m1 0h2m1 0h2m1 0h1m2 0h2m2 0h2m4 0h1m2 0h1m-26 1h2m3 0h2m1 0h1m1 0h1m1 0h3m1 0h10m-19 1h1m1 0h1m1 0h1m4 0h2m1 0h1m3 0h5m-29 1h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h2m1 0h2m1 0h1m1 0h2m1 0h1m-28 1h1m5 0h1m1 0h1m1 0h1m2 0h3m2 0h1m1 0h1m3 0h2m1 0h1m-28 1h1m1 0h3m1 0h1m2 0h1m1 0h2m2 0h3m2 0h5m1 0h1m-27 1h1m1 0h3m1 0h1m1 0h2m1 0h1m3 0h1m1 0h1m2 0h2m2 0h2m2 0h1m-29 1h1m1 0h3m1 0h1m1 0h3m1 0h2m2 0h1m1 0h1m1 0h2m1 0h1m2 0h1m1 0h1m-29 1h1m5 0h1m2 0h5m2 0h1m1 0h1m1 0h2m1 0h3m1 0h1m-28 1h7m1 0h1m1 0h2m4 0h1m2 0h2m2 0h1m3 0h1\"/></svg>";
+
+/// Markup for the sticky bar, plus the desktop download dialog. Only emitted on
+/// the pages with a real call to action; the legal and support pages have none.
+///
+/// On a desktop the App Store link is close to useless -- it opens a web page
+/// for an app the visitor cannot install on the machine in front of them. So on
+/// a fine-pointer device the CTAs open this dialog instead: a QR to scan with
+/// the phone, and the web listing still one click away for anyone who wants it.
+/// Touch devices are untouched and follow the link straight through.
 function getStickyBarHTML(label, href) {
   return `    <div class="tv-stickybar" id="tvStickyBar" aria-hidden="true">
       <span class="tv-stickybar__name">OptionsVision</span>
       <a class="tv-stickybar__cta" href="${href}" target="_blank" rel="noopener noreferrer">${label}</a>
-    </div>`;
+    </div>
+
+    <div class="ov-dl" id="ovDl" hidden>
+      <div class="ov-dl__card" role="dialog" aria-modal="true" aria-labelledby="ovDlTitle" tabindex="-1">
+        <h2 class="ov-dl__title pf-serif" id="ovDlTitle">Get OptionsVision</h2>
+        <p class="ov-dl__lede">Point your iPhone camera at the code to install it.</p>
+        <div class="ov-dl__qr">${APP_STORE_QR_SVG}</div>
+        <a class="ov-dl__cta" href="${href}" target="_blank" rel="noopener noreferrer">View on the App Store</a>
+        <button class="ov-dl__close" type="button">Not now</button>
+      </div>
+    </div>
+
+    <style>
+      .ov-dl {
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        background: rgba(6, 12, 24, 0.72);
+      }
+      .ov-dl[hidden] { display: none; }
+      @supports (backdrop-filter: blur(6px)) or (-webkit-backdrop-filter: blur(6px)) {
+        .ov-dl { -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+      }
+      .ov-dl__card {
+        width: 100%;
+        max-width: 340px;
+        text-align: center;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 28px 26px 22px;
+        box-shadow: 0 18px 48px var(--shadow);
+      }
+      .ov-dl__title {
+        margin: 0 0 8px;
+        font-size: 1.6rem;
+        font-weight: 400;
+        letter-spacing: -0.012em;
+        color: var(--text);
+      }
+      .ov-dl__lede { margin: 0 0 18px; color: var(--text-body); font-size: 0.9375rem; }
+      /* The code keeps a white field regardless of theme -- scanners need the
+         light quiet zone, and inverting a QR breaks a good share of readers. */
+      .ov-dl__qr {
+        width: 190px;
+        height: 190px;
+        margin: 0 auto 20px;
+        padding: 8px;
+        background: #fff;
+        border-radius: 10px;
+      }
+      .ov-dl__qr svg { display: block; width: 100%; height: 100%; }
+      .ov-dl__cta {
+        display: block;
+        padding: 12px 20px;
+        border-radius: 999px;
+        background: var(--accent);
+        color: var(--on-accent);
+        font-size: 0.9375rem;
+        font-weight: 600;
+        text-decoration: none;
+        transition: background 0.2s ease;
+      }
+      .ov-dl__cta:hover { background: var(--accent-hover); text-decoration: none; }
+      .ov-dl__close {
+        display: block;
+        width: 100%;
+        margin-top: 12px;
+        padding: 8px;
+        border: 0;
+        background: none;
+        color: var(--text-muted);
+        font: inherit;
+        font-size: 0.875rem;
+        cursor: pointer;
+      }
+      .ov-dl__close:hover { color: var(--text); }
+      @media (max-width: 380px) {
+        .ov-dl__qr { width: 160px; height: 160px; }
+      }
+    </style>
+
+    <script>
+    (function () {
+      var dl = document.getElementById('ovDl');
+      if (!dl) return;
+      // Coarse pointer means a phone or tablet, where the App Store link does
+      // the right thing on its own. Only intercept on a fine pointer.
+      if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) return;
+
+      var card = dl.querySelector('.ov-dl__card');
+      var lastFocus = null;
+
+      function open(e) {
+        e.preventDefault();
+        lastFocus = document.activeElement;
+        dl.hidden = false;
+        card.focus();
+      }
+      function close() {
+        dl.hidden = true;
+        if (lastFocus && lastFocus.focus) lastFocus.focus();
+      }
+
+      // Delegated rather than bound per element: this block is emitted at the
+      // top of the body, above the App Store badge, so querySelectorAll finds
+      // nothing when it runs. The sticky bar sits just above it and bound fine,
+      // which is exactly how this hid at first -- one CTA opened the dialog and
+      // the other silently followed the link.
+      document.addEventListener('click', function (e) {
+        var el = e.target.closest && e.target.closest('.appstore-badge, .tv-stickybar__cta');
+        if (el) open(e);
+      });
+
+      dl.querySelector('.ov-dl__close').addEventListener('click', close);
+      dl.addEventListener('click', function (e) { if (e.target === dl) close(); });
+      document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && !dl.hidden) close();
+      });
+      // Following the real link should not leave the dialog open behind it.
+      dl.querySelector('.ov-dl__cta').addEventListener('click', close);
+    })();
+    </script>`;
 }
 
 function getMotionScript() {
@@ -1310,18 +1446,23 @@ function getEditorialCopyStyles() {
         border-top: 1px solid var(--border);
       }
       /* Sub-headings read as eyebrows rather than smaller titles. Gold keeps
-         them clear of the accent, which on these pages means "this is a link". */
+         them clear of the accent, which on these pages means "this is a link".
+         Set at 1rem -- body size -- rather than the 11px caption they started
+         at; tracking comes down to suit, since uppercase needs far less of it
+         at 16px than at 11. */
       .tv-copy h3 {
-        font-size: 0.6875rem;
-        letter-spacing: 0.16em;
+        font-size: 1rem;
+        letter-spacing: 0.1em;
         text-transform: uppercase;
         font-weight: 600;
         color: var(--gold);
         margin: 27px 0 10px;
       }
-      .tv-copy p { margin: 0 0 15px; max-width: 34rem; }
+      /* No max-width: prose runs the full column, the same measure the demo
+         bands use, so every block on the page shares one left and right edge. */
+      .tv-copy p { margin: 0 0 15px; }
       .tv-copy ul,
-      .tv-copy ol { margin: 0 0 20px 0; padding-left: 18px; max-width: 34rem; }
+      .tv-copy ol { margin: 0 0 20px 0; padding-left: 18px; }
       .tv-copy li { margin-bottom: 6px; }
       .tv-copy li::marker { color: var(--accent); }
       .tv-copy img {
@@ -1332,11 +1473,13 @@ function getEditorialCopyStyles() {
         border: 1px solid var(--border);
         border-radius: 8px;
       }
-      /* The band titles inside .tv-copy are component chrome, not prose --
-         exempt them from the eyebrow treatment above. */
+      /* The band titles inside .tv-copy are component chrome, not prose, so they
+         are exempt from the eyebrow treatment above. 28px matches the Demo
+         Videos band, whose title sits outside .tv-copy and never picked up the
+         eyebrow rule -- the two bands are siblings and should read as a pair. */
       .tv-copy .tv-walkthrough h3,
       .tv-copy .tv-band-title {
-        font-size: 1.05rem;
+        font-size: 28px;
         letter-spacing: 0.01em;
         text-transform: none;
       }
@@ -1555,21 +1698,27 @@ function getPortfolioHomeStyles() {
          out-specify .pf-name and repaint the masthead in body colour. */
       .pf-sub {
         margin: 21px 0 0;
-        max-width: 480px;
         color: var(--text-body);
         font-size: 1.0625rem;
       }
-      /* optionsvision.app leads with a four-sentence pitch rather than the
-         portfolio's two lines, so it gets the full measure. */
-      .pf-sub--wide { max-width: 34rem; }
+      /* Retained as a no-op hook: every block now runs the full column width,
+         so there is nothing left for this to widen. */
+      .pf-sub--wide { max-width: none; }
 
       /* ---- optionsvision.app ----
          getTradeVisionPageStyles() widens .container to 1000px and pads it for
          the old layout. That page is a .pf-page now, so those rules no longer
          reach it; these are the pieces it still needs. */
-      .ov-page .tv-cta { margin: 30px 0 0; }
-      .ov-page .tv-band { margin-top: 34px; }
-      .ov-page .tv-copy { margin-top: 34px; }
+      .ov-page .tv-cta { margin: 14px 0 0; }
+      .ov-page .tv-band { margin-top: 18px; }
+      /* The two demo bands read as a pair, so they get the same title size, the
+         same bottom padding and the same gap to the copy beneath. Measured
+         first: the walkthrough was already the tighter of the two (10px padding
+         and a 27px gap, against 29px and 34px), so they are equalised at its
+         spacing rather than the videos band's. */
+      .ov-page .tv-band { padding-bottom: 12px; }
+      .ov-page .tv-copy { margin-top: 22px; }
+      .ov-page .tv-copy .tv-walkthrough + h3 { margin-top: 22px; }
       .ov-page .tv-copy > p:first-child { margin-top: 0; }
       .ov-page .tv-disclaimer {
         margin-top: 26px;
@@ -1619,8 +1768,8 @@ function getPortfolioHomeStyles() {
       .pf-page > section.pf-tight { padding: 21px 0 22px; }
 
       .pf-label {
-        font-size: 0.8125rem;
-        letter-spacing: 0.15em;
+        font-size: 1rem;
+        letter-spacing: 0.1em;
         text-transform: uppercase;
         color: var(--gold);
         margin: 0 0 18px;
@@ -1655,7 +1804,6 @@ function getPortfolioHomeStyles() {
       .pf-entry > h3 a:hover { color: var(--accent); text-decoration: none; }
       .pf-desc {
         margin: 10px 0 0;
-        max-width: 544px;
         color: var(--text-body);
         font-size: 1rem;
       }

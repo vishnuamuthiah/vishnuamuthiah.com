@@ -1483,6 +1483,17 @@ function getEditorialCopyStyles() {
         letter-spacing: 0.01em;
         text-transform: none;
       }
+      /* Both band titles sat in a 44.8px line box -- body line-height of 1.6
+         applied to a 28px face -- on top of a 22px margin, which read as about
+         50px of dead space under the heading. The selectors are written to
+         out-specify .tv-copy .tv-walkthrough h3 (0,2,1) in
+         getTradeVisionPageStyles and .tv-band-title in getCarouselCSS; this
+         sheet also loads last, so both tie-breaks land here. */
+      .tv-band-title,
+      .tv-copy .tv-walkthrough h3 {
+        line-height: 1.2;
+        margin-bottom: 10px;
+      }
 
       .st-back {
         display: inline-block;
@@ -1710,7 +1721,11 @@ function getPortfolioHomeStyles() {
          the old layout. That page is a .pf-page now, so those rules no longer
          reach it; these are the pieces it still needs. */
       .ov-page .tv-cta { margin: 14px 0 0; }
-      .ov-page .tv-band { margin-top: 18px; }
+      /* The hero's 45px padding-bottom was the real gap under the App Store
+         badge -- 45 plus the band's own top margin came to 63px of empty navy.
+         Zeroed here so the single 22px band margin is the whole distance. */
+      .ov-page .pf-hero { padding-bottom: 0; }
+      .ov-page .tv-band { margin-top: 22px; }
       /* The two demo bands read as a pair, so they get the same title size, the
          same bottom padding and the same gap to the copy beneath. Measured
          first: the walkthrough was already the tighter of the two (10px padding

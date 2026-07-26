@@ -551,11 +551,14 @@ function getNavyComponentStyles() {
       .tv-play-overlay:hover { background: rgba(244, 241, 234, 0.98); }
       .tv-play-overlay svg { fill: #0E1B33; }
 
-      /* The App Store badge used to be drawn here in CSS as a black pill and
-         needed a dark hover shadow to lift off the navy. It is supplied light
-         artwork now, styled in getTradeVisionPageStyles, and a black shadow
-         under a white pill on a navy ground does nothing -- so there is no
-         badge rule left in this sheet. */
+      /* --- App Store badge: Apple's standard black badge, same as everywhere
+             else. It reads as a dark shape against the navy, which is how it
+             sits on Apple's own dark pages -- the white lockup carries it. An
+             earlier revision recoloured this to the launch screen's off-white
+             bar; that drifted from Apple's artwork, so it's back to black. --- */
+      .appstore-badge:hover {
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+      }
     </style>
   `;
 }
@@ -671,30 +674,42 @@ function getTradeVisionPageStyles() {
       .tv-cta {
         margin: 22px 0 8px;
       }
-      /* The badge is supplied artwork now, not drawn in CSS -- the black pill,
-         the Apple glyph and the two lines of type were all built here before.
-         The wrapper carries nothing but the hit area and the hover lift.
-         Artwork is cropped to its opaque bounds before export, so the image
-         edge is the badge edge and it sits flush on the shared left margin. */
       .appstore-badge {
-        display: inline-block;
-        line-height: 0;
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        background: #000;
+        color: #fff;
+        border: 1px solid #000;
+        border-radius: 12px;
+        padding: 10px 20px;
         text-decoration: none;
-        border-radius: 999px;
-        transition: transform 0.15s ease, filter 0.15s ease;
-      }
-      .appstore-badge img {
-        display: block;
-        width: 180px;
-        height: auto;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
       }
       .appstore-badge:hover {
         transform: translateY(-2px);
-        filter: brightness(1.06);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.22);
         text-decoration: none;
       }
-      @media (max-width: 600px) {
-        .appstore-badge img { width: 168px; }
+      .appstore-badge__logo {
+        width: 26px;
+        height: 26px;
+        flex: 0 0 auto;
+        color: #fff;
+      }
+      .appstore-badge__text {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.12;
+        text-align: left;
+      }
+      .appstore-badge__small {
+        font-size: 11px;
+        letter-spacing: 0.02em;
+      }
+      .appstore-badge__big {
+        font-size: 20px;
+        font-weight: 600;
       }
 
       ${getCarouselCSS()}
@@ -2882,9 +2897,12 @@ ${getStickyBarHTML('Get the App', 'https://apps.apple.com/app/id6786063635')}
         <p class="pf-sub pf-sub--wide">Take a screenshot from Robinhood and watch it become an interactive P&amp;L chart. Model different scenarios by adjusting your days to expiration and your implied volatility. Then analyze your Greeks and break-evens, all privately on your device.</p>
 
       <div class="tv-cta">
-        <a class="appstore-badge" href="https://apps.apple.com/app/id6786063635" target="_blank" rel="noopener noreferrer">
-          <img src="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/appstore-badge-black.png"
-               alt="Available on the App Store" width="180" height="53" />
+        <a class="appstore-badge" href="https://apps.apple.com/app/id6786063635" target="_blank" rel="noopener noreferrer" aria-label="Download OptionsVision on the App Store">
+          <svg class="appstore-badge__logo" viewBox="0 0 384 512" aria-hidden="true"><path fill="currentColor" d="M318.7 268.7c-.2-36.7 16.4-64.4 50-84.8-18.8-26.9-47.2-41.7-84.7-44.6-35.5-2.8-74.3 20.7-88.5 20.7-15 0-49.4-19.7-76.4-19.7C63.3 141.2 4 184.8 4 273.5q0 39.3 14.4 81.2c12.8 36.7 59 126.7 107.2 125.2 25.2-.6 43-17.9 75.8-17.9 31.8 0 48.3 17.9 76.4 17.9 48.6-.7 90.4-82.5 102.6-119.3-65.2-30.7-61.7-90-61.7-91.9zm-56.6-164.2c27.3-32.4 24.8-61.9 24-72.5-24.1 1.4-52 16.4-67.9 34.9-17.5 19.8-27.8 44.3-25.6 71.9 26.1 2 49.9-11.4 69.5-34.3z"/></svg>
+          <span class="appstore-badge__text">
+            <span class="appstore-badge__small">Download on the</span>
+            <span class="appstore-badge__big">App Store</span>
+          </span>
         </a>
       </div>
       </header>

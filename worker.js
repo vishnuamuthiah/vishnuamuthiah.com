@@ -223,27 +223,32 @@ function getSharedStyles() {
   return `
     <style>
       /* ===== THEME TOKENS =====
-         Defaults below are the portfolio's original palette, literal for
-         literal, so vishnumuthiah.com renders exactly as it always has.
-         getAppThemeStyles() redefines the same names for optionsvision.app,
-         which is why every rule below reads a variable and never a hex. */
+         One navy palette for both sites, taken from the app's Theme.swift.
+         It used to live in getAppThemeStyles() and be injected only for
+         optionsvision.app, over a light default for the portfolio; the
+         portfolio went navy too on 2026-07-26, so the override collapsed into
+         the default and that function is gone. Every rule below still reads a
+         variable and never a hex, so a future retheme stays a token edit. */
       :root {
-        --bg: #ffffff;
-        --text: #202124;
-        --text-body: #3c4043;
-        --text-muted: #5f6368;
-        --accent: #1a73e8;
-        --accent-hover: #1557b0;
-        --on-accent: #fff;
-        --surface: #f8f9fa;
-        --surface-alt: #e8f0fe;
-        --surface-code: #f1f3f4;
-        --border: #dadce0;
-        --panel: #fff;
-        --shadow: rgba(0,0,0,0.1);
-        /* The sticky bar reads as its own surface rather than as more page, so
-           it gets the tinted blue instead of the white ground. */
-        --stickybar-bg: var(--surface-alt);
+        --bg: #0E1B33;          /* launchNavy */
+        --text: #EBE6DA;        /* off-white -- never pure white on this ground */
+        --text-body: #C7D3E6;
+        --text-muted: #AABBD8;
+        --accent: #6BCCF5;
+        --accent-hover: #9BDDF8;
+        --on-accent: #0E1B33;   /* navy label on the bright accent */
+        --surface: #1A263D;     /* boxFill */
+        --surface-alt: #16233F; /* wellFill */
+        --surface-code: #16233F;
+        --border: #26364A;
+        --panel: #16233F;
+        --shadow: rgba(0, 0, 0, 0.45);
+        /* The app's Pro gold. Section chrome only -- eyebrows and band titles --
+           so it never competes with the blue that signals "this is a link". */
+        --gold: #D9AE57;
+        /* Held at the page ground: on navy, tinting the bar a second, paler navy
+           separates it from the page for no reason. */
+        --stickybar-bg: var(--bg);
       }
       * {
         margin: 0;
@@ -481,49 +486,124 @@ function getSharedStyles() {
         background: var(--accent-hover);
         text-decoration: none;
       }
-    </style>
+
+      </style>
   `;
 }
 
 // ===== PAGE-SPECIFIC STYLES =====
+/// Component fixes that must load AFTER a page's own stylesheet.
+/// getCarouselCSS() and getTradeVisionPageStyles() still carry light literals
+/// for the band, arrows, dots and play button, and they reach the page through
+/// getLayout's additionalStyles slot -- so these rules only win if they come
+/// later. This was getAppThemeStyles(), injected only for optionsvision.app;
+/// both sites went navy on 2026-07-26, so it is unconditional now.
+function getNavyComponentStyles() {
+  return `
+    <style>
+      /* ===== Components that need explicit navy treatment =====
+         These were getAppThemeStyles(), injected only for optionsvision.app.
+         Both sites are navy now, so they are unconditional. The literals that
+         remain (carousel band, arrows, dots, play button) live in
+         getCarouselCSS() and getTradeVisionPageStyles() as light values; these
+         rules are what put them right, and must stay loaded after them. */
+
+
+      /* --- Tinted bands: the light #f4f6f8/#e6e9ec pair has no token --- */
+      .tv-band,
+      .portfolio-embed {
+        background: var(--surface);
+        border-color: var(--border);
+      }
+      /* Both band titles ("Demo Videos" and "Demo Walkthrough") take gold; the
+         walkthrough one is an h3 inside .tv-copy, so it needs the two-class
+         selector to outrank the accent color on .tv-copy h3 below. */
+      .tv-band-title,
+      .tv-copy .tv-walkthrough h3 { color: var(--gold); }
+      .tv-copy h3 { color: var(--accent); }
+
+      /* --- Media frames and captions --- */
+      .tv-gallery img,
+      .tv-short-frame { border-color: var(--border); }
+      .tv-gallery figcaption,
+      .tv-carousel-caption { color: var(--text-muted); }
+      .tv-disclaimer {
+        color: var(--text-muted);
+        border-top-color: var(--border);
+      }
+
+      /* --- Carousel controls: white pills punch holes in the navy ground --- */
+      .tv-carousel-arrow {
+        background: var(--surface);
+        border-color: var(--border);
+        color: var(--accent);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+      }
+      .tv-carousel-arrow:hover {
+        background: #22314D;
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.5);
+      }
+      .tv-carousel-dot { background: #33445F; }
+      .tv-carousel-dot.active { background: var(--accent); }
+
+      /* --- Play button keeps the launch screen's off-white-on-navy pairing --- */
+      .tv-play-overlay { background: rgba(235, 230, 218, 0.92); }
+      .tv-play-overlay:hover { background: rgba(244, 241, 234, 0.98); }
+      .tv-play-overlay svg { fill: #0E1B33; }
+
+      /* --- App Store badge: Apple's standard black badge, same as everywhere
+             else. It reads as a dark shape against the navy, which is how it
+             sits on Apple's own dark pages -- the white lockup carries it. An
+             earlier revision recoloured this to the launch screen's off-white
+             bar; that drifted from Apple's artwork, so it's back to black. --- */
+      .appstore-badge:hover {
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+      }
+    </style>
+  `;
+}
+
 function getSupportPageStyles() {
   return `
     <style>
+      /* Tokenised 2026-07-26 with the navy retheme. This was the last sheet
+         holding literals -- a #f8f9fa ground behind a white card -- which on
+         navy would have rendered a white box on a dark page. */
       body {
-        background-color: #f8f9fa;
+        background-color: var(--bg);
         padding: 20px;
       }
       .container {
-        background-color: white;
+        background-color: var(--surface);
         padding: 40px;
         border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 2px 8px var(--shadow);
         max-width: 800px;
       }
       h1 {
-        color: #1a73e8;
+        color: var(--accent);
         font-size: 2em;
       }
       h2 {
         margin-top: 30px;
         font-size: 1.5em;
-        border-bottom: 2px solid #1a73e8;
+        border-bottom: 2px solid var(--accent);
         padding-bottom: 10px;
       }
       h3 {
-        color: #555;
+        color: var(--text-muted);
         margin-top: 20px;
       }
       .back-link {
         margin-top: 30px;
         padding: 10px 20px;
-        background-color: #1a73e8;
-        color: white;
+        background-color: var(--accent);
+        color: var(--on-accent);
         border-radius: 6px;
         text-decoration: none;
       }
       .back-link:hover {
-        background-color: #1557b0;
+        background-color: var(--accent-hover);
         text-decoration: none;
       }
     </style>
@@ -637,96 +717,6 @@ function getTradeVisionPageStyles() {
   `;
 }
 
-// ===== OPTIONSVISION APP THEME (optionsvision.app only) =====
-// Loaded after the page styles so it wins on order, and only for pages served
-// on the app host. Two halves: the token block, which recolors everything that
-// went through the tokenization pass, and a short list of restatements for the
-// surfaces whose colors are still literal (the carousel and the CTA badge).
-//
-// Values are lifted from the app's own Theme.swift so the site and the app read
-// as one product: launchNavy #0E1B33, wellFill #16233F, boxFill #1A263D,
-// accent #6BCCF5, gold #D9AE57, and the launch screen's off-white #EBE6DA.
-function getAppThemeStyles() {
-  return `
-    <style>
-      :root {
-        --bg: #0E1B33;
-        --text: #EBE6DA;
-        --text-body: #C7D3E6;
-        --text-muted: #AABBD8;
-        --accent: #6BCCF5;
-        --accent-hover: #9BDDF8;
-        /* Navy label on the bright accent -- the inverse of the light theme. */
-        --on-accent: #0E1B33;
-        --surface: #1A263D;
-        --surface-alt: #16233F;
-        --surface-code: #16233F;
-        --border: #26364A;
-        --panel: #16233F;
-        --shadow: rgba(0, 0, 0, 0.45);
-        /* Gold is the app's Pro accent; here it marks section chrome only, so
-           it never competes with the blue that signals "this is a link". */
-        --gold: #D9AE57;
-        /* Held at the page ground here. The portfolio tints its sticky bar, but
-           on navy that separation is unnecessary -- and inheriting the light
-           theme's --surface-alt would shift this to a second, paler navy. */
-        --stickybar-bg: var(--bg);
-      }
-
-      /* --- Tinted bands: the light #f4f6f8/#e6e9ec pair has no token --- */
-      .tv-band,
-      .portfolio-embed {
-        background: var(--surface);
-        border-color: var(--border);
-      }
-      /* Both band titles ("Demo Videos" and "Demo Walkthrough") take gold; the
-         walkthrough one is an h3 inside .tv-copy, so it needs the two-class
-         selector to outrank the accent color on .tv-copy h3 below. */
-      .tv-band-title,
-      .tv-copy .tv-walkthrough h3 { color: var(--gold); }
-      .tv-copy h3 { color: var(--accent); }
-
-      /* --- Media frames and captions --- */
-      .tv-gallery img,
-      .tv-short-frame { border-color: var(--border); }
-      .tv-gallery figcaption,
-      .tv-carousel-caption { color: var(--text-muted); }
-      .tv-disclaimer {
-        color: var(--text-muted);
-        border-top-color: var(--border);
-      }
-
-      /* --- Carousel controls: white pills punch holes in the navy ground --- */
-      .tv-carousel-arrow {
-        background: var(--surface);
-        border-color: var(--border);
-        color: var(--accent);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
-      }
-      .tv-carousel-arrow:hover {
-        background: #22314D;
-        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.5);
-      }
-      .tv-carousel-dot { background: #33445F; }
-      .tv-carousel-dot.active { background: var(--accent); }
-
-      /* --- Play button keeps the launch screen's off-white-on-navy pairing --- */
-      .tv-play-overlay { background: rgba(235, 230, 218, 0.92); }
-      .tv-play-overlay:hover { background: rgba(244, 241, 234, 0.98); }
-      .tv-play-overlay svg { fill: #0E1B33; }
-
-      /* --- App Store badge: Apple's standard black badge, same as everywhere
-             else. It reads as a dark shape against the navy, which is how it
-             sits on Apple's own dark pages -- the white lockup carries it. An
-             earlier revision recoloured this to the launch screen's off-white
-             bar; that drifted from Apple's artwork, so it's back to black. --- */
-      .appstore-badge:hover {
-        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
-      }
-    </style>
-  `;
-}
-
 // ===== LAYOUT WRAPPER =====
 // ===== Motion =====
 // Scroll reveal, the sticky CTA bar, and the one-time carousel nudge. Three rules
@@ -748,6 +738,7 @@ function getAppThemeStyles() {
 /// rather than an effect. The script pairs each heading with the copy beneath it so a
 /// block arrives as one piece; see getMotionScript.
 const REVEAL_TARGETS = [
+  '[data-reveal]',
   '.project-card',
   '.portfolio-embed',
   '.tv-band',
@@ -756,7 +747,14 @@ const REVEAL_TARGETS = [
 
 /// The subset the script observes one-by-one. Everything inside `.tv-copy` is handled
 /// separately, grouped under its heading, so it is not listed here.
-const REVEAL_STANDALONE = '.project-card, .portfolio-embed, .tv-band';
+///
+/// `[data-reveal]` marks a block that should arrive as one piece -- a whole work
+/// entry, a whole section. The class selectors beside it are finer-grained than
+/// that, and on the portfolio home they used to be the *only* matches: a heading
+/// and its copy sat still while a PDF frame faded in underneath, which read as
+/// nothing happening at all. Anything nested inside a reveal block is skipped by
+/// the script, so marking a section does not double-animate the band inside it.
+const REVEAL_STANDALONE = '[data-reveal], .project-card, .portfolio-embed, .tv-band';
 
 function getMotionStyles() {
   const transitions = REVEAL_TARGETS.map((s) => `html.motion-ready ${s}`).join(',\n      ');
@@ -773,7 +771,9 @@ function getMotionStyles() {
       }
       ${hidden} {
         opacity: 0;
-        transform: translateY(18px);
+        /* 26px, up from 18px. Now that a whole block arrives at once rather than
+           a single embed, the shorter travel was easy to miss entirely. */
+        transform: translateY(26px);
       }
 
       /* --- Sticky CTA bar -----------------------------------------------------
@@ -894,6 +894,10 @@ function getMotionScript() {
         };
 
         [].slice.call(document.querySelectorAll(standalone)).forEach(function (n) {
+          // Skip anything sitting inside another reveal block: the outer one
+          // already carries it, and observing both means the inner element
+          // animates a second time on top of its parent's arrival.
+          if (n.parentElement && n.parentElement.closest(standalone)) return;
           attach({ trigger: n, members: [n] });
         });
 
@@ -1003,8 +1007,8 @@ function getLayout(title, content, additionalStyles = '', meta = {}) {
     meta.description ? `<meta name="twitter:description" content="${meta.description}">` : '',
     meta.image ? `<meta name="twitter:image" content="${meta.image}">` : '',
     meta.imageAlt ? `<meta name="twitter:image:alt" content="${meta.imageAlt}">` : '',
-    // Tints mobile browser chrome to match the navy ground.
-    meta.app ? `<meta name="theme-color" content="#0E1B33">` : '',
+    // Tints mobile browser chrome to match the navy ground. Both sites now.
+    `<meta name="theme-color" content="#0E1B33">`,
     // Keeps unfinished pages out of search results. Draft strategy guides must not
     // be indexed under this domain before they have been edited and sourced.
     meta.noindex ? `<meta name="robots" content="noindex, nofollow">` : '',
@@ -1019,7 +1023,7 @@ function getLayout(title, content, additionalStyles = '', meta = {}) {
     ${metaTags}
     ${getSharedStyles()}
     ${additionalStyles}
-    ${meta.app ? getAppThemeStyles() : ''}
+    ${getNavyComponentStyles()}
     ${getMotionStyles()}
     ${getMobileStyles()}
     <script>
@@ -1070,450 +1074,624 @@ function getMobileStyles() {
 }
 
 // ===== PAGE FUNCTIONS =====
+/// The Sources Tracker product page. Was a standalone <html> document with its
+/// own white stylesheet, which is why it did not follow the navy retheme; it now
+/// renders through getLayout() like everything else, so it inherits the shared
+/// tokens, the scroll reveal and the mobile rules. Content is unchanged.
+///
+/// The copy sits in a `.tv-copy` wrapper on purpose: the reveal script groups
+/// that container's children under their headings, so a section arrives as one
+/// piece instead of a heading animating over its own body text.
 function getSourcesTrackerHomepageHTML() {
+  return getLayout('Sources Tracker for Google Slides\u2122 \u2014 Vishnu Muthiah', `
+    <div class="pf-page st-page">
+      <a href="/" class="st-back">&larr; Back to home</a>
+
+      <div class="tv-copy">
+        <h1>Automatically keep track of every source, citation, and link in your presentations.</h1>
+
+              <div class="pf-embed"><div class="pf-frame pf-video"><iframe src="https://www.youtube.com/embed/Z7QSvFDqXjM" title="Sources Tracker for Google Slides demo" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe></div></div>
+
+              <p style="font-size: 18px; margin-bottom: 24px;"><a href="https://workspace.google.com/marketplace/app/sources_tracker_for_google_slides/979571123439">Sources Tracker</a> is now available for free download on the Google Workspace Marketplace!</p>
+
+              <h2>How It Works</h2>
+
+              <h3>All Your Sources in One View</h3>
+              <p>
+                The Sources Tracker sidebar automatically detects and organizes every link, file,
+                and embedded resource in your Google Slides™ presentation.
+                </p>
+                <p>
+                Manage Google Docs™, Google Sheets™, PDFs, YouTube videos, Excel files, and other file types in a clean, structured list.
+              </p>
+
+              <p><strong>What you get:</strong></p>
+              <ul>
+                <li>Automatic source detection across your entire deck</li>
+                <li>Organized cards showing file type, title, and location</li>
+                <li>Slide by slide navigation to jump to any source instantly</li>
+                <li>One click scanning to update your source list</li>
+              </ul>
+
+              <p>
+                Perfect for research presentations, investor decks, and collaborative projects.
+              </p>
+
+              <h2>Overview of Sidebar Functionality</h2>
+               <img
+                src="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/refs/heads/main/sources-tracker/Screenshot%202026-01-02%20at%204.10.37%20PM.png"
+                alt="Sources Tracker sidebar integrated into Google Slides"
+              />
+              <p>
+                This view shows the full Sources Tracker sidebar integrated directly into Google Slides™.
+                The panel automatically detects all embedded sources on a slide including Google Docs™,
+                Google Sheets™, Microsoft Excel files, Microsoft Word files, PDFs, YouTube videos, links,
+                and other file types in a structured list.
+              </p>
+
+              <p>
+                Each source card includes metadata, links, discussions, and navigation controls.
+                The sidebar also provides a slide by slide index on the left, allowing users to jump
+                between slides with comments or sources. At the top, users can click "Generate Summary
+                File" to run a full deck scan and generate a summary file in Google Sheets™.
+              </p>
+
+              <p>
+                This view demonstrates the add-on's core value: bringing all citations, artifacts,
+                and discussions into a unified workspace inside Google Slides™.
+              </p>
+
+              <h2>Export a Complete Summary in Seconds</h2>
+              <p>
+                Generate a comprehensive Google Sheets™ report of every source in your presentation
+                with a single click.
+              </p>
+
+              <p><strong>Your export includes:</strong></p>
+              <ul>
+                <li>Every URL with its title and file type</li>
+                <li>Which slides contain each source</li>
+                <li>All discussion threads and comments</li>
+                <li>Audit ready format for compliance and review</li>
+              </ul>
+
+              <p>
+                Ideal for handoffs, documentation, and quality assurance.
+              </p>
+
+              <h2>Find Every Use of a Source Across Your Deck</h2>
+              <p>
+                Click any source to instantly see every slide where it appears. Sources Tracker highlights
+                all slides using that link in gold, showing you exactly where your data, analysis,
+                or citations are referenced.
+              </p>
+
+              <p><strong>Why this matters:</strong></p>
+              <ul>
+                <li>Prevent inconsistencies across large presentations</li>
+                <li>Ensure updates propagate everywhere</li>
+                <li>Quickly audit which slides use specific data sources</li>
+                <li>Maintain consistency in multi-author decks</li>
+              </ul>
+
+              <h2>Track Discussions Tied to Specific Sources</h2>
+              <p>
+                Add comments directly to sources, not just slides. Keep feedback organized and actionable
+                with threaded discussions that stay connected to the exact file or link being discussed.
+              </p>
+
+              <p><strong>Comment features:</strong></p>
+              <ul>
+                <li>Thread replies to keep conversations organized</li>
+                <li>Resolve and unresolve comments with visual indicators</li>
+                <li>Hide resolved comments to reduce clutter</li>
+                <li>See comment history for every source</li>
+              </ul>
+
+              <p>
+                Great for team collaboration and stakeholder feedback.
+              </p>
+
+              <h2>Drag to Reorder and See Source Frequency</h2>
+              <p>
+                Keep your sources organized exactly how you want them. Drag and drop to reorder,
+                and see at a glance when a source appears multiple times on the same slide.
+              </p>
+
+              <p><strong>Quality Control Features:</strong></p>
+              <ul>
+                <li>Visual badges showing how many times a source appears</li>
+                <li>Easy reordering with drag and drop</li>
+                <li>Automatic duplicate detection</li>
+                <li>Clean, organized source lists</li>
+              </ul>
+
+              <p><strong>Why Sources Tracker:</strong></p>
+              <ul>
+                <li>Save time by eliminating manual link tracking</li>
+                <li>Stay organized with all sources and discussions in one place</li>
+                <li>Collaborate better with comments tied to specific sources</li>
+                <li>Ensure quality by finding inconsistencies across your deck</li>
+                <li>Privacy first. Your data never leaves Google's infrastructure</li>
+              </ul>
+
+              <p><strong>Get Started:</strong></p>
+               <ol>
+                 <li>Install Sources Tracker from the Google Workspace Marketplace</li>
+                 <li>Open any Google Slides™ presentation</li>
+                 <li>Go to Extensions > Sources Tracker > Scan Deck</li>
+                 <li>Your sidebar appears with all sources automatically detected</li>
+               </ol>
+               <p><strong>Perfect For:</strong></p>
+              <ul>
+                <li>Research teams managing citations and data sources</li>
+                <li>Consulting firms tracking client deliverables and references</li>
+                <li>Academic presentations with multiple citations</li>
+                <li>Executive decks requiring audit trails</li>
+                <li>Collaborative projects with multiple contributors</li>
+              </ul>
+
+              <p><strong>Privacy, Security, and Terms of Service:</strong></p>
+              <ul>
+                <li>Minimal permissions. Only accesses your current presentation</li>
+                <li>No data sharing with third parties</li>
+                <li>All data stored in Google's secure infrastructure</li>
+                <li>You control your data and can delete it anytime</li>
+              </ul>
+
+              <p>
+                <a href="/privacy-policy">Read our Privacy Policy →</a><br />
+                <a href="/terms-of-service">Read our Terms of Service →</a>
+              </p>
+
+              <h2>Support</h2>
+              <p>
+                Questions or need help?<br />
+                📧 Email: <a href="mailto:VishnuAMuthiah@gmail.com">VishnuAMuthiah@gmail.com</a><br />
+                ⏱️ Response time: 48 to 72 hours
+              </p>
+      </div>
+
+      <footer class="pf-foot">
+        <p>&copy; 2026 Vishnu Muthiah. All rights reserved.</p>
+        <p><a href="/">Home</a> &nbsp;&middot;&nbsp; <a href="/privacy-policy">Privacy Policy</a> &nbsp;&middot;&nbsp; <a href="/terms-of-service">Terms of Service</a></p>
+      </footer>
+    </div>
+  `, getPortfolioHomeStyles() + getSourcesTrackerStyles(), {
+    description: 'Automatically track every source, citation, and link in your Google Slides presentations.',
+    url: 'https://vishnumuthiah.com/sources-tracker',
+  });
+}
+
+/// Typographic treatment for the Sources Tracker page, matching the home page:
+/// serif headings, gold sub-eyebrows, accent list markers. Scoped under
+/// `.st-page` so it cannot reach the product site's own `.tv-copy` pages.
+function getSourcesTrackerStyles() {
   return `
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Sources Tracker Homepage</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Automatically track every source, citation, and link in your Google Slides presentations." />
-
     <style>
-      body {
-        font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-        margin: 0;
-        padding: 32px 24px;
-        background: #ffffff;
-        color: #202124;
-      }
-
-      .container {
-        max-width: 900px;
-        margin: 0 auto;
-      }
-
-      h1 {
-        font-size: 2.5rem;
-        font-weight: 600;
-        margin: 24px 0 16px 0;
-      }
-
-      h2 {
-        font-size: 1.5rem;
-        font-weight: 600;
-        margin-top: 40px;
-        margin-bottom: 12px;
-      }
-
-      h3 {
-        font-size: 1.2rem;
-        font-weight: 600;
-        margin-top: 28px;
-        margin-bottom: 8px;
-      }
-
-      p {
-        font-size: 1rem;
-        line-height: 1.7;
-        margin-bottom: 16px;
-      }
-
-      ul, ol {
-        margin-left: 24px;
-        margin-bottom: 16px;
-      }
-
-      li {
-        margin-bottom: 6px;
-      }
-
-      a {
-        color: #1a73e8;
-        text-decoration: none;
-        font-weight: 500;
-      }
-
-      a:hover {
-        text-decoration: underline;
-      }
-
-      .back-link {
+      .st-back {
         display: inline-block;
-        margin-bottom: 16px;
-        font-size: 0.95rem;
+        margin: 32px 0 34px;
+        font-size: 0.8125rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: var(--text-muted);
       }
+      .st-back:hover { color: var(--accent); }
 
-      .cta {
-        margin-top: 48px;
-        padding: 24px;
-        background: none;
+      .st-page .tv-copy h1 {
+        font-family: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", ui-serif, Georgia, serif;
+        font-size: clamp(2rem, 5vw, 3.15rem);
+        line-height: 1.1;
+        letter-spacing: -0.018em;
+        font-weight: 400;
+        margin: 0 0 28px;
+        text-wrap: balance;
+      }
+      .st-page .tv-copy h2 {
+        font-family: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", ui-serif, Georgia, serif;
+        font-size: clamp(1.4rem, 3.2vw, 1.85rem);
+        line-height: 1.25;
+        letter-spacing: -0.012em;
+        font-weight: 400;
+        margin: 42px 0 13px;
+        padding-top: 22px;
+        border-top: 1px solid var(--border);
+      }
+      /* Sub-headings read as eyebrows here, not as smaller titles -- the gold
+         keeps them clear of the accent, which on this page means "link". */
+      .st-page .tv-copy h3 {
+        font-size: 0.6875rem;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        font-weight: 600;
+        color: var(--gold);
+        margin: 27px 0 10px;
+      }
+      .st-page .tv-copy p { margin: 0 0 15px; max-width: 544px; }
+      .st-page .tv-copy ul,
+      .st-page .tv-copy ol { margin: 0 0 20px; padding-left: 18px; margin-left: 0; max-width: 544px; }
+      .st-page .tv-copy li { margin-bottom: 6px; }
+      .st-page .tv-copy li::marker { color: var(--accent); }
+      .st-page .tv-copy img {
+        display: block;
+        max-width: 100%;
+        height: auto;
+        margin: 20px 0 22px;
+        border: 1px solid var(--border);
         border-radius: 8px;
       }
-      .footer {
-        margin-top: 64px;
-        font-size: 0.9rem;
-        opacity: 0.9;
-      }
+      .st-page .pf-foot { margin-top: 36px; }
     </style>
-  </head>
-
-  <body>
-    <div class="container">
-      <h1>Automatically keep track of every source, citation, and link in your presentations.</h1>
-
-      <div style="margin: 24px 0;">
-        <iframe width="100%" height="480" src="https://www.youtube.com/embed/Z7QSvFDqXjM" title="Sources Tracker for Google Slides demo" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen style="border-radius: 8px;"></iframe>
-      </div>
-
-      <p style="font-size: 18px; margin-bottom: 24px;"><a href="https://workspace.google.com/marketplace/app/sources_tracker_for_google_slides/979571123439">Sources Tracker</a> is now available for free download on the Google Workspace Marketplace!</p>
-
-      <h2>How It Works</h2>
-
-      <h3>All Your Sources in One View</h3>
-      <p>
-        The Sources Tracker sidebar automatically detects and organizes every link, file,
-        and embedded resource in your Google Slides™ presentation.
-        </p>
-        <p>
-        Manage Google Docs™, Google Sheets™, PDFs, YouTube videos, Excel files, and other file types in a clean, structured list.
-      </p>
-
-      <p><strong>What you get:</strong></p>
-      <ul>
-        <li>Automatic source detection across your entire deck</li>
-        <li>Organized cards showing file type, title, and location</li>
-        <li>Slide by slide navigation to jump to any source instantly</li>
-        <li>One click scanning to update your source list</li>
-      </ul>
-
-      <p>
-        Perfect for research presentations, investor decks, and collaborative projects.
-      </p>
-
-      <h2>Overview of Sidebar Functionality</h2>
-       <img
-        src="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/refs/heads/main/sources-tracker/Screenshot%202026-01-02%20at%204.10.37%20PM.png"
-        alt="Sources Tracker sidebar integrated into Google Slides"
-        style="
-          display: block;
-          max-width: 100%;
-          height: auto;
-          margin: 16px 0 24px 0;
-          border: 1px solid #dadce0;
-        "
-      />
-      <p>
-        This view shows the full Sources Tracker sidebar integrated directly into Google Slides™.
-        The panel automatically detects all embedded sources on a slide including Google Docs™,
-        Google Sheets™, Microsoft Excel files, Microsoft Word files, PDFs, YouTube videos, links,
-        and other file types in a structured list.
-      </p>
-
-      <p>
-        Each source card includes metadata, links, discussions, and navigation controls.
-        The sidebar also provides a slide by slide index on the left, allowing users to jump
-        between slides with comments or sources. At the top, users can click "Generate Summary
-        File" to run a full deck scan and generate a summary file in Google Sheets™.
-      </p>
-
-      <p>
-        This view demonstrates the add-on's core value: bringing all citations, artifacts,
-        and discussions into a unified workspace inside Google Slides™.
-      </p>
-
-      <h2>Export a Complete Summary in Seconds</h2>
-      <p>
-        Generate a comprehensive Google Sheets™ report of every source in your presentation
-        with a single click.
-      </p>
-
-      <p><strong>Your export includes:</strong></p>
-      <ul>
-        <li>Every URL with its title and file type</li>
-        <li>Which slides contain each source</li>
-        <li>All discussion threads and comments</li>
-        <li>Audit ready format for compliance and review</li>
-      </ul>
-
-      <p>
-        Ideal for handoffs, documentation, and quality assurance.
-      </p>
-
-      <h2>Find Every Use of a Source Across Your Deck</h2>
-      <p>
-        Click any source to instantly see every slide where it appears. Sources Tracker highlights
-        all slides using that link in gold, showing you exactly where your data, analysis,
-        or citations are referenced.
-      </p>
-
-      <p><strong>Why this matters:</strong></p>
-      <ul>
-        <li>Prevent inconsistencies across large presentations</li>
-        <li>Ensure updates propagate everywhere</li>
-        <li>Quickly audit which slides use specific data sources</li>
-        <li>Maintain consistency in multi-author decks</li>
-      </ul>
-
-      <h2>Track Discussions Tied to Specific Sources</h2>
-      <p>
-        Add comments directly to sources, not just slides. Keep feedback organized and actionable
-        with threaded discussions that stay connected to the exact file or link being discussed.
-      </p>
-
-      <p><strong>Comment features:</strong></p>
-      <ul>
-        <li>Thread replies to keep conversations organized</li>
-        <li>Resolve and unresolve comments with visual indicators</li>
-        <li>Hide resolved comments to reduce clutter</li>
-        <li>See comment history for every source</li>
-      </ul>
-
-      <p>
-        Great for team collaboration and stakeholder feedback.
-      </p>
-
-      <h2>Drag to Reorder and See Source Frequency</h2>
-      <p>
-        Keep your sources organized exactly how you want them. Drag and drop to reorder,
-        and see at a glance when a source appears multiple times on the same slide.
-      </p>
-
-      <p><strong>Quality Control Features:</strong></p>
-      <ul>
-        <li>Visual badges showing how many times a source appears</li>
-        <li>Easy reordering with drag and drop</li>
-        <li>Automatic duplicate detection</li>
-        <li>Clean, organized source lists</li>
-      </ul>
-
-      <p><strong>Why Sources Tracker:</strong></p>
-      <ul>
-        <li>Save time by eliminating manual link tracking</li>
-        <li>Stay organized with all sources and discussions in one place</li>
-        <li>Collaborate better with comments tied to specific sources</li>
-        <li>Ensure quality by finding inconsistencies across your deck</li>
-        <li>Privacy first. Your data never leaves Google's infrastructure</li>
-      </ul>
-
-      <p><strong>Get Started:</strong></p>
-       <ol>
-         <li>Install Sources Tracker from the Google Workspace Marketplace</li>
-         <li>Open any Google Slides™ presentation</li>
-         <li>Go to Extensions > Sources Tracker > Scan Deck</li>
-         <li>Your sidebar appears with all sources automatically detected</li>
-       </ol>
-       <p><strong>Perfect For:</strong></p>
-      <ul>
-        <li>Research teams managing citations and data sources</li>
-        <li>Consulting firms tracking client deliverables and references</li>
-        <li>Academic presentations with multiple citations</li>
-        <li>Executive decks requiring audit trails</li>
-        <li>Collaborative projects with multiple contributors</li>
-      </ul>
-
-      <p><strong>Privacy, Security, and Terms of Service:</strong></p>
-      <ul>
-        <li>Minimal permissions. Only accesses your current presentation</li>
-        <li>No data sharing with third parties</li>
-        <li>All data stored in Google's secure infrastructure</li>
-        <li>You control your data and can delete it anytime</li>
-      </ul>
-
-      <p>
-        <a href="/privacy-policy">Read our Privacy Policy →</a><br />
-        <a href="/terms-of-service">Read our Terms of Service →</a>
-      </p>
-
-      <h2>Support</h2>
-      <p>
-        Questions or need help?<br />
-        📧 Email: <a href="mailto:VishnuAMuthiah@gmail.com">VishnuAMuthiah@gmail.com</a><br />
-        ⏱️ Response time: 48 to 72 hours
-      </p>
-
-      <div class="footer">
-        <p><a href="/">← Back to home</a></p>
-      </div>
-    </div>
-  </body>
-</html>
   `;
 }
 
 
 
 function getHomepageHTML() {
-  return getLayout('Vishnu Muthiah - Strategy Consultant', `
-    <div class="container">
-      <header>
-        <h1>Vishnu Muthiah</h1>
-        <p class="tagline">Strategy Consultant | Builder</p>
-        <div class="contact-links">
-          <a href="mailto:VishnuAMuthiah@gmail.com">Email</a>
-          <a href="https://www.linkedin.com/in/vishnumuthiah" target="_blank">LinkedIn</a>
+  return getLayout('Vishnu Muthiah - Strategist & Builder', `
+    <div class="pf-page">
+
+      <header class="pf-hero">
+        <p class="pf-name">Vishnu Muthiah</p>
+        <h1 class="pf-serif">Strategist &amp; Builder</h1>
+        <p class="pf-sub">Nine years in strategy and technology consulting, now combined with hands-on product development to build tools that solve real problems.</p>
+        <div class="pf-actions">
+          <a class="pf-pill" href="mailto:VishnuAMuthiah@gmail.com">Get in touch</a>
+          <a class="pf-quiet" href="#work" data-scroll>or see what I've built &rarr;</a>
         </div>
       </header>
 
-      <section>
-        <h2>About</h2>
-        <div class="about">
-          <p>I'm an experienced strategy consultant and technology consultant with over 9 years of post-undergraduate experience. I've recently combined my consulting experience with my hands-on product development experience to build tools that solve real problems.</p>
+      <section id="work">
+        <p class="pf-label" data-reveal>Selected work</p>
+
+        <article class="pf-entry" data-reveal>
+          <p class="pf-kind">iOS &middot; options analytics</p>
+          <h3 class="pf-serif"><a href="https://optionsvision.app" target="_blank" rel="noopener noreferrer">OptionsVision</a></h3>
+          <p class="pf-desc">Take a screenshot of your Robinhood order and watch it become an interactive P&amp;L chart. Model different scenarios by adjusting your days to expiration and your implied volatility. Then analyze your Greeks and break-evens, all privately on your device.</p>
+
+${getDemoVideosHTML()}
+
+          <div class="pf-links">
+            <a href="https://optionsvision.app" target="_blank" rel="noopener noreferrer">Visit optionsvision.app &rarr;</a>
+          </div>
+        </article>
+
+        <article class="pf-entry" data-reveal>
+          <p class="pf-kind">Google Workspace Sources Tool</p>
+          <h3 class="pf-serif"><a href="/sources-tracker">Sources Tracker for Google Slides&trade;</a></h3>
+          <p class="pf-desc">Automatically detects and organizes citations, links, and references in presentations &mdash; source detection, threaded comments, cross-slide tracking, and exportable summaries.</p>
+
+          <div class="pf-embed">
+            <div class="pf-frame pf-video">
+              <iframe src="https://www.youtube.com/embed/Z7QSvFDqXjM" title="Sources Tracker for Google Slides demo" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+            </div>
+          </div>
+
+          <div class="pf-links">
+            <a href="/sources-tracker">Read more &rarr;</a>
+            <a href="https://workspace.google.com/marketplace/app/sources_tracker_for_google_slides/979571123439" target="_blank" rel="noopener noreferrer">Install &rarr;</a>
+            <a href="/support">Support &rarr;</a>
+          </div>
+        </article>
+
+        <article class="pf-entry" data-reveal>
+          <p class="pf-kind">Writing</p>
+          <h3 class="pf-serif">Consulting Case Interview Mental Model</h3>
+          <p class="pf-desc">A mental model for building the framework to tackle any consulting case interview.</p>
+
+          <div class="pf-embed">
+            <div class="pf-frame">
+              <iframe src="https://drive.google.com/file/d/1FxHmnqk2j1rpzcNAYWlfcmt7LVCOY60r/preview" title="Case Interview Mental Model PDF" loading="lazy" allow="autoplay" allowfullscreen></iframe>
+            </div>
+          </div>
+
+          <div class="pf-links">
+            <a href="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/sources-tracker/Case%20Interview%20Mental%20Model.pdf" target="_blank" rel="noopener noreferrer">Download PDF &rarr;</a>
+          </div>
+        </article>
+
+        <article class="pf-entry" data-reveal>
+          <p class="pf-kind">Background</p>
+          <h3 class="pf-serif">Professional Bio</h3>
+          <p class="pf-desc">An overview of my experience, key projects, and capabilities across strategy consulting, product management, and software development.</p>
+
+          <div class="pf-embed">
+            <div class="pf-frame">
+              <iframe src="https://drive.google.com/file/d/1wIy3K3nzAfCEweJIBcULe-5jm-aiJ8we/preview" title="Professional Bio PDF" loading="lazy" allow="autoplay" allowfullscreen></iframe>
+            </div>
+          </div>
+
+          <div class="pf-links">
+            <a href="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/Professional%20Bio%20-%20Vishnu%20Muthiah.pdf" target="_blank" rel="noopener noreferrer">Download PDF &rarr;</a>
+          </div>
+        </article>
+      </section>
+
+      <section class="pf-tight" data-reveal>
+        <p class="pf-label">Experience</p>
+
+        <div class="pf-cv">
+          <h3>Professional</h3>
+          <div class="pf-row">
+            <p class="pf-year pf-mono">2022&ndash;2025</p>
+            <p class="pf-role pf-serif">Senior Strategy Consultant<span class="pf-org">Accenture Strategy</span></p>
+          </div>
+          <div class="pf-row">
+            <p class="pf-year pf-mono">2016&ndash;2020</p>
+            <p class="pf-role pf-serif">Microsoft Enterprise Technology Consultant<span class="pf-org">IBM</span></p>
+          </div>
         </div>
 
-        <div class="experience">
-          <h3>Professional Experience</h3>
-          <ul>
-            <li>2022-2025 Senior Strategy Consultant, Accenture Strategy</li>
-            <li>2016-2020 Microsoft Enterprise Technology Consultant, IBM</li>
-          </ul>
-          <h3>Educational Experience</h3>
-          <ul>
-            <li>2020-2022 MBA, University of Michigan Ross School of Business</li>
-            <li>2012-2016 BS, University of Virginia - Majors: Systems Engineering, Economics</li>
-          </ul>
+        <div class="pf-cv">
+          <h3>Education</h3>
+          <div class="pf-row">
+            <p class="pf-year pf-mono">2020&ndash;2022</p>
+            <p class="pf-role pf-serif">MBA<span class="pf-org">University of Michigan, Ross School of Business</span></p>
+          </div>
+          <div class="pf-row">
+            <p class="pf-year pf-mono">2012&ndash;2016</p>
+            <p class="pf-role pf-serif">BS, Systems Engineering &amp; Economics<span class="pf-org">University of Virginia</span></p>
+          </div>
         </div>
       </section>
 
-      <section>
-      <div class="project-grid">
-      <!-- Professional Bio (PDF Embed) -->
-        <div class="portfolio-embed">
-          <h3>Professional Experience</h3>
-          <p>A overview of my professional experience, key projects, and capabilities across strategy consulting, product management, and software development.</p>
-          <div class="pdf-viewer-wrapper" style="padding-top: 58%;">
-            <iframe
-              src="https://drive.google.com/file/d/1wIy3K3nzAfCEweJIBcULe-5jm-aiJ8we/preview"
-              title="Professional Bio PDF"
-              loading="lazy"
-              allow="autoplay"
-              allowfullscreen>
-            </iframe>
-          </div>
-          <div class="pdf-fallback" id="pdf-fallback-bio">
-            <p>Unable to preview the PDF in your browser.</p>
-            <a class="pdf-download-btn" href="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/Professional%20Bio%20-%20Vishnu%20Muthiah.pdf" target="_blank" rel="noopener noreferrer">Download Portfolio PDF</a>
-          </div>
-          <div class="tags" style="margin-top: 15px;">
-          </div>
-          <div class="project-links">
-            <a href="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/Professional%20Bio%20-%20Vishnu%20Muthiah.pdf" target="_blank" rel="noopener noreferrer">Download PDF →</a>
-          </div>
-        </div>
-
-        <!-- OptionsVision -->
-        <div class="project-card">
-          <h3><a href="https://optionsvision.app" target="_blank" rel="noopener noreferrer">OptionsVision</a></h3>
-          <p>Take a screenshot of your Robinhood order and watch it become an interactive P&amp;L chart. Model different scenarios by adjusting your days to expiration and your implied volatility. Then analyze your Greeks and break-evens, all privately on your device.</p>
-
-          <div style="margin: 8px 0 0;">
-            ${getDemoVideosHTML()}
-          </div>
-
-          <div class="project-links">
-            <a href="https://optionsvision.app" target="_blank" rel="noopener noreferrer">Visit optionsvision.app →</a>
-          </div>
-        </div>
-
-        <!-- Portfolio Deck (PDF Embed) -->
-        <div class="portfolio-embed">
-          <h3>Consulting Case Interview Mental Model</h3>
-          <p>A comprehensive mental model for developing the framework to tackle any consulting case interview.</p>
-          <div class="pdf-viewer-wrapper" style="padding-top: 58%;">
-            <iframe
-              src="https://drive.google.com/file/d/1FxHmnqk2j1rpzcNAYWlfcmt7LVCOY60r/preview"
-              title="Case Interview Mental Model PDF"
-              loading="lazy"
-              allow="autoplay"
-              allowfullscreen>
-            </iframe>
-          </div>
-          <div class="pdf-fallback" id="pdf-fallback">
-            <p>Unable to preview the PDF in your browser.</p>
-            <a class="pdf-download-btn" href="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/sources-tracker/Case%20Interview%20Mental%20Model.pdf" target="_blank" rel="noopener noreferrer">Download Portfolio PDF</a>
-          </div>
-          <div class="tags" style="margin-top: 15px;">
-          </div>
-          <div class="project-links">
-            <a href="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/sources-tracker/Case%20Interview%20Mental%20Model.pdf" target="_blank" rel="noopener noreferrer">Download PDF →</a>
-          </div>
-        </div>
-
-        <!-- Sources Tracker -->
-        <div class="project-card">
-          <h3><a href="/sources-tracker" target="_blank" rel="noopener noreferrer">Sources Tracker for Google Slides™</a></h3>
-          <p>A Google Workspace add-on that automatically detects and organizes citations, links, and references in presentations. Features include automatic source detection, threaded comments, cross-slide tracking, and exportable summaries.</p>
-
-          <div style="margin: 20px 0;">
-            <iframe width="100%" height="315" src="https://www.youtube.com/embed/Z7QSvFDqXjM" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen style="border-radius: 8px;"></iframe>
-          </div>
-
-          <div class="tags">
-          </div>
-          <div class="project-links">
-            <a href="/sources-tracker">Learn More →</a>
-            <a href="https://workspace.google.com/marketplace/app/sources_tracker_for_google_slides/979571123439" target="_blank">Install→</a>
-            <a href="https://vishnumuthiah.com/support" target="_blank">Support →</a>
-          </div>
-        </div>
-        <div class="project-card" style="opacity: 0.6;">
-          <h3>More Projects Coming Soon</h3>
-          <p>More to come!</p>
-          <div class="tags">
-            <span class="tag">In Development</span>
-          </div>
-        </div>
-      </div>
-    </section>
-
-      <section>
-        <h2>Contact</h2>
-        <p style="font-size: 18px; color: #3c4043;">
-          <strong>Email:</strong> <a href="mailto:VishnuAMuthiah@gmail.com">VishnuAMuthiah@gmail.com</a><br>
-        </p>
+      <section class="pf-tight" data-reveal>
+        <p class="pf-label">Contact</p>
+        <p class="pf-contact pf-serif"><a href="mailto:VishnuAMuthiah@gmail.com">VishnuAMuthiah@gmail.com</a></p>
+        <p class="pf-contact pf-serif"><a href="https://www.linkedin.com/in/vishnumuthiah" target="_blank" rel="noopener noreferrer">LinkedIn</a></p>
       </section>
 
-      <footer>
-        <p>&copy; 2025 Vishnu Muthiah. All rights reserved.</p>
-        <p style="margin-top: 10px;">
-          <a href="/privacy-policy">Privacy Policy</a> |
-          <a href="/terms-of-service">Terms of Service</a>
-        </p>
+      <footer class="pf-foot" data-reveal>
+        <p>&copy; 2026 Vishnu Muthiah. All rights reserved.</p>
+        <p><a href="/privacy-policy">Privacy Policy</a> &nbsp;&middot;&nbsp; <a href="/terms-of-service">Terms of Service</a></p>
       </footer>
+
     </div>
 
-<script>
-      // Auto-retry Google Docs viewer iframes
-      document.querySelectorAll('.pdf-viewer-wrapper iframe').forEach(function(iframe) {
-        var attempts = 0;
-        var maxAttempts = 5;
-        var src = iframe.src;
-
-        iframe.addEventListener('load', function() {
-          try {
-            var doc = iframe.contentDocument || iframe.contentWindow.document;
-            if (doc && doc.body && doc.body.innerHTML.length < 100) {
-              if (attempts < maxAttempts) {
-                attempts++;
-                setTimeout(function() { iframe.src = src; }, 1500 * attempts);
-              }
-            }
-          } catch(e) {
-            // Cross-origin means Google loaded content — success
-          }
-        });
-
-        iframe.addEventListener('error', function() {
-          if (attempts < maxAttempts) {
-            attempts++;
-            setTimeout(function() { iframe.src = src; }, 1500 * attempts);
-          }
+    <script>
+      // Smooth-scroll the one in-page link, and move focus with it so the jump
+      // is not keyboard-only-hostile. CSS scroll-behavior handles the motion;
+      // this exists to set focus and to respect reduced-motion explicitly.
+      document.querySelectorAll('[data-scroll]').forEach(function (a) {
+        a.addEventListener('click', function (e) {
+          var target = document.querySelector(a.getAttribute('href'));
+          if (!target) return;
+          e.preventDefault();
+          var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+          target.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+          target.setAttribute('tabindex', '-1');
+          target.focus({ preventScroll: true });
         });
       });
     </script>
     ${getDemoVideosScript()}
-  `, `<style>${getCarouselCSS()}</style>`);
+  `, getPortfolioHomeStyles() + `<style>${getCarouselCSS()}</style>`);
+}
+
+/// Layout for the redesigned portfolio home (2026-07-26). Everything here is
+/// scoped to `.pf-*` so it cannot reach the legal, support or product pages,
+/// which still use the generic element rules in getSharedStyles().
+///
+/// The structure is deliberately typographic rather than card-based: an
+/// oversized serif headline, hairline-ruled rows, and one filled CTA. The serif
+/// is a system stack -- Iowan Old Style ships on macOS/iOS and is what this was
+/// designed against; the Palatino and Georgia fallbacks carry other platforms.
+function getPortfolioHomeStyles() {
+  return `
+    <style>
+      .pf-page {
+        max-width: 736px;
+        margin: 0 auto;
+        padding: 0 28px 64px;
+      }
+      .pf-serif {
+        font-family: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", ui-serif, Georgia, serif;
+      }
+      .pf-mono {
+        font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+      }
+
+      /* ---- Hero ----
+         getSharedStyles() styles the bare header element with a 3px accent
+         rule and a bottom margin, for the old card layout. This is a <header>,
+         so it inherited both: a heavy cyan bar sat under the CTA, directly
+         above the first section's own hairline. Reset explicitly rather than
+         renaming the element -- <header> is the right tag for this content. */
+      .pf-hero {
+        padding: 38px 0 45px;
+        border-bottom: 0;
+        margin-bottom: 0;
+      }
+      /* The name is a masthead, not a caption. Tracking comes down as the size
+         goes up: uppercase at 32px needs far less of it than at 11px. */
+      .pf-name {
+        font-size: clamp(1.35rem, 3.6vw, 2rem);
+        line-height: 1.15;
+        letter-spacing: 0.075em;
+        text-transform: uppercase;
+        color: var(--gold);
+        margin: 0 0 18px;
+      }
+      .pf-hero h1 {
+        margin: 0;
+        font-size: clamp(2.75rem, 7.5vw, 4.5rem);
+        line-height: 1.04;
+        letter-spacing: -0.021em;
+        font-weight: 400;
+        color: var(--text);
+        text-wrap: balance;
+      }
+      /* Classed rather than a .pf-hero p rule: an element selector there would
+         out-specify .pf-name and repaint the masthead in body colour. */
+      .pf-sub {
+        margin: 21px 0 0;
+        max-width: 480px;
+        color: var(--text-body);
+        font-size: 1.0625rem;
+      }
+      .pf-actions {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 24px;
+        margin-top: 30px;
+      }
+      .pf-pill {
+        display: inline-block;
+        padding: 13px 26px;
+        border-radius: 999px;
+        background: var(--accent);
+        color: var(--on-accent);
+        text-decoration: none;
+        font-size: 0.9375rem;
+        transition: background 0.2s ease, transform 0.2s ease;
+      }
+      .pf-pill:hover {
+        background: var(--accent-hover);
+        transform: translateY(-1px);
+        text-decoration: none;
+      }
+      .pf-quiet {
+        color: var(--text-muted);
+        font-size: 0.9375rem;
+        text-decoration: underline;
+        text-underline-offset: 4px;
+        text-decoration-thickness: 1px;
+      }
+      .pf-quiet:hover { color: var(--text); }
+
+      /* ---- Sections ----
+         Child combinator on purpose: the demo-video coverflow is itself a
+         <section class="tv-band"> nested inside a work entry, and an unscoped
+         element selector would hand it this rule-line and padding. */
+      .pf-page > section { border-top: 1px solid var(--border); padding: 29px 0; margin: 0; }
+      .pf-page > section.pf-tight { padding: 21px 0 22px; }
+
+      .pf-label {
+        font-size: 0.8125rem;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: var(--gold);
+        margin: 0 0 18px;
+      }
+      .pf-tight .pf-label { margin-bottom: 13px; }
+
+      /* ---- Work ---- */
+      .pf-entry { padding: 21px 0; border-bottom: 1px solid var(--border); }
+      .pf-entry:first-of-type { padding-top: 0; }
+      .pf-entry:last-of-type { border-bottom: 0; padding-bottom: 0; }
+      .pf-kind {
+        font-size: 0.6875rem;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin: 0;
+      }
+      /* Child combinator, not a descendant one: the coverflow's own
+         "Demo Videos" title is an h3 nested inside this entry, and a
+         .pf-entry h3 rule (0,1,1) out-specifies .tv-band-title (0,1,0) --
+         which silently repainted the band title from gold to off-white here
+         while it stayed gold on the product site. */
+      .pf-entry > h3 {
+        margin: 6px 0 0;
+        font-size: clamp(1.5rem, 3.4vw, 1.9rem);
+        line-height: 1.2;
+        letter-spacing: -0.014em;
+        font-weight: 400;
+        color: var(--text);
+      }
+      .pf-entry > h3 a { color: inherit; text-decoration: none; }
+      .pf-entry > h3 a:hover { color: var(--accent); text-decoration: none; }
+      .pf-desc {
+        margin: 10px 0 0;
+        max-width: 544px;
+        color: var(--text-body);
+        font-size: 1rem;
+      }
+      .pf-links {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+        margin-top: 14px;
+      }
+      .pf-links a { font-size: 0.875rem; }
+
+      /* ---- Embedded PDFs and the YouTube demo ---- */
+      .pf-embed { margin-top: 17px; }
+      .pf-frame {
+        position: relative;
+        width: 100%;
+        padding-top: 58%;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        overflow: hidden;
+        background: var(--surface);
+      }
+      .pf-frame.pf-video { padding-top: 56.25%; }
+      .pf-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+
+      /* ---- Experience: mono years against serif roles ---- */
+      .pf-cv + .pf-cv {
+        margin-top: 11px;
+        padding-top: 11px;
+        border-top: 1px solid var(--border);
+      }
+      .pf-cv h3 {
+        margin: 0 0 4px;
+        font-size: 0.9375rem;
+        font-weight: 500;
+        letter-spacing: 0.01em;
+        color: var(--text-muted);
+      }
+      .pf-row {
+        display: grid;
+        grid-template-columns: 120px 1fr;
+        gap: 0 24px;
+        padding: 6px 0;
+        border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+      }
+      .pf-row:last-child { border-bottom: 0; }
+      .pf-year {
+        font-size: 0.8125rem;
+        color: var(--text-muted);
+        font-variant-numeric: tabular-nums;
+        padding-top: 4px;
+        white-space: nowrap;
+        margin: 0;
+      }
+      .pf-role { font-size: 1.0625rem; line-height: 1.45; color: var(--text); margin: 0; }
+      .pf-org { display: block; font-size: 0.875rem; color: var(--text-muted); margin-top: 2px; }
+
+      /* ---- Contact ---- */
+      .pf-contact { padding: 2px 0; font-size: 1.0625rem; line-height: 1.45; margin: 0; }
+      .pf-contact a { color: var(--text); text-decoration: underline; text-decoration-color: var(--border); text-underline-offset: 5px; }
+      .pf-contact a:hover { color: var(--accent); text-decoration-color: var(--accent); }
+
+      /* Same story as .pf-hero: the bare footer rule contributes an 80px top
+         margin and centred text, both wrong for this layout. */
+      .pf-foot {
+        border-top: 1px solid var(--border);
+        margin-top: 0;
+        padding-top: 18px;
+        font-size: 0.8125rem;
+        color: var(--text-muted);
+        text-align: left;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 20px;
+        justify-content: space-between;
+      }
+      .pf-foot p { margin: 0; color: inherit; }
+
+      @media (max-width: 600px) {
+        .pf-page { padding: 0 20px 44px; }
+        .pf-row { grid-template-columns: 1fr; gap: 2px; }
+        .pf-year { padding-top: 0; }
+        .pf-foot { justify-content: flex-start; }
+      }
+    </style>
+  `;
 }
 
 // ===== Shared Demo Videos coverflow (used by home + /tradevision) =====
@@ -2218,9 +2396,6 @@ function getDemoVideosScript() {
     </script>`;
 }
 
-// `app: true` renders this as the standalone product site at optionsvision.app
-// (navy theme, no portfolio chrome). Called with no options it is the light
-// page on vishnumuthiah.com.
 // ===== OPTIONSVISION LEGAL PAGES (optionsvision.app) =====
 // One renderer for all three generated documents. These are what App Store
 // Connect's privacy-policy URL should point at -- the portfolio's /privacy-policy
@@ -2272,7 +2447,6 @@ ${sections}
   `, getLegalPageStyles(), {
     description: escapeHTML(doc.summary),
     url: `https://${APP_HOST}${pathFor(key)}`,
-    app: true,
   });
 }
 
@@ -2329,7 +2503,6 @@ function getAppSupportHTML() {
   `, getLegalPageStyles(), {
     description: `Support for ${LEGAL_INFO.appName} — how to report a bug, request a feature, or get in touch.`,
     url: `https://${APP_HOST}/support`,
-    app: true,
   });
 }
 
@@ -2448,7 +2621,6 @@ ${list}
   `, getTradeVisionPageStyles(), {
     description: 'Plain-English guides to the options strategies OptionsVision charts.',
     url: 'https://' + APP_HOST + '/learn',
-    app: true,
     noindex: live.length === 0,
   });
 }
@@ -2479,7 +2651,6 @@ ${body}
   `, getTradeVisionPageStyles(), {
     description: guide.dek || (guide.title + ' — a plain-English strategy guide from OptionsVision.'),
     url: 'https://' + APP_HOST + '/learn/' + guide.slug,
-    app: true,
     noindex: draft,
   });
 }
@@ -2583,7 +2754,6 @@ ${getGuidesCarouselHTML()}
     imageHeight: 630,
     imageAlt: 'OptionsVision — an options payoff curve rising across a navy background',
     url: 'https://optionsvision.app/',
-    app: true,
   });
 }
 

@@ -2624,8 +2624,12 @@ function getSupportHTML() {
   `, getSupportPageStyles());
 }
 
-// Shared by both sites; `app: true` renders it in the navy product theme.
-function getPrivacyPolicyHTML({ app = false } = {}) {
+// The portfolio's own policy, covering the Sources Tracker Slides add-on.
+// OptionsVision's is a separate document -- getAppLegalHTML(), served on the
+// product host. This used to take an `app` flag advertised as rendering it in
+// the navy theme; nothing ever passed it, and it was never forwarded to
+// getLayout, so it could not have done anything.
+function getPrivacyPolicyHTML() {
   return getLayout('Privacy Policy - Vishnu Muthiah', `
     <div class="container">
       <a href="/" class="back-link">← Back to Home</a>
@@ -2967,8 +2971,9 @@ function getPrivacyPolicyHTML({ app = false } = {}) {
   `, getLegalPageStyles());
 }
 
-// Shared by both sites; `app: true` renders it in the navy product theme.
-function getTermsOfServiceHTML({ app = false } = {}) {
+// The portfolio's own terms, covering the Sources Tracker Slides add-on. Same
+// story as getPrivacyPolicyHTML above: the `app` flag was inert.
+function getTermsOfServiceHTML() {
   return getLayout('Terms of Service - Vishnu Muthiah', `
     <div class="container">
       <a href="/" class="back-link">← Back to Home</a>

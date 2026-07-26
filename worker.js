@@ -1592,7 +1592,10 @@ function getHomepageHTML() {
 
         <article class="pf-entry" data-reveal>
           <p class="pf-kind">iOS &middot; options analytics</p>
-          <h3 class="pf-serif"><a href="https://optionsvision.app" target="_blank" rel="noopener noreferrer">OptionsVision</a></h3>
+          <div class="ov-lockup ov-lockup--entry">
+            <h3 class="pf-serif"><a href="https://optionsvision.app" target="_blank" rel="noopener noreferrer">OptionsVision</a></h3>
+            ${OV_TREND_MARK_SVG}
+          </div>
           <p class="pf-desc">Take a screenshot of your Robinhood order and watch it become an interactive P&amp;L chart. Model different scenarios by adjusting your days to expiration and your implied volatility. Then analyze your Greeks and break-evens, all privately on your device.</p>
 
 ${getDemoVideosHTML()}
@@ -1796,6 +1799,25 @@ function getPortfolioHomeStyles() {
         .ov-lockup { gap: 14px; }
       }
 
+      /* In a work entry the mark sits beside a ~30px heading rather than a 72px
+         one, so it comes down to suit. */
+      .ov-lockup--entry .ov-mark { width: 46px; margin-bottom: 3px; }
+      @media (max-width: 600px) {
+        .ov-lockup--entry .ov-mark { width: 40px; }
+      }
+
+      /* Hold the draw until the block it lives in has actually arrived. In the
+         hero nothing gates it, so it plays on load. Inside a [data-reveal] entry
+         the block starts at opacity 0 -- without this the whole sequence would
+         run unseen during page load and a reader scrolling down would find a
+         mark that had already drawn itself. Paused from the first frame at
+         currentTime 0, so it resumes from the beginning when .is-visible lands. */
+      html.motion-ready [data-reveal]:not(.is-visible) .ov-mark,
+      html.motion-ready [data-reveal]:not(.is-visible) .ov-mark__line,
+      html.motion-ready [data-reveal]:not(.is-visible) .ov-mark__arrow {
+        animation-play-state: paused;
+      }
+
       /* ---- Mark animation, ported from LaunchView.swift onAppear ----
          Three steps on the app's own curves and clocks:
            the mark fades in while rising 10pt   easeOut 0.26s, no delay
@@ -1943,7 +1965,11 @@ function getPortfolioHomeStyles() {
          .pf-entry h3 rule (0,1,1) out-specifies .tv-band-title (0,1,0) --
          which silently repainted the band title from gold to off-white here
          while it stayed gold on the product site. */
-      .pf-entry > h3 {
+      /* Both forms: the plain heading, and the one wrapped in .ov-lockup beside
+         the brand mark. Still not a descendant selector -- the coverflow's own
+         h3 sits deeper inside this entry and must keep its own styling. */
+      .pf-entry > h3,
+      .pf-entry > .ov-lockup > h3 {
         margin: 6px 0 0;
         font-size: clamp(1.5rem, 3.4vw, 1.9rem);
         line-height: 1.2;
@@ -1951,8 +1977,10 @@ function getPortfolioHomeStyles() {
         font-weight: 400;
         color: var(--text);
       }
-      .pf-entry > h3 a { color: inherit; text-decoration: none; }
-      .pf-entry > h3 a:hover { color: var(--accent); text-decoration: none; }
+      .pf-entry > h3 a,
+      .pf-entry > .ov-lockup > h3 a { color: inherit; text-decoration: none; }
+      .pf-entry > h3 a:hover,
+      .pf-entry > .ov-lockup > h3 a:hover { color: var(--accent); text-decoration: none; }
       .pf-desc {
         margin: 10px 0 0;
         color: var(--text-body);

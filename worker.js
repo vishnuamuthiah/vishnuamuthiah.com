@@ -1547,6 +1547,22 @@ function getCarouselCSS() {
       .tv-cf-stage {
         position: relative;
         height: 702px;
+        /* Hard guarantee that nothing escapes the band, at any width. This used
+           to live only in the phone stylesheet, which left 601-905px unprotected.
+           clip (not hidden) so the other axis stays visible and no scroll
+           container is created. */
+        overflow-x: clip;
+        /* The stage is the reference for the fan-out below. */
+        container-type: inline-size;
+        /* How far the neighbours sit from centre. It has to track the stage,
+           not be a constant: the cards are a fixed 365px, so a fixed 235px push
+           needs 235 + 146 of room on each side and threw them clear out of the
+           band on any stage narrower than ~762px. 50cqw is half the stage and
+           146px is the scaled neighbour's half-width (365 * 0.8 / 2), so the
+           neighbour lands flush against the inside edge of the box and only
+           caps at the original 235px once the stage can afford it (~905px
+           viewport and up) -- leaving the desktop layout exactly as it was. */
+        --tv-fan: min(235px, max(0px, calc(50cqw - 146px)));
       }
       .tv-cf-item {
         position: absolute;
@@ -1567,14 +1583,14 @@ function getCarouselCSS() {
         z-index: 3;
       }
       .tv-cf-item.is-prev {
-        transform: translateX(calc(-50% - 235px)) scale(0.8);
+        transform: translateX(calc(-50% - var(--tv-fan))) scale(0.8);
         opacity: 0.6;
         filter: grayscale(0.9) brightness(0.75);
         z-index: 2;
         cursor: pointer;
       }
       .tv-cf-item.is-next {
-        transform: translateX(calc(-50% + 235px)) scale(0.8);
+        transform: translateX(calc(-50% + var(--tv-fan))) scale(0.8);
         opacity: 0.6;
         filter: grayscale(0.9) brightness(0.75);
         z-index: 2;
@@ -1593,8 +1609,13 @@ function getCarouselCSS() {
         margin-left: auto;
         margin-right: auto;
       }
-      @media (max-width: 760px) {
-        /* Tighter fanning on narrow screens */
+      @media (max-width: 600px) {
+        /* Phones only. Here the 365px card is wider than the stage, so nothing
+           can sit beside it and --tv-fan would floor at 0 and stack all three
+           dead centre. Keep the original hard fan and let the stage clip it --
+           the mobile stylesheet brings the prev/next arrows back to compensate.
+           Was max-width: 760px, which meant 601-760px got this off-screen fan
+           without the clipping that only applies at 600px and below. */
         .tv-cf-item.is-prev { transform: translateX(calc(-50% - 42vw)) scale(0.78); }
         .tv-cf-item.is-next { transform: translateX(calc(-50% + 42vw)) scale(0.78); }
       }

@@ -894,10 +894,17 @@ function getMotionScript() {
         };
 
         [].slice.call(document.querySelectorAll(standalone)).forEach(function (n) {
-          // Skip anything sitting inside another reveal block: the outer one
-          // already carries it, and observing both means the inner element
-          // animates a second time on top of its parent's arrival.
-          if (n.parentElement && n.parentElement.closest(standalone)) return;
+          // Anything sitting inside another reveal block is carried by that
+          // block's arrival, so it must not be observed separately -- observing
+          // both animates the inner element a second time on top of its
+          // parent's. It still matches the rule that hides un-revealed targets
+          // though, so it has to be marked visible here and now. Skipping
+          // without this left the home page's nested coverflow at opacity 0
+          // permanently: 800px of blank navy where the videos should be.
+          if (n.parentElement && n.parentElement.closest(standalone)) {
+            n.classList.add('is-visible');
+            return;
+          }
           attach({ trigger: n, members: [n] });
         });
 

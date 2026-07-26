@@ -674,10 +674,8 @@ function getTradeVisionPageStyles() {
       /* The badge is supplied artwork now, not drawn in CSS -- the black pill,
          the Apple glyph and the two lines of type were all built here before.
          The wrapper carries nothing but the hit area and the hover lift.
-         The source image had a drop shadow baked in, offset well off-centre
-         (38px of padding on the left against 13px on the right); it is cropped
-         to the pill, since a dark shadow is invisible on the navy anyway and
-         the asymmetry would have thrown the badge visibly off its margin. */
+         Artwork is cropped to its opaque bounds before export, so the image
+         edge is the badge edge and it sits flush on the shared left margin. */
       .appstore-badge {
         display: inline-block;
         line-height: 0;
@@ -2885,8 +2883,8 @@ ${getStickyBarHTML('Get the App', 'https://apps.apple.com/app/id6786063635')}
 
       <div class="tv-cta">
         <a class="appstore-badge" href="https://apps.apple.com/app/id6786063635" target="_blank" rel="noopener noreferrer">
-          <img src="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/appstore-badge.png"
-               alt="Download OptionsVision on the App Store" width="180" height="53" />
+          <img src="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/appstore-badge-black.png"
+               alt="Available on the App Store" width="180" height="53" />
         </a>
       </div>
       </header>

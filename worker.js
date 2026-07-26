@@ -1424,12 +1424,15 @@ function getSourcesTrackerHomepageHTML() {
 function getEditorialCopyStyles() {
   return `
     <style>
+      /* No text-wrap: balance here. It evens the line lengths, which on a
+         heading like "How It Works: Screenshot to Interactive Chart in Seconds"
+         broke the first line well short of the column and left it looking
+         narrower than the body text underneath. These fill the measure. */
       .tv-copy h1,
       .tv-copy h2 {
         font-family: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", ui-serif, Georgia, serif;
         font-weight: 400;
         color: var(--text);
-        text-wrap: balance;
       }
       .tv-copy h1 {
         font-size: clamp(2rem, 5vw, 3.15rem);
@@ -1494,6 +1497,13 @@ function getEditorialCopyStyles() {
         line-height: 1.2;
         margin-bottom: 10px;
       }
+      /* Both bands open with the same lid. .tv-band carried 29px of padding-top
+         from getCarouselCSS while .tv-walkthrough had 14px -- that asymmetry is
+         what made the space above "Demo Videos" read as larger than the one
+         above "Demo Walkthrough" even though the titles matched. The 6px above
+         the walkthrough carousel goes too, so both run title -> 10px -> media. */
+      .tv-band { padding-top: 14px; }
+      .tv-walkthrough .tv-carousel { margin-top: 0; }
 
       .st-back {
         display: inline-block;
@@ -1776,10 +1786,18 @@ function getPortfolioHomeStyles() {
       .pf-quiet:hover { color: var(--text); }
 
       /* ---- Sections ----
-         Child combinator on purpose: the demo-video coverflow is itself a
-         <section class="tv-band"> nested inside a work entry, and an unscoped
-         element selector would hand it this rule-line and padding. */
-      .pf-page > section { border-top: 1px solid var(--border); padding: 29px 0; margin: 0; }
+         Child combinator, and the two component sections excluded by name.
+         On the portfolio home the coverflow's <section class="tv-band"> is
+         nested inside a work entry, so the combinator alone was enough. On
+         optionsvision.app both it and <section class="tv-copy"> are direct
+         children of .pf-page, so they were picking this up: at 0,1,1 it beat
+         .tv-band's own 0,1,0 padding and gave the Demo Videos band a 29px lid
+         and a second border across its top. Components bring their own frame. */
+      .pf-page > section:not(.tv-band):not(.tv-copy) {
+        border-top: 1px solid var(--border);
+        padding: 29px 0;
+        margin: 0;
+      }
       .pf-page > section.pf-tight { padding: 21px 0 22px; }
 
       .pf-label {

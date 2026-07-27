@@ -2189,7 +2189,20 @@ function getCarouselCSS() {
       }
       .tv-cf-stage {
         position: relative;
-        height: 702px;
+        /* Derived, not fixed. The items are absolutely positioned, so the stage
+           cannot size itself and has to be told a height -- but 702px was the
+           full-width case frozen in. The card is 365px wide capped at 82vw, so
+           below ~445px of viewport it shrinks while the stage did not: on a
+           390px phone in portrait the card came out 571px tall inside a 702px
+           stage, leaving 100px of empty navy above the dots. Landscape hid it
+           because the card was back at full size.
+
+           Same numbers as the card itself: min(365px, 82vw) wide, 177.78% tall
+           (the 9:16 short-frame), plus its 2px border, plus 60px for the
+           caption and its gap -- enough for the longest one to wrap to three
+           lines at the narrowest width. At full width that is 711px against the
+           old 702px, so desktop is unchanged to within a caption's leading. */
+        height: calc(min(365px, 82vw) * 1.7778 + 62px);
         /* Hard guarantee that nothing escapes the band, at any width. This used
            to live only in the phone stylesheet, which left 601-905px unprotected.
            clip (not hidden) so the other axis stays visible and no scroll

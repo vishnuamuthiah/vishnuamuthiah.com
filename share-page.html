@@ -569,6 +569,13 @@
     const px = (n) => "$" + Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     const MONTHS = ["", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
     function expLabel(mo, dy, yr) { return mo && dy ? MONTHS[mo] + " " + dy + (yr ? ", " + yr : "") : null; }
+    /// "Aug 12" — the calendar date `day` days from today, for the time chart's scrub readout.
+    function dayLabel(day) {
+      const d = new Date();
+      d.setHours(0, 0, 0, 0);
+      d.setDate(d.getDate() + Math.round(day));
+      return MONTHS[d.getMonth() + 1] + " " + d.getDate();
+    }
     function entryDTE(t) {
       if (!t.expMonth || !t.expDay) return 30;
       const now = new Date();
@@ -681,31 +688,78 @@
       return { lo: Math.max(0, center - half), hi: center + half };
     }
 
-    function buildChartSVG() {
-      const { legs, spot, offs, iv, dte, r, q, scrub } = S;
-      const { lo, hi } = priceWindow();
-      const W = 430, H = 232, padL = 6, padR = 6, padT = 14, padB = 22, N = 200;
-      const live = [], exp = []; let yMin = Infinity, yMax = -Infinity;
-      for (let i = 0; i <= N; i++) {
-        const p = lo + (hi - lo) * i / N;
-        const yl = pnlAt(p, legs, offs, iv, dte, r, q), ye = pnlExp(p, legs, S.ctx);
-        live.push([p, yl]); exp.push([p, ye]);
-        yMin = Math.min(yMin, yl, ye); yMax = Math.max(yMax, yl, ye);
-      }
+    // ---------- time axis (chartAxis === "time") ----------
+    // The x-axis IS time here, so the scrub line picks a DAY and the price becomes a slider —
+    // exactly the swap the app makes. Ports `timeRange` / `timeStrideDays` / `timeSampleDays`
+    // / `pnlAtDay`.
+
+    const isTimeChart = () => S.axis === "time";
+
+    /// Visible day window (days elapsed from today), zoomed but clamped inside the trade's
+    /// life: days before today or past expiration mean nothing, so the window slides rather
+    /// than spills.
+    function timeWindow() {
+      const n = Math.max(S.entryDTE, 1);
+      const half = n / 2 / S.zoom;
+      const center = Math.min(Math.max(S.zoomCenter != null ? S.zoomCenter : n / 2, 0), n);
+      let lo = center - half, hi = center + half;
+      if (lo < 0) { hi = Math.min(hi - lo, n); lo = 0; }
+      else if (hi > n) { lo = Math.max(lo - (hi - n), 0); hi = n; }
+      return { lo, hi };
+    }
+
+    // The x-domain of whichever axis is active.
+    function xWindow() { return isTimeChart() ? timeWindow() : priceWindow(); }
+
+    /// Whole days the staircase is drawn at: stride multiples anchored at day 0 (so zooming
+    /// never shifts existing steps), plus expiration itself whenever it's in view so the
+    /// final value lands exactly. Also the scrub's snap targets — the dot sits on a step.
+    function timeSampleDays(lo, hi) {
+      const span = hi - lo;
+      const stride = span <= 200 ? 1 : span <= 300 ? 2 : span <= 600 ? 3 : 5;
+      const lastDay = Math.max(Math.trunc(S.entryDTE), 0);
+      const a = Math.max(Math.floor(lo), 0), b = Math.min(Math.ceil(hi), lastDay);
+      const days = [];
+      for (let d = Math.floor(a / stride) * stride; d <= b; d += stride) days.push(d);
+      if (b === lastDay && days[days.length - 1] !== lastDay) days.push(lastDay);
+      // A trade expiring today has one day; extend it into a flat step so the line still draws.
+      if (days.length === 1) days.push(days[0] + 1);
+      return days;
+    }
+
+    /// P&L once `day` whole days have elapsed, at the price slider's value. Each leg prices
+    /// to its own remaining life, so a calendar's back leg still has time value at the front
+    /// expiration — the same call the price chart's live curve makes, at a different DTE.
+    function pnlAtDay(day) {
+      const dte = Math.max(S.entryDTE - Math.floor(day), 0);
+      return pnlAt(S.evalPrice, S.legs, S.offs, S.iv, dte, S.r, S.q);
+    }
+
+    // ---------- chart ----------
+
+    const CHART = { W: 430, H: 232, padL: 6, padR: 6, padT: 14, padB: 22 };
+
+    /// Wrap the sampled series in the SVG frame both axes share: zero line, green/red fill
+    /// and clipping, the scrub line and its dot.
+    function chartFrame(pts, dashed, marks, scrubX, scrubY, stepped) {
+      const { W, H, padL, padR, padT, padB } = CHART;
+      let yMin = Infinity, yMax = -Infinity;
+      for (const s of [pts, dashed]) for (const p of (s || [])) { yMin = Math.min(yMin, p[1]); yMax = Math.max(yMax, p[1]); }
       const padY = (yMax - yMin) * 0.12 || 1; yMin -= padY; yMax += padY;
-      const X = (p) => padL + (p - lo) / (hi - lo) * (W - padL - padR);
+      const { lo, hi } = xWindow();
+      const X = (x) => padL + (x - lo) / (hi - lo) * (W - padL - padR);
       const Y = (y) => padT + (yMax - y) / (yMax - yMin) * (H - padT - padB);
       const zeroY = Y(0);
-      const line = (pts) => pts.map((pt, i) => (i ? "L" : "M") + X(pt[0]).toFixed(1) + "," + Y(pt[1]).toFixed(1)).join(" ");
-      const liveD = line(live), expD = line(exp);
+      // Step interpolation for the time chart: each sample is the flat P&L for that day, and
+      // the line jumps as the next begins — a staircase, not a smooth curve through the days.
+      const line = (s) => s.map((p, i) => {
+        const x = X(p[0]).toFixed(1), y = Y(p[1]).toFixed(1);
+        if (!i) return "M" + x + "," + y;
+        return (stepped ? `L${x},${Y(s[i - 1][1]).toFixed(1)} ` : "") + "L" + x + "," + y;
+      }).join(" ");
+      const liveD = line(pts);
       const area = liveD + ` L${X(hi).toFixed(1)},${zeroY.toFixed(1)} L${X(lo).toFixed(1)},${zeroY.toFixed(1)} Z`;
-      const strikes = legs.filter(l => l.strike != null).map(l => l.strike);
-      const marks = strikes.filter(k => k >= lo && k <= hi).map(k =>
-        `<line x1="${X(k).toFixed(1)}" y1="${padT}" x2="${X(k).toFixed(1)}" y2="${H - padB}" stroke="var(--panel-line)" stroke-dasharray="3 4"/>`).join("");
-      const sx = X(Math.min(Math.max(scrub, lo), hi));
-      const sPL = pnlAt(scrub, legs, offs, iv, dte, r, q);
-      const scrubMark = `<line x1="${sx.toFixed(1)}" y1="${padT}" x2="${sx.toFixed(1)}" y2="${H - padB}" stroke="var(--accent)" stroke-width="1.5"/>
-        <circle cx="${sx.toFixed(1)}" cy="${Y(sPL).toFixed(1)}" r="4" fill="var(--accent)" stroke="#0d0f1c" stroke-width="1.5"/>`;
+      const sx = X(Math.min(Math.max(scrubX, lo), hi));
       return `<svg class="chart" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Profit and loss">
         <defs>
           <clipPath id="above"><rect x="0" y="0" width="${W}" height="${zeroY.toFixed(1)}"/></clipPath>
@@ -715,31 +769,74 @@
         <path d="${area}" fill="var(--green)" opacity="0.13" clip-path="url(#above)"/>
         <path d="${area}" fill="var(--red)" opacity="0.13" clip-path="url(#below)"/>
         <line x1="${padL}" y1="${zeroY.toFixed(1)}" x2="${W - padR}" y2="${zeroY.toFixed(1)}" stroke="var(--faint)"/>
-        <path d="${expD}" fill="none" stroke="var(--faint)" stroke-width="1.4" stroke-dasharray="4 4"/>
+        ${dashed ? `<path d="${line(dashed)}" fill="none" stroke="var(--faint)" stroke-width="1.4" stroke-dasharray="4 4"/>` : ""}
         <path d="${liveD}" fill="none" stroke="var(--green)" stroke-width="2.5" clip-path="url(#above)"/>
         <path d="${liveD}" fill="none" stroke="var(--red)" stroke-width="2.5" clip-path="url(#below)"/>
-        ${scrubMark}
+        <line x1="${sx.toFixed(1)}" y1="${padT}" x2="${sx.toFixed(1)}" y2="${H - padB}" stroke="var(--accent)" stroke-width="1.5"/>
+        <circle cx="${sx.toFixed(1)}" cy="${Y(scrubY).toFixed(1)}" r="4" fill="var(--accent)" stroke="#0d0f1c" stroke-width="1.5"/>
       </svg>`;
+    }
+
+    function buildChartSVG() {
+      const { legs, offs, iv, dte, r, q, scrub } = S;
+      const { lo, hi } = xWindow();
+      const { W, padL, padR, padT, H, padB } = CHART;
+
+      if (isTimeChart()) {
+        // One point per sampled day, priced at the price slider. No at-expiration companion
+        // curve: the staircase's last step already IS expiration.
+        const pts = timeSampleDays(lo, hi).map(d => [d, pnlAtDay(d)]);
+        return chartFrame(pts, null, "", scrub, pnlAtDay(scrub), true);
+      }
+
+      const N = 200, live = [], exp = [];
+      for (let i = 0; i <= N; i++) {
+        const p = lo + (hi - lo) * i / N;
+        live.push([p, pnlAt(p, legs, offs, iv, dte, r, q)]);
+        exp.push([p, pnlExp(p, legs, S.ctx)]);
+      }
+      const X = (p) => padL + (p - lo) / (hi - lo) * (W - padL - padR);
+      const marks = legs.filter(l => l.strike != null && l.strike >= lo && l.strike <= hi).map(l =>
+        `<line x1="${X(l.strike).toFixed(1)}" y1="${padT}" x2="${X(l.strike).toFixed(1)}" y2="${H - padB}" stroke="var(--panel-line)" stroke-dasharray="3 4"/>`).join("");
+      return chartFrame(live, exp, marks, scrub, pnlAt(scrub, legs, offs, iv, dte, r, q), false);
     }
 
     // Re-draw chart + readouts + slider bounds without rebuilding the whole DOM.
     function update() {
       const { legs, spot, offs, iv, dte, r, q } = S;
       document.getElementById("chartSVG").innerHTML = buildChartSVG();
-      const { lo, hi } = priceWindow();
+      const { lo, hi } = xWindow();
       const sc = Math.min(Math.max(S.scrub, lo), hi); S.scrub = sc;
-      const pl = pnlAt(sc, legs, offs, iv, dte, r, q);
-      const pct = spot ? (sc - spot) / spot * 100 : 0;
-      document.getElementById("roPrice").textContent = px(sc);
+
       const plEl = document.getElementById("roPL");
-      plEl.textContent = (pl >= 0 ? "+" : "") + money(pl); plEl.style.color = pl >= 0 ? "var(--green)" : "var(--red)";
-      document.getElementById("roPct").textContent = (pct >= 0 ? "+" : "") + pct.toFixed(1) + "% vs spot";
-      // sliders
-      const dteEl = document.getElementById("sDTE"), ivEl = document.getElementById("sIV"), prEl = document.getElementById("sPrice");
-      dteEl.value = dte; document.getElementById("vDTE").textContent = Math.round(dte) + (Math.round(dte) === 1 ? " day" : " days");
+      const ivEl = document.getElementById("sIV");
+      const time = isTimeChart();
+      const pl = time ? pnlAtDay(sc) : pnlAt(sc, legs, offs, iv, dte, r, q);
+      plEl.textContent = (pl >= 0 ? "+" : "") + money(pl);
+      plEl.style.color = pl >= 0 ? "var(--green)" : "var(--red)";
+
+      if (time) {
+        // The scrub is a date; the readout says which, and how much life is left there.
+        const left = Math.max(S.entryDTE - Math.floor(sc), 0);
+        document.getElementById("roPrice").textContent = dayLabel(sc);
+        document.getElementById("roPct").textContent = Math.round(left) + (Math.round(left) === 1 ? " day left" : " days left");
+      } else {
+        const pct = spot ? (sc - spot) / spot * 100 : 0;
+        document.getElementById("roPrice").textContent = px(sc);
+        document.getElementById("roPct").textContent = (pct >= 0 ? "+" : "") + pct.toFixed(1) + "% vs spot";
+      }
+
+      // Only one of the two x-axis sliders exists — the other axis is the chart itself, and
+      // the scrub line already does that job (see `renderInteractive`).
+      const dteEl = document.getElementById("sDTE"), prEl = document.getElementById("sPrice");
+      if (dteEl) { dteEl.value = dte; document.getElementById("vDTE").textContent = Math.round(dte) + (Math.round(dte) === 1 ? " day" : " days"); }
+      if (prEl) {
+        const w = basePriceWindow();
+        prEl.min = w.lo; prEl.max = w.hi; prEl.step = Math.max((w.hi - w.lo) / 500, 0.01);
+        prEl.value = S.evalPrice;
+        document.getElementById("vPrice").textContent = px(S.evalPrice);
+      }
       ivEl.value = iv; document.getElementById("vIV").textContent = (iv * 100).toFixed(1) + "%";
-      prEl.min = lo; prEl.max = hi; prEl.step = Math.max((hi - lo) / 500, 0.01); prEl.value = sc;
-      document.getElementById("vPrice").textContent = px(sc);
       document.getElementById("zoomOut").disabled = S.zoom <= 0.5;
       document.getElementById("zoomIn").disabled = S.zoom >= 6;
     }
@@ -747,15 +844,47 @@
     function scrubFromClientX(clientX) {
       const svg = document.getElementById("chartSVG").firstElementChild;
       const rect = svg.getBoundingClientRect();
-      const W = 430, padL = 6, padR = 6;
+      // A tap that lands before the chart has been laid out measures zero width, which would
+      // make every number below NaN. The price axis clamps that to the window's low end; the
+      // time axis is worse, because its nearest-step search treats NaN as "no match" and
+      // silently snaps to day 0. Ignore the tap instead — the next one will measure fine.
+      if (!(rect.width > 0)) return;
+      const { W, padL, padR } = CHART;
       const fx = (clientX - rect.left) / rect.width * W;                  // into viewBox units
       const t = (fx - padL) / (W - padL - padR);
-      const { lo, hi } = priceWindow();
-      S.scrub = Math.min(Math.max(lo + t * (hi - lo), lo), hi);
+      const { lo, hi } = xWindow();
+      let v = Math.min(Math.max(lo + t * (hi - lo), lo), hi);
+      // Time chart: land on a drawn step, so the dot never floats between two staircase corners.
+      if (isTimeChart()) {
+        const days = timeSampleDays(lo, hi);
+        v = days.reduce((best, d) => Math.abs(d - v) < Math.abs(best - v) ? d : best, days[0]);
+      }
+      S.scrub = v;
       update();
     }
 
     // ---------- render (one-time DOM) ----------
+
+    /// The x-axis slider — and there is only ever one of it, because the other axis is the
+    /// chart. A price chart's scrub line already picks the underlying price, so offering an
+    /// Underlying Price slider beside it is two controls for one number; on a time chart the
+    /// scrub picks the day, so the DTE slider is the redundant one. Whichever the chart
+    /// doesn't plot becomes the slider. (The app makes the same swap — `thetaSlider`.)
+    function sliderRows(time, edte, spot) {
+      const row = (id, label, input) => `
+          <div class="slider-row">
+            <div class="slider-head"><span class="name">${label}</span><span class="v" id="v${id}"></span></div>
+            ${input}
+          </div>`;
+      if (time) {
+        const w = { lo: Math.max(0, spot * 0.74), hi: spot * 1.26 };   // re-bounded in `update`
+        return row("Price", "Underlying Price",
+          `<input type="range" id="sPrice" min="${w.lo.toFixed(2)}" max="${w.hi.toFixed(2)}" step="0.01" value="${spot}">`);
+      }
+      return row("DTE", "Days to Expiration",
+        `<input type="range" id="sDTE" min="0" max="${Math.max(edte, 1)}" step="1" value="${edte}">`);
+    }
+
     function renderInteractive(t, legs) {
       const app = document.getElementById("app");
       const spot = t.spot, qty = Math.max(t.contracts || 1, 1);
@@ -766,8 +895,13 @@
       const offs = ivOffsets(legs, baseIV, spot, r, q, edte, t.perLegPremiums === true);
       const ctx = { r, q, resid: residualIVs(legs, baseIV, offs, t.farIV) };
       const an = analyze(legs, spot, ctx);
+      // Which axis the sender's chart was on. On the time axis the scrub picks a day (it
+      // starts at today) rather than a price, and `evalPrice` is what the staircase is
+      // priced at.
+      const time = t.chartAxis === "time";
       S = { t, legs, r, q, spot, baseIV, entryDTE: edte, offs, ctx, an,
-            dte: edte, iv: baseIV, scrub: spot, zoom: 1, zoomCenter: spot };
+            axis: time ? "time" : "price", dte: edte, iv: baseIV, evalPrice: spot,
+            scrub: time ? 0 : spot, zoom: 1, zoomCenter: time ? 0 : spot };
 
       const name = strategyName(t);
       const sen = sentiment(name);
@@ -815,19 +949,14 @@
           </div>
           <div class="chartwrap" id="chartWrap"><div id="chartSVG"></div></div>
 
-          <div class="slider-row">
-            <div class="slider-head"><span class="name">Days to Expiration</span><span class="v" id="vDTE"></span></div>
-            <input type="range" id="sDTE" min="0" max="${Math.max(edte, 1)}" step="1" value="${edte}">
-          </div>
+          ${sliderRows(time, edte, spot)}
           <div class="slider-row">
             <div class="slider-head"><span class="name">Implied Volatility</span><span class="v" id="vIV"></span></div>
             <input type="range" id="sIV" min="${(baseIV * 0.5).toFixed(4)}" max="${(baseIV * 1.5).toFixed(4)}" step="0.0005" value="${baseIV.toFixed(4)}">
           </div>
-          <div class="slider-row">
-            <div class="slider-head"><span class="name">Underlying Price</span><span class="v" id="vPrice"></span></div>
-            <input type="range" id="sPrice">
-          </div>
-          <div class="note">Solid line represents price at specified DTE and IV.<br/>Dashed line represents value at expiration.</div>
+          <div class="note">${time
+            ? "Line steps day by day at the specified price and IV.<br/>The last step is the front expiration."
+            : "Solid line represents price at specified DTE and IV.<br/>Dashed line represents value at expiration."}</div>
         </div>
 
         <button class="mxbtn" id="mxOpen" type="button">
@@ -936,7 +1065,10 @@
         const snap = (S.baseIV * 1.5 - S.baseIV * 0.5) * 0.03;             // snap near default (mirrors ivBinding)
         const v = +e.target.value; S.iv = Math.abs(v - S.baseIV) < snap ? S.baseIV : v; update();
       });
-      if (pr) pr.addEventListener("input", e => { S.scrub = +e.target.value; update(); });
+      // Only present on a time chart, where it sets the price the staircase is priced at —
+      // NOT the scrub, which is the day. (On a price chart the scrub is the price and this
+      // slider doesn't exist; see `sliderRows`.)
+      if (pr) pr.addEventListener("input", e => { S.evalPrice = +e.target.value; update(); });
       const zi = document.getElementById("zoomIn"), zo = document.getElementById("zoomOut");
       if (zi) zi.addEventListener("click", () => { S.zoomCenter = S.scrub; S.zoom = Math.min(S.zoom * 1.4, 6); update(); });
       if (zo) zo.addEventListener("click", () => { S.zoomCenter = S.scrub; S.zoom = Math.max(S.zoom / 1.4, 0.5); update(); });

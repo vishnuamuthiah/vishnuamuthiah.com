@@ -110,6 +110,7 @@
     th { color: var(--faint); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .4px; }
     tr:last-child td { border-bottom: none; }
     .side-long { color: var(--green); } .side-short { color: var(--red); }
+    td .dim { color: var(--faint); font-size: 12px; }   /* "(back)" on a calendar's far leg */
 
     .cta { display: block; text-align: center; background: var(--accent); color: #06212e;
       font-weight: 800; padding: 14px; border-radius: 14px; margin: 8px 0 4px; cursor: pointer; }
@@ -249,13 +250,44 @@
     }
 
     // ---------- Black–Scholes (ports ContentView.swift options math) ----------
-    function erf(x) {
-      const s = x < 0 ? -1 : 1; x = Math.abs(x);
-      const t = 1 / (1 + 0.3275911 * x);
-      const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x);
-      return s * y;
+    // Standard normal CDF, Φ(x) — Hart's rational approximation (the one West's "Better
+    // approximations to cumulative normal functions" recommends for option pricing).
+    //
+    // Accurate to roughly machine precision, which matters more here than it looks: the app
+    // computes Φ from libm's `erfc` at full double precision, and the payoff numbers this
+    // page prints are compared against the app's cent for cent by
+    // `scripts/check-share-web-parity.mjs`. The Abramowitz & Stegun approximation this
+    // replaced tops out around 1.5e-7 — invisible per share, but a four-figure index
+    // position multiplies it by 100 × contracts and it surfaces in the dollars on screen.
+    function normCDF(x) {
+      const z = Math.abs(x);
+      let c = 0;
+      if (z <= 37) {
+        const e = Math.exp(-z * z / 2);
+        if (z < 7.07106781186547) {
+          let b = 3.52624965998911e-02 * z + 0.700383064443688;
+          b = b * z + 6.37396220353165;
+          b = b * z + 33.912866078383;
+          b = b * z + 112.079291497871;
+          b = b * z + 221.213596169931;
+          b = b * z + 220.206867912376;
+          let d = 8.83883476483184e-02 * z + 1.75566716318264;
+          d = d * z + 16.064177579207;
+          d = d * z + 86.7807322029461;
+          d = d * z + 296.564248779674;
+          d = d * z + 637.333633378831;
+          d = d * z + 793.826512519948;
+          d = d * z + 440.413735824752;
+          c = e * b / d;
+        } else {
+          // Continued fraction in the far tail, where the ratio above loses its footing.
+          let b = z + 0.65;
+          b = z + 4 / b; b = z + 3 / b; b = z + 2 / b; b = z + 1 / b;
+          c = e / (b * 2.506628274631);
+        }
+      }
+      return x > 0 ? 1 - c : c;
     }
-    const normCDF = (x) => 0.5 * (1 + erf(x * Math.SQRT1_2));
     function optionPrice(kind, S, K, t, r, q, sig) {
       if (kind === "call") {
         if (!(t > 0 && sig > 0)) return Math.max(S - K, 0);
@@ -291,61 +323,146 @@
       return bS;
     }
 
-    // ---------- reconstruct legs (leg1 = long for verticals; call for straddle/strangle) ----------
-    function legsFor(t) {
+    // ---------- reconstruct legs ----------
+    // Internal leg shape: { type, side, strike, qty, mult, entry, ivp, dte, iv }.
+    // `mult` is shares per unit of `qty` — 100 for an option contract, 1 for stock, which
+    // is how the app itself splits the two. `dte` is days this leg expires AFTER the front
+    // expiration (0 for everything single-expiration; a calendar's back leg is positive).
+    // `iv` is the volatility the sender's app priced this leg at, when the payload carries it.
+    const LEG_TYPES = ["call", "put", "share"];
+
+    // Modern payloads (every strategy, up to four legs): the trade travels as its legs, so
+    // nothing here needs to know which of the 32 strategies they add up to.
+    function legsFromPayload(t) {
+      if (!Array.isArray(t.legs) || !t.legs.length) return null;
+      const out = [];
+      for (const l of t.legs) {
+        const type = LEG_TYPES[l.t];
+        if (!type || !(l.q > 0)) return null;   // a leg type this page can't price
+        const isShare = type === "share";
+        if (!isShare && !(l.k > 0)) return null;
+        out.push({ type, side: l.s < 0 ? -1 : 1, strike: isShare ? null : l.k,
+                   qty: l.q, mult: isShare ? 1 : 100, entry: l.e,
+                   ivp: (l.m != null ? l.m : l.e), dte: l.d || 0,
+                   iv: (l.v != null ? l.v : null) });
+      }
+      return out;
+    }
+
+    // Links shared before the payload carried its legs. Ten single-expiration shapes read
+    // off `kind` and the two-leg fields; leg 1 is the long leg of a vertical, the call of a
+    // straddle/strangle. Calendars and diagonals were never encodable this way — they fall
+    // through to null and the summary card, exactly as they always did.
+    function legsFromKind(t) {
       const qty = Math.max(t.contracts || 1, 1), K1 = t.strike, K2 = t.strike2, p1 = t.premium, p2 = t.premium2;
       const m1 = (t.mark != null ? t.mark : p1), m2 = (t.mark2 != null ? t.mark2 : p2);
-      const O = (type, side, strike, entry, ivp) => ({ type, side, strike, entry, ivp, qty });
+      const O = (type, side, strike, entry, ivp) =>
+        ({ type, side, strike, entry, ivp, qty, mult: 100, dte: 0, iv: null });
+      const shares = (entry) =>
+        ({ type: "share", side: 1, strike: null, entry, ivp: entry, qty: 100 * qty, mult: 1, dte: 0, iv: null });
       switch (t.kind) {
         case "Long Call": return [O("call", 1, K1, p1, m1)];
         case "Long Put": return [O("put", 1, K1, p1, m1)];
         case "Cash-Secured Put": return [O("put", -1, K1, p1, m1)];
-        case "Covered Call": return [{ type: "share", side: 1, entry: (t.shareCost != null ? t.shareCost : t.spot), qty }, O("call", -1, K1, p1, m1)];
+        case "Covered Call": return [shares(t.shareCost != null ? t.shareCost : t.spot), O("call", -1, K1, p1, m1)];
         case "Call Debit Spread": case "Call Credit Spread": return [O("call", 1, K1, p1, m1), O("call", -1, K2, p2, m2)];
         case "Put Debit Spread": case "Put Credit Spread": return [O("put", 1, K1, p1, m1), O("put", -1, K2, p2, m2)];
         case "Long Straddle": case "Long Strangle": return [O("call", 1, K1, p1, m1), O("put", 1, K2, p2, m2)];
-        default: return null; // calendars / unknown
+        default: return null;
       }
     }
-    // Entry-calibrated blended IV (mirrors Strategy.defaultIV, single-expiration cases).
+
+    function legsFor(t) { return legsFromPayload(t) || legsFromKind(t); }
+
+    // Entry-calibrated blended IV — where the slider starts and what "blended IV" reads.
+    // Cosmetic on its own: `ivOffsets` below reproduces each leg's own volatility from ANY
+    // base, so the chart is unchanged by what this returns. The sender stamps its own value
+    // (`t.baseIV`) and these fallbacks only run for links that predate that.
     function defaultIV(legs, S, r, q, dte) {
-      const t = Math.max(dte, 0) / 365, opts = legs.filter(l => l.type !== "share");
+      const opts = legs.filter(l => l.type !== "share");
+      if (!opts.length) return 0.30;
+      const legT = (l) => Math.max(dte + l.dte, 0) / 365;
+      const t = Math.max(dte, 0) / 365;
+      // Three or more legs: the mean of what each leg solves to on its own, dropping any
+      // that hit the solver's bounds (a premium no volatility reproduces). Mirrors the
+      // app's advanced branch — pinning the surface to leg 1 would read a condor's thin
+      // far wing as the whole position's vol.
+      if (opts.length > 2) {
+        const solved = opts.map(l => ivSolve(l.type, l.ivp, S, l.strike, legT(l), r, q))
+                           .filter(v => v > 0.001 && v < 4.99);
+        return solved.length ? solved.reduce((a, b) => a + b, 0) / solved.length : 0.30;
+      }
       if (opts.length > 1 && opts.every(l => l.side > 0)) return ivTotal(opts, opts.reduce((s, l) => s + l.ivp, 0), S, t, r, q);
       if (opts.length === 2) { const lng = opts.find(l => l.side > 0), sht = opts.find(l => l.side < 0);
         if (lng && sht) return ivVertical(lng.type, lng.strike, sht.strike, S, t, lng.ivp - sht.ivp, r, q); }
-      const leg = opts[0]; if (!leg) return 0.30;
-      return ivSolve(leg.type, leg.ivp, S, leg.strike, t, r, q);
+      return ivSolve(opts[0].type, opts[0].ivp, S, opts[0].strike, legT(opts[0]), r, q);
     }
-    // Per-leg IV skew vs. baseIV when real per-leg premiums were supplied; zeros otherwise.
-    function ivOffsets(legs, baseIV, S, r, q, dte, perLeg) {
-      if (!perLeg) return legs.map(() => 0);
-      const t = Math.max(dte, 0) / 365;
-      return legs.map(l => l.type === "share" ? 0 : ivSolve(l.type, l.ivp, S, l.strike, t, r, q) - baseIV);
-    }
-    // Every leg is ×100: `qty` is the contract count, and a covered call's shares run 100
-    // per contract (the app splits the same units differently — the share leg is built as
-    // quantity: contracts × 100 with a multiplier of 1). The legs table already prints the
-    // share leg as `100 * qty` shares, so this is what it has always claimed to hold.
-    const MULT = 100;
 
-    // Position P&L at a price, valued at `dte` days out with volatility `iv` (+ per-leg skew).
+    // Per-leg IV skew vs. baseIV. Stamped volatilities win outright: the sender solved them
+    // against the same rate and yield with the calibration its strategy actually calls for
+    // (a vertical off its net, a calendar across two expirations), none of which lives here.
+    // Otherwise solve from the leg's own mark, each at its OWN expiration.
+    function ivOffsets(legs, baseIV, S, r, q, dte, perLeg) {
+      if (legs.some(l => l.iv != null))
+        return legs.map(l => l.iv != null ? l.iv - baseIV : 0);
+      if (!perLeg) return legs.map(() => 0);
+      return legs.map(l => l.type === "share" ? 0
+        : ivSolve(l.type, l.ivp, S, l.strike, Math.max(dte + l.dte, 0) / 365, r, q) - baseIV);
+    }
+
+    // The volatility each leg is priced at when projecting the AT-EXPIRATION payoff. Only a
+    // leg that outlives the front expiration needs one, and for those the sender stamps the
+    // residual IV calibrated to Robinhood's quoted extreme (Strategy.calendarFarResidualIV),
+    // so the tent's peak and both break-evens land where the app puts them. Without it, the
+    // leg keeps its own entry vol.
+    function residualIVs(legs, baseIV, offs, farIV) {
+      return legs.map((l, i) => (l.dte > 0 && farIV > 0) ? farIV : Math.max(baseIV + offs[i], 0.005));
+    }
+
+    // Position P&L at a price, `dte` days before the FRONT expiration, at volatility `iv`
+    // (+ each leg's skew). Every leg prices to its own remaining life, so a calendar's back
+    // leg still carries time value once the front one is spent.
     function pnlAt(price, legs, offs, iv, dte, r, q) {
       let sum = 0;
       legs.forEach((l, i) => {
         let val;
         if (l.type === "share") val = price;
-        else { const t = Math.max(dte, 0) / 365, sig = Math.max(iv + offs[i], 0.005); val = optionPrice(l.type, price, l.strike, t, r, q, sig); }
-        sum += l.side * l.qty * MULT * (val - l.entry);
+        else {
+          const t = Math.max(dte + l.dte, 0) / 365, sig = Math.max(iv + offs[i], 0.005);
+          val = optionPrice(l.type, price, l.strike, t, r, q, sig);
+        }
+        sum += l.side * l.qty * l.mult * (val - l.entry);
       });
       return sum;
     }
-    function pnlExp(price, legs) {
+
+    // P&L at the front expiration: legs that expire there go to intrinsic, one that outlives
+    // it keeps its residual value. `ctx` is { resid, r, q } — see `residualIVs`.
+    function pnlExp(price, legs, ctx) {
       let sum = 0;
-      legs.forEach(l => {
-        const val = l.type === "share" ? price : (l.type === "call" ? Math.max(price - l.strike, 0) : Math.max(l.strike - price, 0));
-        sum += l.side * l.qty * MULT * (val - l.entry);
+      legs.forEach((l, i) => {
+        let val;
+        if (l.type === "share") val = price;
+        else if (!(l.dte > 0)) val = l.type === "call" ? Math.max(price - l.strike, 0) : Math.max(l.strike - price, 0);
+        else val = optionPrice(l.type, price, l.strike, l.dte / 365, ctx.r, ctx.q, Math.max(ctx.resid[i], 0.005));
+        sum += l.side * l.qty * l.mult * (val - l.entry);
       });
       return sum;
+    }
+
+    // Dollars of expiration P&L per $1 of underlying below every strike and above every one.
+    // Out there each option is fully intrinsic or worthless, so these are exact rather than
+    // sampled — which is what lets a ratio's open side be reported as open instead of being
+    // quoted whatever number the scan range happened to reach. Ports Strategy.low/highTailSlope.
+    function tailSlopes(legs) {
+      let low = 0, high = 0;
+      legs.forEach(l => {
+        const signed = l.side * l.qty * l.mult;
+        if (l.type === "call") high += signed;          // ITM above every strike
+        else if (l.type === "put") low -= signed;       // ITM below every strike (value = K − S)
+        else { low += signed; high += signed; }
+      });
+      return { low, high };
     }
 
     // ---------- P/L matrix (ports PLMatrixView.swift) ----------
@@ -361,8 +478,9 @@
     // expiration, evenly strided down to at most 12, the last column always expiration
     // itself), prices down the side, each cell the position's dollar P&L there. Cells
     // price through `pnlAt` — the same call the chart's live curve uses — so a cell agrees
-    // with the chart when the DTE slider sits on that column. Calendars never reach here
-    // (they fall back to the facts-only summary), so every leg runs to the one expiration.
+    // with the chart when the DTE slider sits on that column. The columns run to the FRONT
+    // expiration, which is where a calendar's back leg still has life left; `pnlAt` prices
+    // each leg to its own, so the last column carries that residual rather than zeroing it.
     function buildMatrix() {
       const { legs, spot, offs, iv, r, q, entryDTE } = S;
       const totalDays = Math.trunc(entryDTE);
@@ -398,7 +516,7 @@
       // where every supported strategy's payoff has gone flat or is rising.
       const strikes = legs.filter(l => l.strike != null).map(l => l.strike);
       const extremes = strikes.concat([0, 2 * Math.max(Math.max(...strikes, 0), prices[0] || spot)]);
-      const worstIntrinsic = Math.max(...extremes.map(s => -pnlExp(s, legs)));
+      const worstIntrinsic = Math.max(...extremes.map(s => -pnlExp(s, legs, S.ctx)));
 
       const di = prices.findIndex(p => p <= spot);
       return { columns, prices, cells, maxGain, maxLoss,
@@ -458,27 +576,91 @@
       const exp = new Date(t.expYear || now.getFullYear(), t.expMonth - 1, t.expDay);
       return Math.max(Math.round((exp - today) / 86400000), 0);
     }
-    function sentiment(kind) {
-      if (/Long Call|Call Debit|Put Credit|Cash-Secured Put|Covered Call/.test(kind)) return { label: "Bullish", color: "var(--green)" };
-      if (/Long Put|Put Debit|Call Credit/.test(kind)) return { label: "Bearish", color: "var(--red)" };
-      if (/Straddle|Strangle/.test(kind)) return { label: "Volatile", color: "var(--orange)" };
-      return { label: "Neutral", color: "var(--gray)" };
+    // The chip beside the symbol. An exact table of all 32 strategy names rather than
+    // patterns matched against them: "Short Put Calendar" contains neither "Long Put" nor
+    // "Put Credit" but is Volatile, and "Short Call Diagonal (Covered)" reads Bearish
+    // despite the word "Call" — the app's own sentiments, which no regex over these names
+    // reproduces. Keyed by `TradeKind.rawValue` and `AdvancedStrategy.rawValue`.
+    const SENTIMENTS = {
+      bullish: ["Long Call", "Covered Call", "Cash-Secured Put",
+                "Call Debit Spread", "Put Credit Spread",
+                "Long Call Calendar", "Long Call Diagonal",
+                "Call back ratio"],
+      bearish: ["Long Put", "Call Credit Spread", "Put Debit Spread",
+                "Long Put Calendar", "Long Put Diagonal", "Short Call Diagonal (Covered)",
+                "Put front ratio", "Put back ratio"],
+      volatile: ["Long Straddle", "Long Strangle",
+                 "Short Put Calendar", "Short Put Diagonal",
+                 "Short call condor", "Short put condor", "Long iron condor",
+                 "Short call butterfly", "Short put butterfly", "Long iron butterfly"],
+      neutral: ["Long call condor", "Long put condor", "Short iron condor",
+                "Long call butterfly", "Long put butterfly", "Short iron butterfly"]
+    };
+    const SENTIMENT_STYLE = {
+      bullish:  { label: "Bullish",  color: "var(--green)" },
+      bearish:  { label: "Bearish",  color: "var(--red)" },
+      volatile: { label: "Volatile", color: "var(--orange)" },
+      neutral:  { label: "Neutral",  color: "var(--gray)" }
+    };
+    const SENTIMENT_BY_NAME = Object.fromEntries(
+      Object.entries(SENTIMENTS).flatMap(([k, names]) => names.map(n => [n, SENTIMENT_STYLE[k]])));
+    function sentiment(name) { return SENTIMENT_BY_NAME[name] || SENTIMENT_STYLE.neutral; }
+
+    // What the trade is called: the advanced structure when there is one (`kind` is blank
+    // for those — a condor has no `TradeKind`), else the plain kind.
+    function strategyName(t) { return t.advanced || t.kind || ""; }
+
+    // Strikes, low→high, trailing ".00" trimmed — "302.5", "310". Mirrors Strategy.fmtStrike.
+    const fmtStrike = (k) => (Math.abs(k - Math.round(k)) < 0.005 ? String(Math.round(k)) : k.toFixed(2).replace(/0$/, ""));
+
+    // The rest of the header line: every strike, then the expiration(s). Read off the legs
+    // rather than the strategy name, so all 32 get the same treatment — a condor's four
+    // numbers ARE the position, and a calendar's two dates are what makes it one.
+    function subtitleDetail(t, legs, exp, exp2) {
+      const strikes = [...new Set(legs.filter(l => l.strike != null).map(l => l.strike))].sort((a, b) => a - b);
+      const strikeText = strikes.length === 1 ? "$" + fmtStrike(strikes[0]) + " strike"
+                       : strikes.length ? strikes.map(fmtStrike).join("/") : "";
+      const twoDates = legs.some(l => l.dte > 0) && exp2;
+      const expText = exp ? "exp " + exp + (twoDates ? " → " + exp2 : "") : "";
+      return [strikeText, expText].filter(Boolean).map(s => " · " + esc(s)).join("");
     }
 
     // ---------- app state (interactive) ----------
     let S = null;   // shared trade state: { t, legs, r, q, spot, baseIV, entryDTE, offs,
                     //                        dte, iv, scrub, zoom, zoomCenter, base }
 
-    function analyze(legs, spot) {
+    // Break-evens and the two extremes of the expiration payoff.
+    //
+    // Which side is capped comes from the exact tail slopes, never from the scan: a put
+    // front ratio's loss runs to $0 underlying and a call back ratio's gain runs forever,
+    // and quoting the scan's edge for either would read as a cap the position doesn't have.
+    // The capped values then come from the scan AND from the payoff's kinks (the strikes),
+    // which between them cover both shapes — piecewise-linear payoffs turn only at strikes,
+    // while a calendar's tent peaks smoothly and needs the sampling. Ports Strategy's
+    // tail slopes and the app's `advancedRisk`.
+    function analyze(legs, spot, ctx) {
       const strikes = legs.filter(l => l.strike != null).map(l => l.strike);
-      const refHi = Math.max(spot || 0, ...strikes, 1), hi = refHi * 2.5, N = 600, step = hi / N;
-      let prev = pnlExp(0, legs), maxP = prev, minP = prev; const bes = [];
-      for (let i = 1; i <= N; i++) { const s = i * step, y = pnlExp(s, legs);
+      const refHi = Math.max(spot || 0, ...strikes, 1), hi = refHi * 2.5, N = 2000, step = hi / N;
+      const f = (s) => pnlExp(s, legs, ctx);
+      let prev = f(0), maxP = prev, minP = prev; const bes = [];
+      for (let i = 1; i <= N; i++) { const s = i * step, y = f(s);
         if (y > maxP) maxP = y; if (y < minP) minP = y;
-        if ((prev <= 0 && y > 0) || (prev >= 0 && y < 0)) { const s0 = (i - 1) * step, be = s0 + (0 - prev) / (y - prev) * step; if (be > 0) bes.push(be); }
+        if ((prev <= 0 && y > 0) || (prev >= 0 && y < 0)) {
+          // Bisect the bracketed crossing so a break-even is exact to the cent rather than
+          // to the sampling stride — a butterfly's wings can be narrower than one step.
+          let a = (i - 1) * step, b = s, fa = prev;
+          for (let j = 0; j < 60 && b - a > 1e-4; j++) {
+            const m = 0.5 * (a + b), fm = f(m);
+            if ((fa <= 0) === (fm <= 0)) { a = m; fa = fm; } else b = m;
+          }
+          const be = 0.5 * (a + b); if (be > 0) bes.push(be);
+        }
         prev = y; }
-      const slopeUp = pnlExp(hi, legs) - pnlExp(hi - step, legs) > 1e-6;
-      return { breakevens: bes, maxProfit: maxP, maxLoss: minP, unlimitedProfit: slopeUp };
+      for (const k of strikes) { const y = f(k); if (y > maxP) maxP = y; if (y < minP) minP = y; }
+      const { low, high } = tailSlopes(legs);
+      return { breakevens: bes, maxProfit: maxP, maxLoss: minP,
+               unlimitedProfit: low < 0 || high > 0,
+               unlimitedLoss: low > 0 || high < 0 };
     }
 
     // The chart's default (pre-zoom) framing. The matrix ladder spans this rather than the
@@ -506,7 +688,7 @@
       const live = [], exp = []; let yMin = Infinity, yMax = -Infinity;
       for (let i = 0; i <= N; i++) {
         const p = lo + (hi - lo) * i / N;
-        const yl = pnlAt(p, legs, offs, iv, dte, r, q), ye = pnlExp(p, legs);
+        const yl = pnlAt(p, legs, offs, iv, dte, r, q), ye = pnlExp(p, legs, S.ctx);
         live.push([p, yl]); exp.push([p, ye]);
         yMin = Math.min(yMin, yl, ye); yMax = Math.max(yMax, yl, ye);
       }
@@ -580,21 +762,29 @@
       const r = (t.riskFreeRate != null ? t.riskFreeRate : 0.043);
       const q = (t.dividendYield != null ? t.dividendYield : (/^(SPX|SPXW|SPY|ES)$/i.test(t.symbol || "") ? 0.013 : 0));
       const edte = entryDTE(t);
-      const baseIV = defaultIV(legs, spot, r, q, edte);
+      const baseIV = (t.baseIV > 0) ? t.baseIV : defaultIV(legs, spot, r, q, edte);
       const offs = ivOffsets(legs, baseIV, spot, r, q, edte, t.perLegPremiums === true);
-      const an = analyze(legs, spot);
-      S = { t, legs, r, q, spot, baseIV, entryDTE: edte, offs, an,
+      const ctx = { r, q, resid: residualIVs(legs, baseIV, offs, t.farIV) };
+      const an = analyze(legs, spot, ctx);
+      S = { t, legs, r, q, spot, baseIV, entryDTE: edte, offs, ctx, an,
             dte: edte, iv: baseIV, scrub: spot, zoom: 1, zoomCenter: spot };
 
-      const sen = sentiment(t.kind || "");
+      const name = strategyName(t);
+      const sen = sentiment(name);
       const exp = expLabel(t.expMonth, t.expDay, t.expYear);
+      const exp2 = expLabel(t.expMonth2, t.expDay2, t.expYear2);
       const beText = an.breakevens.length ? an.breakevens.map(px).join(" / ") : "—";
+      // An open-ended side says so rather than quoting the edge of the scan (see `analyze`).
       const mp = an.unlimitedProfit ? "Unlimited" : money0(an.maxProfit);
+      const ml = an.unlimitedLoss ? "Uncapped" : money0(an.maxLoss);
 
       const legRows = legs.map(l => {
-        if (l.type === "share") return `<tr><td class="side-long">Long</td><td>${100 * qty} sh</td><td>Shares</td><td>—</td><td>${l.entry != null ? px(l.entry) : "—"}</td></tr>`;
+        if (l.type === "share") return `<tr><td class="side-long">Long</td><td>${l.qty} sh</td><td>Shares</td><td>—</td><td>${l.entry != null ? px(l.entry) : "—"}</td></tr>`;
         const side = l.side > 0 ? `<span class="side-long">Buy</span>` : `<span class="side-short">Sell</span>`;
-        return `<tr><td>${side}</td><td>${l.qty}</td><td>${l.type === "call" ? "Call" : "Put"}</td><td>${px(l.strike)}</td><td>${px(l.entry)}</td></tr>`;
+        // A back-month leg is labelled, because on a calendar the two rows are otherwise
+        // identical apart from their price and the whole trade is the difference between them.
+        const type = (l.type === "call" ? "Call" : "Put") + (l.dte > 0 ? ` <span class="dim">(back)</span>` : "");
+        return `<tr><td>${side}</td><td>${l.qty}</td><td>${type}</td><td>${px(l.strike)}</td><td>${px(l.entry)}</td></tr>`;
       }).join("");
 
       app.innerHTML = `
@@ -607,12 +797,12 @@
             <span class="glyph" id="edit" aria-label="Edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></span>
           </span>
         </div>
-        <div class="sub">${esc(t.kind || "Options trade")}${exp ? " · exp " + exp : ""} · ${qty} contract${qty > 1 ? "s" : ""}</div>
+        <div class="sub">${esc(name || "Options trade")}${subtitleDetail(t, legs, exp, exp2)} · ${qty} contract${qty > 1 ? "s" : ""}</div>
 
         <div class="panel"><div class="figs">
           <div class="fig"><div class="lbl">Max profit</div><div class="val pos">${mp}</div></div>
           <div class="fig"><div class="lbl">${an.breakevens.length > 1 ? "Breakevens" : "Breakeven"}</div><div class="val">${beText}</div></div>
-          <div class="fig"><div class="lbl">Max loss</div><div class="val ${an.maxLoss < 0 ? "neg" : ""}">${money0(an.maxLoss)}</div></div>
+          <div class="fig"><div class="lbl">Max loss</div><div class="val ${an.unlimitedLoss || an.maxLoss < 0 ? "neg" : ""}">${ml}</div></div>
         </div></div>
 
         <div class="panel">
@@ -659,9 +849,11 @@
     }
 
     function renderSummaryOnly(t) {
-      // Calendars & anything without a single-expiration payoff: facts + a nudge to the app.
+      // Nothing chartable came out of the payload: a calendar link shared before the legs
+      // travelled, or a trade missing the spot the whole curve is framed on. Facts, and a
+      // nudge to the app. Every link the current build writes charts instead.
       const app = document.getElementById("app");
-      const sen = sentiment(t.kind || "");
+      const sen = sentiment(strategyName(t));
       const near = expLabel(t.expMonth, t.expDay, t.expYear), far = expLabel(t.expMonth2, t.expDay2, t.expYear2);
       app.innerHTML = `
         <div class="top">
@@ -673,9 +865,9 @@
             <span class="glyph" id="edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></span>
           </span>
         </div>
-        <div class="sub">${esc(t.kind || "Options trade")}</div>
+        <div class="sub">${esc(strategyName(t) || "Options trade")}</div>
         <div class="panel"><div class="note" style="font-size:14px;color:var(--dim)">
-          ${/Calendar/.test(t.kind || "") ? `Calendar spread at the ${t.strike ? px(t.strike) : ""} strike${near ? ", front " + near : ""}${far ? " / back " + far : ""}.` : "This trade type"}
+          ${/Calendar/.test(strategyName(t)) ? `Calendar spread at the ${t.strike ? px(t.strike) : ""} strike${near ? ", front " + near : ""}${far ? " / back " + far : ""}.` : "This trade type"}
           Open it in OptionsVision for the full interactive payoff, sliders, and greeks.</div></div>
         <div class="cta" id="cta">Open in OptionsVision</div>
         <div class="foot">OptionsVision is an educational options visualizer and not investment advice.</div>`;
@@ -726,7 +918,7 @@
       mxModel = buildMatrix();
       const exp = expLabel(S.t.expMonth, S.t.expDay, S.t.expYear);
       document.getElementById("mxSub").textContent =
-        (S.t.kind || "Options trade") + (exp ? " · exp " + exp : "");
+        (strategyName(S.t) || "Options trade") + (exp ? " · exp " + exp : "");
       document.getElementById("mxFoot").textContent =
         `Uses the same Black-Scholes model as the chart at the current IV (${(mxDisplayIV() * 100).toFixed(1)}%), risk-free rate, and dividend settings.`;
       renderMatrixGrid();
@@ -780,7 +972,7 @@
     if (!window.matchMedia("(pointer: coarse)").matches) document.body.classList.add("is-desktop");
 
     const trade = decodeTrade();
-    if (!trade || !(trade.symbol || trade.kind || trade.strike != null)) { renderEmpty(); }
+    if (!trade || !(trade.symbol || trade.kind || trade.advanced || trade.strike != null)) { renderEmpty(); }
     else { const legs = legsFor(trade); if (legs && trade.spot) renderInteractive(trade, legs); else renderSummaryOnly(trade); }
   </script>
 </body>

@@ -1,0 +1,33 @@
+# Cache policy for the static assets. Wrangler reads this file as configuration
+# and does not upload it, the same way it treats .assetsignore.
+#
+# Cloudflare's default for Workers static assets is `max-age=0, must-revalidate`,
+# which costs a conditional round-trip per file per page view. The walkthrough
+# carousel alone is seven images totalling ~1.7 MB, so that default is the wrong
+# trade here.
+#
+# Deliberately NOT `immutable`: these filenames are stable across regenerations
+# (tools/rasterize-pdf.swift writes og-card.png in place, and the walkthrough
+# slides are regenerated from Walkthrough_Slides_Clean.pdf under the same
+# numbers), so an immutable response would strand returning visitors on an old
+# image with no way to recover. A day of freshness plus a week of
+# serve-stale-while-revalidating gets nearly all the benefit and still heals.
+#
+# The rules below are written NOT to overlap. Matching rules are additive, not
+# most-specific-wins: a `/*` block plus a per-file block emits BOTH Cache-Control
+# values into one comma-joined header, which is malformed. Every asset must be
+# matched by exactly one rule.
+
+/tradevision/walkthrough/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+
+/sources-tracker/*
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+
+/professional-bio.pdf
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+
+# The link-preview card. Crawlers refetch on their own schedule and a wrong card
+# is more visible than a slightly stale one, so keep this shorter than the rest.
+/tradevision/og-card.png
+  Cache-Control: public, max-age=3600, stale-while-revalidate=86400

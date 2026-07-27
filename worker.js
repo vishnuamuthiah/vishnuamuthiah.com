@@ -36,10 +36,49 @@ const APPLE_APP_SITE_ASSOCIATION = {
 // product homepage, while vishnumuthiah.com stays the light portfolio.
 const APP_HOST = 'optionsvision.app';
 
-function html(body) {
+// ===== CACHING =====
+// Every page this Worker serves is a pure function of its URL: the content
+// changes when we deploy, never per-request. Until 2026-07-26 the responses
+// carried no cache-control at all, so every visit -- including a repeat visit
+// and every internal navigation -- came back to the Worker and rebuilt the whole
+// page. These headers let a browser skip the network entirely, and let the edge
+// hold a copy (see cacheKey below for why that can't go stale across a deploy).
+//
+// max-age is deliberately short: a deploy should be visible to someone already
+// on the site within a few minutes without a hard reload.
+const HTML_CACHE_CONTROL = 'public, max-age=300, s-maxage=86400';
+
+/// Assets under public/ are served by the asset layer before this code runs, so
+/// their caching is Cloudflare's default (immutable, keyed by content hash) and
+/// nothing here applies to them.
+function html(body, cacheControl = HTML_CACHE_CONTROL) {
   return new Response(body, {
-    headers: { "content-type": "text/html;charset=UTF-8" },
+    headers: {
+      'content-type': 'text/html;charset=UTF-8',
+      'cache-control': cacheControl,
+    },
   });
+}
+
+/// Build a page once per isolate instead of once per request. The page builders
+/// below are string concatenation over module constants -- same input, same
+/// output, forever -- but they were being re-run on every hit. Wrapping rather
+/// than hoisting to `const PAGE = getHomepageHTML()` is deliberate: a top-level
+/// call would run before the `const GUIDES` further down the file is
+/// initialised and die in the temporal dead zone. This defers to first use.
+function once(build) {
+  let built;
+  return () => (built ??= build());
+}
+
+/// The keyed form, for the page families (legal routes, guides) that take an
+/// argument from a small fixed set.
+function onceBy(build) {
+  const built = new Map();
+  return (key, ...rest) => {
+    if (!built.has(key)) built.set(key, build(key, ...rest));
+    return built.get(key);
+  };
 }
 
 // ===== PER-TRADE LINK PREVIEWS =====
@@ -120,102 +159,141 @@ function sharePageFor(path) {
                    .join(`content="${escapeHTML(headline).replace(/"/g, '&quot;')}"`);
 }
 
+// ===== MEMOISED PAGES =====
+// One entry per page the router can serve. Referencing the builders here (rather
+// than calling them) is what keeps this safe to place above their declarations.
+// sharePageFor is deliberately absent: its input is an unbounded attacker-supplied
+// payload, so it must not key a Map that lives for the isolate's lifetime -- the
+// edge cache handles repeat hits on a given share link instead.
+const homePage = once(getHomepageHTML);
+const privacyPolicyPage = once(getPrivacyPolicyHTML);
+const termsOfServicePage = once(getTermsOfServiceHTML);
+const supportPage = once(getSupportHTML);
+const sourcesTrackerPage = once(getSourcesTrackerHomepageHTML);
+const appHomePage = once(getTradeVisionHTML);
+const appSupportPage = once(getAppSupportHTML);
+const learningLibraryPage = once(getLearningLibraryHTML);
+const appLegalPage = onceBy(getAppLegalHTML);
+/// Keyed by slug rather than by the guide object so a rebuilt GUIDES entry can't
+/// silently produce a second cache line for the same page.
+const guidePage = onceBy((_slug, guide) => getGuideHTML(guide));
+
 export default {
   async fetch(request, env, ctx) {
-    const url = new URL(request.url);
-    const path = url.pathname;
-    const isAppSite = url.hostname === APP_HOST || url.hostname.endsWith('.' + APP_HOST);
+    // Only GET is cacheable -- cache.put() rejects anything else, and this site
+    // has no non-GET routes to begin with.
+    if (request.method !== 'GET') return route(request);
 
-    // ===== optionsvision.app — the product site =====
-    if (isAppSite) {
-      // ---- Universal Links ----
-      // Apple requires HTTPS and no redirect here. Serve it as application/json
-      // (the legacy Pages host serves application/octet-stream, which iOS also
-      // accepts, but there is no reason to be loose about it).
-      if (path === '/.well-known/apple-app-site-association') {
-        return new Response(JSON.stringify(APPLE_APP_SITE_ASSOCIATION, null, 2), {
-          headers: {
-            'content-type': 'application/json',
-            // Apple's CDN caches this; keep it short so a change propagates.
-            'cache-control': 'public, max-age=3600',
-          },
-        });
-      }
+    const cache = caches.default;
+    const key = cacheKey(request, env);
+    const hit = await cache.match(key);
+    if (hit) return hit;
 
-      // Share links. The payload is the single path segment after /p/ and is
-      // read client-side from location.pathname, so every /p/<payload> serves
-      // the same page -- this is a rewrite, never a redirect, or the payload
-      // would be lost.
-      if (path.startsWith('/p/')) {
-        return html(sharePageFor(path));
-      }
-
-      // The legal pages here are OptionsVision's own, generated from the app.
-      // They are deliberately NOT the portfolio's same-named routes, which
-      // document the Sources Tracker Google Slides add-on.
-      if (APP_LEGAL_ROUTES[path]) {
-        return html(getAppLegalHTML(APP_LEGAL_ROUTES[path]));
-
-      } else if (path === '/support') {
-        return html(getAppSupportHTML());
-
-      } else if (path === '/') {
-        return html(getTradeVisionHTML());
-
-      } else if (path === '/learn' || path === '/learn/') {
-        return html(getLearningLibraryHTML());
-
-      } else if (path.startsWith('/learn/')) {
-        // An unknown slug is not a guide; fall through to the root redirect below
-        // rather than serving an empty page for anything under /learn/.
-        const slug = path.slice('/learn/'.length).replace(/\/+$/, '');
-        const guide = GUIDES.find((g) => g.slug === slug);
-        if (guide) return html(getGuideHTML(guide));
-        return Response.redirect(url.origin + '/learn', 302);
-
-      } else {
-        // The product site is a single page for now, so /optionsvision,
-        // /tradevision and anything else land on the root instead of 404ing.
-        return Response.redirect(url.origin + '/', 301);
-      }
+    const response = await route(request);
+    // Redirects and errors stay out; only fully-built pages are worth storing,
+    // and cache.put() derives its TTL from the response's own cache-control.
+    if (response.status === 200) {
+      ctx.waitUntil(cache.put(key, response.clone()));
     }
-
-    // ===== vishnumuthiah.com — the portfolio =====
-    if (path === '/privacy-policy') {
-      return new Response(getPrivacyPolicyHTML(), {
-        headers: { "content-type": "text/html;charset=UTF-8" },
-      });
-
-    } else if (path === '/terms-of-service') {
-      return new Response(getTermsOfServiceHTML(), {
-        headers: { "content-type": "text/html;charset=UTF-8" },
-      });
-
-    } else if (path === '/support') {
-      return new Response(getSupportHTML(), {
-        headers: { "content-type": "text/html;charset=UTF-8" },
-      });
-
-    } else if (path === '/sources-tracker') {
-      return new Response(getSourcesTrackerHomepageHTML(), {
-        headers: { "content-type": "text/html;charset=UTF-8" },
-      });
-
-    } else if (path === '/optionsvision' || path === '/tradevision') {
-      // Both retired 2026-07-25. /optionsvision used to serve a light-theme
-      // mirror of optionsvision.app -- the same content twice, on two domains,
-      // which is the duplication this removes. They stay as 301s rather than
-      // 404s because neither can be recalled: /tradevision is the old app-name
-      // URL, and both have been shared and indexed.
-      return Response.redirect('https://optionsvision.app/', 301);
-
-    } else {
-      return new Response(getHomepageHTML(), {
-        headers: { "content-type": "text/html;charset=UTF-8" },
-      });
-    }
+    return response;
   },
 };
+
+/// The edge cache is NOT cleared by a deploy, which would make a long s-maxage a
+/// trap: push a fix, and datacenters that already hold the old page keep serving
+/// it for a day. Folding the deployed version id into the key sidesteps that --
+/// every deploy starts from a cold, empty namespace and the old entries simply
+/// age out. `?__v` never reaches the origin; it exists only to key the cache.
+function cacheKey(request, env) {
+  const url = new URL(request.url);
+  url.searchParams.set('__v', env.CF_VERSION?.id ?? 'dev');
+  return new Request(url, request);
+}
+
+async function route(request) {
+  const url = new URL(request.url);
+  const path = url.pathname;
+  const isAppSite = url.hostname === APP_HOST || url.hostname.endsWith('.' + APP_HOST);
+
+  // ===== optionsvision.app — the product site =====
+  if (isAppSite) {
+    // ---- Universal Links ----
+    // Apple requires HTTPS and no redirect here. Serve it as application/json
+    // (the legacy Pages host serves application/octet-stream, which iOS also
+    // accepts, but there is no reason to be loose about it).
+    if (path === '/.well-known/apple-app-site-association') {
+      return new Response(JSON.stringify(APPLE_APP_SITE_ASSOCIATION, null, 2), {
+        headers: {
+          'content-type': 'application/json',
+          // Apple's CDN caches this; keep it short so a change propagates.
+          'cache-control': 'public, max-age=3600',
+        },
+      });
+    }
+
+    // Share links. The payload is the single path segment after /p/ and is
+    // read client-side from location.pathname, so every /p/<payload> serves
+    // the same page -- this is a rewrite, never a redirect, or the payload
+    // would be lost.
+    if (path.startsWith('/p/')) {
+      return html(sharePageFor(path));
+    }
+
+    // The legal pages here are OptionsVision's own, generated from the app.
+    // They are deliberately NOT the portfolio's same-named routes, which
+    // document the Sources Tracker Google Slides add-on.
+    if (APP_LEGAL_ROUTES[path]) {
+      return html(appLegalPage(APP_LEGAL_ROUTES[path]));
+
+    } else if (path === '/support') {
+      return html(appSupportPage());
+
+    } else if (path === '/') {
+      return html(appHomePage());
+
+    } else if (path === '/learn' || path === '/learn/') {
+      return html(learningLibraryPage());
+
+    } else if (path.startsWith('/learn/')) {
+      // An unknown slug is not a guide; fall through to the root redirect below
+      // rather than serving an empty page for anything under /learn/.
+      const slug = path.slice('/learn/'.length).replace(/\/+$/, '');
+      const guide = GUIDES.find((g) => g.slug === slug);
+      if (guide) return html(guidePage(slug, guide));
+      return Response.redirect(url.origin + '/learn', 302);
+
+    } else {
+      // The product site is a single page for now, so /optionsvision,
+      // /tradevision and anything else land on the root instead of 404ing.
+      return Response.redirect(url.origin + '/', 301);
+    }
+  }
+
+  // ===== vishnumuthiah.com — the portfolio =====
+  if (path === '/privacy-policy') {
+    return html(privacyPolicyPage());
+
+  } else if (path === '/terms-of-service') {
+    return html(termsOfServicePage());
+
+  } else if (path === '/support') {
+    return html(supportPage());
+
+  } else if (path === '/sources-tracker') {
+    return html(sourcesTrackerPage());
+
+  } else if (path === '/optionsvision' || path === '/tradevision') {
+    // Both retired 2026-07-25. /optionsvision used to serve a light-theme
+    // mirror of optionsvision.app -- the same content twice, on two domains,
+    // which is the duplication this removes. They stay as 301s rather than
+    // 404s because neither can be recalled: /tradevision is the old app-name
+    // URL, and both have been shared and indexed.
+    return Response.redirect('https://optionsvision.app/', 301);
+
+  } else {
+    return html(homePage());
+  }
+}
 
 
 // ===== SHARED STYLES (Edit once, applies everywhere) =====
@@ -1192,7 +1270,7 @@ function getLayout(title, content, additionalStyles = '', meta = {}) {
     // the image finishes downloading, instead of guessing and falling back small.
     // These MUST match the real file -- a client that trusts a wrong value and
     // then gets something else can drop back to the small card. Currently
-    // tradevision/og-card.png is 1200x630, rasterized from og-card.pdf by
+    // public/tradevision/og-card.png is 1200x630, rasterized from og-card.pdf by
     // tools/rasterize-pdf.swift (vectors drawn at target size, not upscaled).
     meta.imageWidth ? `<meta property="og:image:width" content="${meta.imageWidth}">` : '',
     meta.imageHeight ? `<meta property="og:image:height" content="${meta.imageHeight}">` : '',
@@ -1320,7 +1398,7 @@ function getSourcesTrackerHomepageHTML() {
 
               <h2>Overview of Sidebar Functionality</h2>
                <img
-                src="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/refs/heads/main/sources-tracker/Screenshot%202026-01-02%20at%204.10.37%20PM.png"
+                src="/sources-tracker/screenshot.png"
                 alt="Sources Tracker sidebar integrated into Google Slides"
               />
               <p>
@@ -1635,7 +1713,7 @@ ${getDemoVideosHTML()}
           </div>
 
           <div class="pf-links">
-            <a href="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/sources-tracker/Case%20Interview%20Mental%20Model.pdf" target="_blank" rel="noopener noreferrer">Download PDF &rarr;</a>
+            <a href="/sources-tracker/case-interview-mental-model.pdf" target="_blank" rel="noopener noreferrer">Download PDF &rarr;</a>
           </div>
         </article>
 
@@ -1651,7 +1729,7 @@ ${getDemoVideosHTML()}
           </div>
 
           <div class="pf-links">
-            <a href="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/Professional%20Bio%20-%20Vishnu%20Muthiah.pdf" target="_blank" rel="noopener noreferrer">Download PDF &rarr;</a>
+            <a href="/professional-bio.pdf" target="_blank" rel="noopener noreferrer">Download PDF &rarr;</a>
           </div>
         </article>
       </section>
@@ -2537,7 +2615,7 @@ function getWalkthroughCarouselHTML() {
   // Assets.xcassets/WalkthroughN.imageset and shows on first launch and from the
   // Walkthrough Library's "Intro Walkthrough" row. Regenerate all three copies
   // together from Walkthrough_Slides_Clean.pdf so the app and both sites never drift.
-  // Served from raw.githubusercontent.com at 751x1560 (2x the 360px carousel viewport).
+  // Served from public/tradevision/walkthrough/ at 751x1560 (2x the 360px carousel viewport).
   return `      <!-- Demo Walkthrough: seven intro slides, shared by optionsvision.app and the portfolio case study. -->
       <div class="portfolio-embed tv-walkthrough">
         <h3>Demo Walkthrough</h3>
@@ -2546,25 +2624,25 @@ function getWalkthroughCarouselHTML() {
           <div class="tv-carousel-viewport">
             <div class="tv-carousel-track">
               <div class="tv-carousel-slide">
-                <img class="tv-carousel-img" src="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/walkthrough/1.png" alt="OptionsVision walkthrough slide 1" loading="lazy" />
+                <img class="tv-carousel-img" src="/tradevision/walkthrough/1.png" alt="OptionsVision walkthrough slide 1" loading="lazy" />
               </div>
               <div class="tv-carousel-slide">
-                <img class="tv-carousel-img" src="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/walkthrough/2.png" alt="OptionsVision walkthrough slide 2" loading="lazy" />
+                <img class="tv-carousel-img" src="/tradevision/walkthrough/2.png" alt="OptionsVision walkthrough slide 2" loading="lazy" />
               </div>
               <div class="tv-carousel-slide">
-                <img class="tv-carousel-img" src="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/walkthrough/3.png" alt="OptionsVision walkthrough slide 3" loading="lazy" />
+                <img class="tv-carousel-img" src="/tradevision/walkthrough/3.png" alt="OptionsVision walkthrough slide 3" loading="lazy" />
               </div>
               <div class="tv-carousel-slide">
-                <img class="tv-carousel-img" src="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/walkthrough/4.png" alt="OptionsVision walkthrough slide 4" loading="lazy" />
+                <img class="tv-carousel-img" src="/tradevision/walkthrough/4.png" alt="OptionsVision walkthrough slide 4" loading="lazy" />
               </div>
               <div class="tv-carousel-slide">
-                <img class="tv-carousel-img" src="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/walkthrough/5.png" alt="OptionsVision walkthrough slide 5" loading="lazy" />
+                <img class="tv-carousel-img" src="/tradevision/walkthrough/5.png" alt="OptionsVision walkthrough slide 5" loading="lazy" />
               </div>
               <div class="tv-carousel-slide">
-                <img class="tv-carousel-img" src="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/walkthrough/6.png" alt="OptionsVision walkthrough slide 6" loading="lazy" />
+                <img class="tv-carousel-img" src="/tradevision/walkthrough/6.png" alt="OptionsVision walkthrough slide 6" loading="lazy" />
               </div>
               <div class="tv-carousel-slide">
-                <img class="tv-carousel-img" src="https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/walkthrough/7.png" alt="OptionsVision walkthrough slide 7" loading="lazy" />
+                <img class="tv-carousel-img" src="/tradevision/walkthrough/7.png" alt="OptionsVision walkthrough slide 7" loading="lazy" />
               </div>
             </div>
           </div>
@@ -3127,7 +3205,7 @@ ${getGuidesCarouselHTML()}
     description: 'Screenshot your trade and see the P&L payoff, Greeks, and break-evens privately on your phone.',
     // Purpose-built 1200x630 card. The old og:image was a portrait screenshot,
     // which every client cropped to a thin strip out of its middle.
-    image: 'https://raw.githubusercontent.com/vishnuamuthiah/vishnuamuthiah.com/main/tradevision/og-card.png',
+    image: 'https://optionsvision.app/tradevision/og-card.png',
     imageWidth: 1200,
     imageHeight: 630,
     imageAlt: 'OptionsVision — an options payoff curve rising across a navy background',

@@ -8,6 +8,13 @@
   "observability": {
     "enabled": true
   },
+  // Exposes the deployed version's id as env.CF_VERSION.id. The Worker folds it
+  // into its edge-cache keys, because a deploy does NOT purge caches.default --
+  // without this, a long s-maxage would keep serving yesterday's page from any
+  // datacenter that already had one.
+  "version_metadata": {
+    "binding": "CF_VERSION"
+  },
   // One Worker serves two sites, split by hostname in the fetch router:
   //   vishnumuthiah.com -> personal portfolio (light theme)
   //   optionsvision.app -> OptionsVision product site (navy app theme)
@@ -17,7 +24,31 @@
   "routes": [
     { "pattern": "vishnumuthiah.com", "custom_domain": true },
     { "pattern": "optionsvision.app", "custom_domain": true }
-  ]
+  ],
+  // Images and PDFs the pages reference. These used to be hot-linked from
+  // raw.githubusercontent.com, which is not a CDN: it serves them with
+  // cache-control max-age=300 and GitHub rate-limits hotlinking, and a repo
+  // rename or a flip to private would have broken the live site with no deploy
+  // and no error. Same-origin also matters for tradevision/og-card.png
+  // specifically -- link-preview crawlers are markedly happier with an og:image
+  // on the same origin as the page than with GitHub's sandboxed CSP.
+  //
+  // public/ is exactly "what the world can fetch". The sources that produce
+  // these files stay at the repo root (tradevision/og-card.pdf, the
+  // unreferenced screenshots, TradeVision Walkthrough.pdf) and never upload.
+  //
+  // A request matching a file here is served before the Worker runs; anything
+  // else falls through to the fetch handler, so no route changed.
+  "assets": {
+    "directory": "./public",
+    // Nothing in public/ is HTML, and the portfolio has a real /sources-tracker
+    // route. Leaving the default on would let the asset layer attempt
+    // /sources-tracker/index.html-style rewrites and shadow the router.
+    "html_handling": "none",
+    // A miss must reach the Worker -- the portfolio's catch-all serves the
+    // homepage, and the app site has its own redirects.
+    "not_found_handling": "none"
+  }
   // No "rules" entry needed for share-page.html: wrangler's default module rules
   // already load **/*.html as a Text module, which is how worker.js imports the
   // 47 KB share page as a string instead of inlining a file full of backticks

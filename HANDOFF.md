@@ -63,7 +63,7 @@ A `git push` may also trigger a Workers Builds CI deploy of the same code. Harml
 |---|---|---|
 | `legal-content.js` | `tools/extract-legal.py` | app's `TradeVision/LegalView.swift` |
 | `share-page.html` | `tools/sync-share-page.py` | app's `web/p/index.html` |
-| `tradevision/og-card.png` | `tools/rasterize-pdf.swift` + `tools/flatten-navy.swift` | `tradevision/og-card.pdf` |
+| `public/tradevision/og-card.png` | `tools/rasterize-pdf.swift` + `tools/flatten-navy.swift` | `tradevision/og-card.pdf` |
 
 The legal pages exist so App Store Connect's privacy URL says what the app says. Edit the **Swift**,
 re-run the script, redeploy. The Privacy Policy interpolates `TradeShare.host`, so changing the
@@ -72,9 +72,28 @@ share domain changes the legal copy automatically — that is by design.
 Regenerate the OG card after a new PowerPoint → PDF export:
 
 ```bash
-swift tools/rasterize-pdf.swift tradevision/og-card.pdf tradevision/og-card.png 1200 630
-swift tools/flatten-navy.swift tradevision/og-card.png tradevision/og-card.png
+swift tools/rasterize-pdf.swift tradevision/og-card.pdf public/tradevision/og-card.png 1200 630
+swift tools/flatten-navy.swift public/tradevision/og-card.png public/tradevision/og-card.png
 ```
+
+## `public/` — the only files the world can fetch
+
+Images and PDFs are served by Workers Static Assets from `public/`, declared in `wrangler.jsonc`.
+Until 2026-07-26 they were hot-linked from `raw.githubusercontent.com`, which is not a CDN: 5-minute
+cache headers, hotlink rate limits, a sandboxed CSP that link-preview crawlers dislike, and a live
+site that a repo rename would have broken with no deploy and no error.
+
+**`public/` is exactly what is publicly fetchable. Sources stay at the repo root and never upload** —
+`tradevision/og-card.pdf`, `TradeVision Walkthrough.pdf`, and the unreferenced `edit-trade.png` /
+`launch-screen.png` / `payoff-chart.png`. A file matching a request is served *before* the Worker
+runs; a miss falls through to the router, so no route changed.
+
+Two config files in `public/` are read by wrangler and never uploaded:
+
+- `.assetsignore` — keeps `.DS_Store` out.
+- `_headers` — cache policy. **Matching rules are additive, not most-specific-wins.** A `/*` block
+  plus a per-file block emits both `Cache-Control` values comma-joined into one malformed header
+  (hit exactly this way while building it). Every asset must match exactly one rule.
 
 ## Theming: tokens, not a fork
 

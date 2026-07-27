@@ -977,13 +977,36 @@
       update();
     }
 
+    /// What the summary card says instead of a chart. Two branches, because there are two
+    /// genuinely different reasons to land here and they call for different sentences:
+    ///
+    /// * No `legs` at all ⇒ the link predates the payload that carries them. Current builds
+    ///   always emit legs, so this is the ONLY way a well-formed link reaches this card — and
+    ///   in practice it's a calendar or diagonal, the one shape the old `kind`-based decoder
+    ///   could never rebuild. Say what the trade is (both dates are in the payload) and why
+    ///   there's no chart, because "get the app" doesn't explain a blank where a chart was.
+    /// * Legs present but unusable ⇒ no spot to frame the curve on, or a leg type this build
+    ///   doesn't know. Nothing useful to describe, so don't pretend otherwise.
+    function summaryNote(t) {
+      const near = expLabel(t.expMonth, t.expDay, t.expYear);
+      const far = expLabel(t.expMonth2, t.expDay2, t.expYear2);
+      if (Array.isArray(t.legs)) return "This link doesn't carry enough detail to chart the payoff here.";
+
+      let shape = "";
+      if (far) {
+        const strikes = [...new Set([t.strike, t.strike2].filter(k => k > 0))].sort((a, b) => a - b);
+        const at = strikes.length === 1 ? ` at the ${px(strikes[0])} strike`
+                 : strikes.length ? ` at ${strikes.map(fmtStrike).join("/")}` : "";
+        shape = `A two-expiration spread${at}, front ${near || "—"} / back ${far}. `;
+      }
+      return `${shape}This link came from an earlier version of the app, so it can't be charted here.`;
+    }
+
     function renderSummaryOnly(t) {
-      // Nothing chartable came out of the payload: a calendar link shared before the legs
-      // travelled, or a trade missing the spot the whole curve is framed on. Facts, and a
-      // nudge to the app. Every link the current build writes charts instead.
+      // Nothing chartable came out of the payload — see `summaryNote` for the two ways that
+      // happens. Facts, and a nudge to the app. Every link the current build writes charts.
       const app = document.getElementById("app");
       const sen = sentiment(strategyName(t));
-      const near = expLabel(t.expMonth, t.expDay, t.expYear), far = expLabel(t.expMonth2, t.expDay2, t.expYear2);
       app.innerHTML = `
         <div class="top">
           <span class="sym">${esc((t.symbol || "—").toUpperCase())}</span>
@@ -996,7 +1019,7 @@
         </div>
         <div class="sub">${esc(strategyName(t) || "Options trade")}</div>
         <div class="panel"><div class="note" style="font-size:14px;color:var(--dim)">
-          ${/Calendar/.test(strategyName(t)) ? `Calendar spread at the ${t.strike ? px(t.strike) : ""} strike${near ? ", front " + near : ""}${far ? " / back " + far : ""}.` : "This trade type"}
+          ${esc(summaryNote(t))}
           Open it in OptionsVision for the full interactive payoff, sliders, and greeks.</div></div>
         <div class="cta" id="cta">Open in OptionsVision</div>
         <div class="foot">OptionsVision is an educational options visualizer and not investment advice.</div>`;

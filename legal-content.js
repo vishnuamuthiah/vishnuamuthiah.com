@@ -6,12 +6,12 @@
 export const LEGAL_INFO = {
   "appName": "OptionsVision",
   "effectiveDate": "July 16, 2026",
-  "provider": "Vishnu Muthiah",
-  "contactEmail": "VishnuAMuthiah@gmail.com",
+  "provider": "OptionsVision",
+  "contactEmail": "optionstradervision@gmail.com",
   "governingLaw": "Arlington, Virginia, United States"
 };
 
-export const LEGAL_FINE_PRINT = "OptionsVision is an educational tool and is not affiliated with any broker, exchange, or the Options Clearing Corporation. Last updated July 16, 2026.";
+export const LEGAL_FINE_PRINT = "OptionsVision is an educational tool and is not affiliated with any broker, exchange, or the Options Clearing Corporation. Robinhood is a trademark of Robinhood Markets, Inc.; OptionsVision is not affiliated with, endorsed by, or sponsored by Robinhood Markets, Inc., and reads screenshots you supply rather than connecting to any brokerage account. Last updated July 16, 2026.";
 
 export const LEGAL_DOCS = [
   {
@@ -104,7 +104,7 @@ export const LEGAL_DOCS = [
       },
       {
         "heading": "Contact",
-        "body": "Questions about this Privacy Policy? Contact us at VishnuAMuthiah@gmail.com."
+        "body": "Questions about this Privacy Policy? Contact us at optionstradervision@gmail.com."
       }
     ]
   },
@@ -131,7 +131,7 @@ export const LEGAL_DOCS = [
       },
       {
         "heading": "Limitation of Liability",
-        "body": "TO THE MAXIMUM EXTENT PERMITTED BY LAW, IN NO EVENT WILL VISHNU MUTHIAH BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR FOR ANY LOSS OF PROFITS OR TRADING OR INVESTMENT LOSSES, ARISING OUT OF OR RELATED TO YOUR USE OF THE APP, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES."
+        "body": "TO THE MAXIMUM EXTENT PERMITTED BY LAW, IN NO EVENT WILL OPTIONSVISION BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR FOR ANY LOSS OF PROFITS OR TRADING OR INVESTMENT LOSSES, ARISING OUT OF OR RELATED TO YOUR USE OF THE APP, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES."
       },
       {
         "heading": "Accuracy of Information",
@@ -139,7 +139,7 @@ export const LEGAL_DOCS = [
       },
       {
         "heading": "Intellectual Property",
-        "body": "The App, including its design, text, graphics, and logos, is owned by Vishnu Muthiah and is protected by applicable intellectual-property laws. You may not copy, modify, distribute, or reverse-engineer the App except as permitted by law."
+        "body": "The App, including its design, text, graphics, and logos, is owned by OptionsVision and is protected by applicable intellectual-property laws. You may not copy, modify, distribute, or reverse-engineer the App except as permitted by law."
       },
       {
         "heading": "Third-Party Platforms",
@@ -155,7 +155,7 @@ export const LEGAL_DOCS = [
       },
       {
         "heading": "Contact",
-        "body": "Questions about these Terms? Contact us at VishnuAMuthiah@gmail.com."
+        "body": "Questions about these Terms? Contact us at optionstradervision@gmail.com."
       }
     ]
   }

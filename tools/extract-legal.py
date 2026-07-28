@@ -85,10 +85,11 @@ def document(key):
 
 docs = [document(k) for k in ("disclaimer", "privacy", "terms")]
 
-fine_print = (
-    f"{INFO['appName']} is an educational tool and is not affiliated with any broker, "
-    f"exchange, or the Options Clearing Corporation. Last updated {INFO['effectiveDate']}."
-)
+# Read from the app rather than restated here. This was a hardcoded copy of the Swift
+# string, which quietly defeated the point of generating the page at all: an edit to
+# `finePrint` in LegalView.swift left the site showing the previous wording, and nothing
+# failed to say so. `swift_const` exits non-zero if the constant moves or is renamed.
+fine_print = unescape(swift_const(src, "finePrint"))
 
 banner = (
     "// GENERATED FILE -- DO NOT EDIT BY HAND.\n"

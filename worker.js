@@ -31,6 +31,33 @@ const APPLE_APP_SITE_ASSOCIATION = {
   },
 };
 
+// App Links: Google's Digital Asset Links fetcher reads this to learn which
+// Android app owns which URLs on this domain, which is what lets `autoVerify`
+// promote the app to the default handler instead of showing a chooser. Must be
+// served over HTTPS with no redirect, as application/json.
+//
+// Mirrors docs/applinks/assetlinks.json in the Android repo, and the copy the
+// legacy tradevision-web.pages.dev host has served since 2026-07-20 for links
+// shared before the domain move -- both must keep working, forever.
+//
+// The single fingerprint here is the DEBUG keystore's. Play App Signing re-signs
+// the uploaded bundle with a different certificate, so before the Play release
+// the release cert's SHA-256 (Play Console -> App integrity) has to be APPENDED
+// to this array -- appended, not swapped, so debug builds keep verifying too.
+// Until then, release builds fall back to the chooser.
+const ANDROID_ASSET_LINKS = [
+  {
+    relation: ['delegate_permission/common.handle_all_urls'],
+    target: {
+      namespace: 'android_app',
+      package_name: 'com.tradevision.app',
+      sha256_cert_fingerprints: [
+        '02:9F:CA:C5:C6:12:D6:C8:8A:EE:42:E0:29:06:1A:C1:52:D9:54:81:56:90:99:D2:B7:97:23:59:D3:99:1B:6A',
+      ],
+    },
+  },
+];
+
 // Hostname of the OptionsVision product site. One Worker serves both sites; the
 // router branches on this so the app domain gets the app's navy theme and a
 // product homepage, while vishnumuthiah.com stays the light portfolio.
@@ -226,6 +253,19 @@ async function route(request) {
         headers: {
           'content-type': 'application/json',
           // Apple's CDN caches this; keep it short so a change propagates.
+          'cache-control': 'public, max-age=3600',
+        },
+      });
+    }
+
+    // ---- App Links (Android) ----
+    // Same contract as the AASA above: HTTPS, no redirect, application/json.
+    if (path === '/.well-known/assetlinks.json') {
+      return new Response(JSON.stringify(ANDROID_ASSET_LINKS, null, 2), {
+        headers: {
+          'content-type': 'application/json',
+          // Google's fetcher caches this; keep it short so appending the release
+          // cert's fingerprint propagates without a long wait.
           'cache-control': 'public, max-age=3600',
         },
       });

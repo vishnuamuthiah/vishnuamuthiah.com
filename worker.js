@@ -1379,7 +1379,6 @@ function getMobileStyles() {
 
         /* Neighbor videos get clipped on phones, so restore the prev/next arrows
            as the way to change videos. (Loaded last, so this wins the display:none above.) */
-        .tv-coverflow .tv-carousel-arrow { display: flex; }
 
         /* Comfortable edge padding on small screens */
         .container { padding-left: 16px; padding-right: 16px; padding-top: 28px; }
@@ -2298,9 +2297,11 @@ function getCarouselCSS() {
       .tv-cf-item:not(.is-active) .tv-short-frame {
         pointer-events: none;
       }
+      /* Shown at every width, matching the Demo Walkthrough. Clicking a
+         neighbouring video still brings it forward too -- the arrows are a
+         second way in, not a replacement for it. */
       .tv-coverflow .tv-carousel-arrow {
         z-index: 4;
-        display: none; /* desktop: neighbor videos are visible + clickable, no arrows needed */
       }
       .tv-cf-item .tv-carousel-caption {
         max-width: 365px;
@@ -2311,7 +2312,7 @@ function getCarouselCSS() {
         /* Phones only. Here the 365px card is wider than the stage, so nothing
            can sit beside it and --tv-fan would floor at 0 and stack all three
            dead centre. Keep the original hard fan and let the stage clip it --
-           the mobile stylesheet brings the prev/next arrows back to compensate.
+           the prev/next arrows are the way through at this width.
            Was max-width: 760px, which meant 601-760px got this off-screen fan
            without the clipping that only applies at 600px and below. */
         .tv-cf-item.is-prev { transform: translateX(calc(-50% - 42vw)) scale(0.78); }

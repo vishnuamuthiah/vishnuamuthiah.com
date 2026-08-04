@@ -299,16 +299,30 @@ async function route(request) {
     } else if (path === '/model/import' || path === '/model/import/') {
       return html(modelImportPage());
 
-    } else if (path === '/learn' || path === '/learn/') {
+    } else if (path === '/resources' || path === '/resources/') {
       return html(learningLibraryPage());
 
-    } else if (path.startsWith('/learn/')) {
-      // An unknown slug is not a guide; fall through to the root redirect below
-      // rather than serving an empty page for anything under /learn/.
-      const slug = path.slice('/learn/'.length).replace(/\/+$/, '');
+    } else if (path.startsWith('/resources/')) {
+      // An unknown slug is not a guide; send it to the index rather than
+      // serving an empty page for anything under /resources/.
+      const slug = path.slice('/resources/'.length).replace(/\/+$/, '');
       const guide = GUIDES.find((g) => g.slug === slug);
       if (guide) return html(guidePage(slug, guide));
-      return Response.redirect(url.origin + '/learn', 302);
+      return Response.redirect(url.origin + '/resources', 302);
+
+    // The old /learn paths, renamed to /resources 2026-08-04. Kept as 301s
+    // rather than dropped: the library and every guide under it have been
+    // indexed and shared, and a 301 is what carries that to the new address.
+    // Guides move slug-for-slug, so the mapping is mechanical -- but an unknown
+    // slug goes to the index directly rather than to /resources/<unknown>,
+    // which would only bounce again.
+    } else if (path === '/learn' || path === '/learn/') {
+      return Response.redirect(url.origin + '/resources', 301);
+
+    } else if (path.startsWith('/learn/')) {
+      const slug = path.slice('/learn/'.length).replace(/\/+$/, '');
+      const known = GUIDES.some((g) => g.slug === slug);
+      return Response.redirect(url.origin + '/resources' + (known ? '/' + slug : ''), 301);
 
     } else {
       // The product site is a single page for now, so /optionsvision,
@@ -824,7 +838,7 @@ function getTradeVisionPageStyles() {
          Landing-page shell
          =====================================================================
          Everything below is scoped to .ov-page (or to .ov-nav, which only the
-         product page emits). This sheet is also loaded by the /learn guide
+         product page emits). This sheet is also loaded by the /resources guide
          pages, and they must keep the 736px editorial measure.
 
          SPECIFICITY NOTE, and it is load-bearing: getLayout() injects this
@@ -903,7 +917,30 @@ function getTradeVisionPageStyles() {
         font-size: 0.9375rem;
         transition: color 0.15s ease;
       }
-      .ov-nav__links a:hover { color: var(--accent); text-decoration: none; }
+      /* Hover goes bold and white, not accent. Bold is wider than regular, so
+         hovering an item in a flex row would shove its neighbours sideways --
+         .ov-nav__reserve holds the BOLD width at all times by rendering the
+         label a second time, bold and zero-height, inside the same box. The
+         visible text then only changes weight, never the box. */
+      .ov-nav__reserve {
+        display: inline-flex;
+        flex-direction: column;
+      }
+      .ov-nav__reserve::after {
+        content: attr(data-label);
+        height: 0;
+        overflow: hidden;
+        visibility: hidden;
+        font-weight: 700;
+        pointer-events: none;
+        /* Nothing here may be read aloud -- it is the same words twice. */
+        speak: never;
+      }
+      .ov-nav__links a:hover {
+        color: var(--text);
+        font-weight: 700;
+        text-decoration: none;
+      }
       /* ---- "Model on the Web" menu ----
          Rendered in BOTH bars, so every rule here is keyed on its own classes
          rather than on .ov-nav. One consequence worth knowing: getMotionStyles
@@ -938,7 +975,10 @@ function getTradeVisionPageStyles() {
         left: 50%;
         transform: translateX(-50%) translateY(-6px);
         z-index: 60;
-        min-width: 320px;
+        /* Fixed, not min-width: the labels go bold on hover, and a content-sized
+           panel would grow by a few pixels under the pointer. 340 clears the
+           longest label at bold with room for the badge. */
+        width: 340px;
         padding: 6px;
         border: 1px solid var(--border);
         border-radius: 14px;
@@ -990,7 +1030,14 @@ function getTradeVisionPageStyles() {
         gap: 2px;
         min-width: 0;
       }
-      .ov-nav__menu-label { color: var(--text); line-height: 1.25; }
+      .ov-nav__menu-label {
+        color: var(--text);
+        line-height: 1.25;
+        transition: font-weight 0.12s ease;
+      }
+      /* Only the white label bolds. The description underneath stays muted and
+         regular, so the row gains emphasis without the whole block thickening. */
+      .ov-nav__menuwrap .ov-nav__menu a:hover .ov-nav__menu-label { font-weight: 700; }
       /* The second line is the point of the change. Two bare labels in a large
          panel left the menu mostly padding, and "Manual Input" does not say what
          it does on its own. A line of explanation fills the space with something
@@ -1018,7 +1065,7 @@ function getTradeVisionPageStyles() {
         flex: 0 0 auto;
         fill: var(--gold);
       }
-      .ov-nav__menuwrap.is-open .ov-nav__menubtn { color: var(--accent); }
+      .ov-nav__menuwrap.is-open .ov-nav__menubtn { color: var(--text); font-weight: 700; }
       .ov-nav__menuwrap.is-open .ov-nav__caret { transform: rotate(180deg); }
       .ov-nav__menuwrap.is-open .ov-nav__menu,
       .ov-nav__menuwrap:focus-within .ov-nav__menu {
@@ -1031,7 +1078,7 @@ function getTradeVisionPageStyles() {
                     visibility 0s;
       }
       @media (hover: hover) and (pointer: fine) {
-        .ov-nav__menuwrap:hover .ov-nav__menubtn { color: var(--accent); }
+        .ov-nav__menuwrap:hover .ov-nav__menubtn { color: var(--text); font-weight: 700; }
         .ov-nav__menuwrap:hover .ov-nav__caret { transform: rotate(180deg); }
         .ov-nav__menuwrap:hover .ov-nav__menu {
           opacity: 1;
@@ -1054,10 +1101,16 @@ function getTradeVisionPageStyles() {
         text-decoration: none;
         transition: background 0.15s ease, transform 0.15s ease;
       }
+      /* text-decoration: none is load-bearing here, not defensive. getSharedStyles
+         sets a blanket a:hover { text-decoration: underline }, which was drawing
+         a line under the pill's label. */
+      .ov-nav__cta,
+      .ov-nav__cta:hover {
+        text-decoration: none;
+      }
       .ov-nav__cta:hover {
         background: var(--accent-hover);
         transform: translateY(-1px);
-        text-decoration: none;
       }
       /* Phones keep the brand and the CTA and drop the section links -- four
          anchors will not fit beside a pill at 360px, and every one of them is
@@ -1135,7 +1188,7 @@ function getTradeVisionPageStyles() {
          reduced motion should never get it, including on a browser that only
          honours the media query and not a later reset.
 
-         This sheet only loads on the product host and the /learn guides, which
+         This sheet only loads on the product host and the /resources guides, which
          are the pages that have in-page anchors at all. */
       @media (prefers-reduced-motion: no-preference) {
         html { scroll-behavior: smooth; }
@@ -1291,7 +1344,7 @@ function getTradeVisionPageStyles() {
         font-size: 1.0625rem;
         font-weight: 600;
         letter-spacing: -0.01em;
-        transition: color 0.22s ease;
+        transition: color 0.22s ease, text-shadow 0.22s ease;
       }
       .ov-strat__count {
         flex: 0 0 auto;
@@ -1416,8 +1469,16 @@ function getTradeVisionPageStyles() {
         background: var(--surface-alt);
         z-index: 7;
       }
+      /* Open/hover lifts the title to full white and gives it a soft halo,
+         rather than turning it accent-blue. Blue reads as "this is a link" --
+         and these are group headings, not links. The glow is the off-white ink
+         colour at low alpha, so it reads as the text lighting up rather than a
+         coloured shadow behind it. */
       .ov-strat__card.is-open .ov-strat__name,
-      .ov-strat__card:focus-within .ov-strat__name { color: var(--accent); }
+      .ov-strat__card:focus-within .ov-strat__name {
+        color: var(--text);
+        text-shadow: 0 0 14px rgba(235, 230, 218, 0.42);
+      }
       .ov-strat__card.is-open .ov-strat__head,
       .ov-strat__card:focus-within .ov-strat__head { box-shadow: inset 0 -1px 0 var(--border); }
       .ov-strat__card.is-open .ov-strat__panel,
@@ -1439,7 +1500,10 @@ function getTradeVisionPageStyles() {
           background: var(--surface-alt);
           z-index: 7;
         }
-        .ov-strat__card:hover .ov-strat__name { color: var(--accent); }
+        .ov-strat__card:hover .ov-strat__name {
+          color: var(--text);
+          text-shadow: 0 0 14px rgba(235, 230, 218, 0.42);
+        }
         .ov-strat__card:hover .ov-strat__head { box-shadow: inset 0 -1px 0 var(--border); }
         .ov-strat__card:hover .ov-strat__panel {
           opacity: 1;
@@ -1896,7 +1960,14 @@ function getMotionStyles(reveal = true) {
         white-space: nowrap;
         transition: color 0.15s ease;
       }
-      .tv-stickybar__links a:hover { color: var(--accent); text-decoration: none; }
+      /* Matches the at-rest nav: bold and white on hover, never accent. The
+         .ov-nav__reserve span inside each link holds the bold width, so the bar's
+         items do not shuffle under the pointer either. */
+      .tv-stickybar__links a:hover {
+        color: var(--text);
+        font-weight: 700;
+        text-decoration: none;
+      }
       /* Same breakpoint the at-rest nav drops its links at, so the bar never
          shows a set of links the page above it has already hidden. */
       @media (max-width: 860px) {
@@ -1978,7 +2049,7 @@ const OV_CROWN_SVG = `<svg class="ov-crown" viewBox="0 0 24 24" aria-hidden="tru
 /// (hover: hover), tap and keyboard driving the same class.
 const OV_NAV_LINKS = `<div class="ov-nav__menuwrap">
           <button class="ov-nav__menubtn" type="button" aria-expanded="false" aria-controls="ovModelMenu">
-            Model on the Web
+            <span class="ov-nav__reserve" data-label="Model on the Web">Model on the Web</span>
             <svg class="ov-nav__caret" viewBox="0 0 10 6" aria-hidden="true" focusable="false"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
           <div class="ov-nav__menu" id="ovModelMenu">
@@ -1997,7 +2068,7 @@ const OV_NAV_LINKS = `<div class="ov-nav__menuwrap">
             </a>
           </div>
         </div>
-        <a href="/learn">Resources</a>`;
+        <a href="/resources"><span class="ov-nav__reserve" data-label="Resources">Resources</span></a>`;
 
 /// Apple's official "Download on the App Store" badge, black, US/UK, pulled from
 /// toolbox.marketingtools.apple.com. Apple asks that the badge be used as
@@ -2301,7 +2372,7 @@ function getMotionScript(reveal = true) {
       // badge had fully cleared the top, most of a viewport later, so the whole
       // hero scrolled by with no visible CTA at all.
       //
-      // The /learn guides have no nav, so they fall back to their own CTA. The
+      // Guide pages have no nav, so they fall back to their own CTA. The
       // guard below is a bar && trigger test, so a miss fails silently.
       var trigger = document.querySelector('.ov-nav') ||
                     document.querySelector('.ov-hero__cta, .tv-cta');
@@ -4136,7 +4207,7 @@ function getAppSupportHTML() {
 }
 
 // ===== Learning Library =====
-// Five strategy guides, each its own page at /learn/<slug> on optionsvision.app,
+// Five strategy guides, each its own page at /resources/<slug> on optionsvision.app,
 // surfaced by a card carousel at the bottom of the product page.
 //
 // Content is written per-guide in its own session, edited by hand, and given real
@@ -4199,7 +4270,7 @@ function getGuidesCarouselHTML() {
   if (!live.length) return '';
   // Product host only, so these are same-origin paths. The absolute-URL variant
   // existed for the portfolio mirror at /optionsvision, retired 2026-07-26.
-  const base = '/learn/';
+  const base = '/resources/';
   const slides = live.map((g) => `
               <div class="tv-carousel-slide">
                 <a class="tv-guide-card" href="${base}${g.slug}">
@@ -4228,28 +4299,29 @@ ${dots}
       </div>`;
 }
 
-/// The /learn index. Lists published guides; says so plainly when there are none.
+/// The /resources index. Lists published guides; says so plainly when there are none.
 function getLearningLibraryHTML() {
   const live = publishedGuides();
   const list = live.length
-    ? live.map((g) => `        <a class="tv-guide-row" href="/learn/${g.slug}">
+    ? live.map((g) => `        <a class="tv-guide-row" href="/resources/${g.slug}">
           <span class="tv-guide-row__title">${escapeHTML(g.title)}</span>
           <span class="tv-guide-row__dek">${escapeHTML(g.dek)}</span>
         </a>`).join('\n')
     : `        <p class="tv-guides-intro">The first guides are being written. Check back shortly.</p>`;
 
-  return getLayout('Learning Library — OptionsVision', `
-${getStickyBarHTML('Get the App', 'https://apps.apple.com/app/id6786063635')}
+  return getLayout('Resources — OptionsVision', `
+${getStickyBarHTML('Get the App', 'https://apps.apple.com/app/id6786063635', OV_NAV_LINKS)}
+    ${getOvNavHTML()}
     <div class="container">
-      <h1>Learning Library</h1>
-      <p class="tagline">Plain-English guides to the options strategies OptionsVision charts. Educational only &mdash; none of this is financial advice or a recommendation to trade.</p>
+      <h1>Resources</h1>
+      <p class="tagline">Selection of OptionsVision guides to learn about options.</p>
       <div class="tv-guide-list">
 ${list}
       </div>
     </div>
   `, getTradeVisionPageStyles(), {
-    description: 'Plain-English guides to the options strategies OptionsVision charts.',
-    url: 'https://' + APP_HOST + '/learn',
+    description: 'Selection of OptionsVision guides to learn about options.',
+    url: 'https://' + APP_HOST + '/resources',
     noindex: live.length === 0,
   });
 }
@@ -4271,7 +4343,7 @@ ${s.p.map((p) => `        <p>${escapeHTML(p)}</p>`).join('\n')}`).join('\n')}
   return getLayout(escapeHTML(guide.title) + ' — OptionsVision', `
 ${getStickyBarHTML('Get the App', 'https://apps.apple.com/app/id6786063635')}
     <div class="container">
-      <a href="/learn" class="back-link">&larr; Learning Library</a>
+      <a href="/resources" class="back-link">&larr; Resources</a>
       <h1>${escapeHTML(guide.title)}</h1>
       ${guide.dek ? `<p class="tagline">${escapeHTML(guide.dek)}</p>` : ''}
 ${body}
@@ -4279,7 +4351,7 @@ ${body}
     </div>
   `, getTradeVisionPageStyles(), {
     description: guide.dek || (guide.title + ' — a plain-English strategy guide from OptionsVision.'),
-    url: 'https://' + APP_HOST + '/learn/' + guide.slug,
+    url: 'https://' + APP_HOST + '/resources/' + guide.slug,
     noindex: draft,
   });
 }

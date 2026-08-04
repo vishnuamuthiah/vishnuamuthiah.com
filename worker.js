@@ -200,6 +200,8 @@ const sourcesTrackerPage = once(getSourcesTrackerHomepageHTML);
 const appHomePage = once(getTradeVisionHTML);
 const appSupportPage = once(getAppSupportHTML);
 const learningLibraryPage = once(getLearningLibraryHTML);
+const modelPage = once(getModelHTML);
+const modelImportPage = once(getModelImportHTML);
 const appLegalPage = onceBy(getAppLegalHTML);
 /// Keyed by slug rather than by the guide object so a rebuilt GUIDES entry can't
 /// silently produce a second cache line for the same page.
@@ -290,6 +292,12 @@ async function route(request) {
 
     } else if (path === '/') {
       return html(appHomePage());
+
+    } else if (path === '/model' || path === '/model/') {
+      return html(modelPage());
+
+    } else if (path === '/model/import' || path === '/model/import/') {
+      return html(modelImportPage());
 
     } else if (path === '/learn' || path === '/learn/') {
       return html(learningLibraryPage());
@@ -896,6 +904,112 @@ function getTradeVisionPageStyles() {
         transition: color 0.15s ease;
       }
       .ov-nav__links a:hover { color: var(--accent); text-decoration: none; }
+      /* ---- "Model on the Web" menu ----
+         Rendered in BOTH bars, so every rule here is keyed on its own classes
+         rather than on .ov-nav. One consequence worth knowing: getMotionStyles
+         loads after this sheet and defines .tv-stickybar__links a at (0,1,1),
+         so the menu's own link rule is written as .ov-nav__menuwrap
+         .ov-nav__menu a -- (0,2,1) -- or the bar's colour would win inside the
+         dropdown. */
+      .ov-nav__menuwrap { position: relative; }
+      .ov-nav__menubtn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 0;
+        background: none;
+        border: 0;
+        font: inherit;
+        font-size: 0.9375rem;
+        color: var(--text-body);
+        cursor: pointer;
+        white-space: nowrap;
+        transition: color 0.15s ease;
+      }
+      .ov-nav__caret {
+        width: 10px;
+        height: 6px;
+        flex: 0 0 auto;
+        transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .ov-nav__menu {
+        position: absolute;
+        top: calc(100% + 10px);
+        left: 50%;
+        transform: translateX(-50%) translateY(-6px);
+        z-index: 60;
+        min-width: 258px;
+        padding: 7px;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: var(--surface);
+        box-shadow: 0 26px 46px -20px rgba(0, 0, 0, 0.92);
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition: opacity 0.18s ease,
+                    transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+                    visibility 0s 0.22s;
+      }
+      /* A gap between the button and the panel would close the menu the moment
+         the pointer crossed it. This bridges it -- invisible, and only while
+         the menu is open, so it never sits over anything clickable at rest. */
+      .ov-nav__menu::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: -12px;
+        height: 12px;
+      }
+      .ov-nav__menuwrap .ov-nav__menu a {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 10px 12px;
+        border-radius: 9px;
+        color: var(--text-body);
+        font-size: 0.9375rem;
+        text-decoration: none;
+        white-space: nowrap;
+        transition: background 0.14s ease, color 0.14s ease;
+      }
+      .ov-nav__menuwrap .ov-nav__menu a:hover {
+        background: var(--surface-alt);
+        color: var(--text);
+        text-decoration: none;
+      }
+      .ov-crown {
+        width: 15px;
+        height: 15px;
+        flex: 0 0 auto;
+        fill: var(--gold);
+      }
+      .ov-nav__menuwrap.is-open .ov-nav__menubtn { color: var(--accent); }
+      .ov-nav__menuwrap.is-open .ov-nav__caret { transform: rotate(180deg); }
+      .ov-nav__menuwrap.is-open .ov-nav__menu,
+      .ov-nav__menuwrap:focus-within .ov-nav__menu {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+        transform: translateX(-50%) translateY(0);
+        transition: opacity 0.18s ease,
+                    transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+                    visibility 0s;
+      }
+      @media (hover: hover) and (pointer: fine) {
+        .ov-nav__menuwrap:hover .ov-nav__menubtn { color: var(--accent); }
+        .ov-nav__menuwrap:hover .ov-nav__caret { transform: rotate(180deg); }
+        .ov-nav__menuwrap:hover .ov-nav__menu {
+          opacity: 1;
+          visibility: visible;
+          pointer-events: auto;
+          transform: translateX(-50%) translateY(0);
+          transition: opacity 0.18s ease,
+                      transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+                      visibility 0s;
+        }
+      }
       .ov-nav__cta {
         flex: 0 0 auto;
         background: var(--accent);
@@ -1330,6 +1444,189 @@ function getTradeVisionPageStyles() {
         .ov-strat__name { font-size: 0.9375rem; }
       }
 
+      /* =====================================================================
+         /model and /model/import
+         ===================================================================== */
+      .ov-model { padding-top: 8px; }
+      .ov-model__head { padding: 44px 0 30px; max-width: 62ch; }
+      .ov-model__title {
+        margin: 0;
+        font-size: clamp(2.1rem, 4vw, 3.1rem);
+        line-height: 1.06;
+        letter-spacing: -0.02em;
+        font-weight: 400;
+        color: var(--text);
+      }
+      .ov-model__sub {
+        margin: 16px 0 0;
+        color: var(--text-body);
+        font-size: 1.0625rem;
+        line-height: 1.55;
+      }
+      .ov-model__pro {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0 0 14px;
+        font-size: 0.8125rem;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        color: var(--gold);
+      }
+
+      .ov-model__form { max-width: 900px; }
+      /* auto-fit rather than a fixed count: this row carries three fields on the
+         header and six on a leg, and both should fill the width they are given
+         instead of each needing its own breakpoint. */
+      .ov-field-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 14px;
+      }
+      .ov-field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+      .ov-field > span {
+        font-size: 0.8125rem;
+        color: var(--text-muted);
+        letter-spacing: 0.01em;
+      }
+      .ov-field > span em {
+        font-style: normal;
+        opacity: 0.72;
+      }
+      .ov-field input,
+      .ov-field select {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--surface);
+        color: var(--text);
+        font: inherit;
+        font-size: 0.9375rem;
+        /* iOS zooms the page when a focused field is under 16px. These are
+           0.9375rem = 15px, so the size is bumped on touch rather than letting
+           the viewport jump on every tap. */
+        transition: border-color 0.15s ease;
+      }
+      @media (pointer: coarse) {
+        .ov-field input, .ov-field select { font-size: 1rem; }
+      }
+      .ov-field input:focus,
+      .ov-field select:focus {
+        outline: none;
+        border-color: var(--accent);
+      }
+      /* Safari renders date inputs with a light UA background on dark grounds
+         and a black glyph, which disappears against navy. */
+      .ov-field input[type="date"] { color-scheme: dark; }
+
+      .ov-leg {
+        margin: 0 0 14px;
+        padding: 16px 16px 4px;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: var(--surface-alt);
+      }
+      .ov-leg__head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+      }
+      .ov-leg__n {
+        font-size: 0.8125rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--gold);
+      }
+      .ov-leg__rm {
+        padding: 0;
+        border: 0;
+        background: none;
+        font: inherit;
+        font-size: 0.8125rem;
+        color: var(--text-muted);
+        cursor: pointer;
+      }
+      .ov-leg__rm:hover { color: var(--accent); }
+      .ov-leg__rm[hidden] { display: none; }
+      /* Stock has no strike and no expiration of its own. Hidden rather than
+         disabled so there is nothing on screen to wonder about. */
+      .ov-leg.is-share .ov-field:has([data-f="k"]),
+      .ov-leg.is-share .ov-field:has([data-f="x"]) { display: none; }
+
+      .ov-model__actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 14px;
+        margin: 22px 0 0;
+      }
+      .ov-btn-primary {
+        padding: 12px 22px;
+        border: 0;
+        border-radius: 999px;
+        background: var(--accent);
+        color: var(--on-accent);
+        font: inherit;
+        font-size: 0.9375rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.15s ease, transform 0.15s ease;
+      }
+      .ov-btn-primary:hover { background: var(--accent-hover); transform: translateY(-1px); }
+      .ov-btn-ghost {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 11px 20px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: none;
+        color: var(--text-body);
+        font: inherit;
+        font-size: 0.9375rem;
+        text-decoration: none;
+        cursor: pointer;
+        transition: border-color 0.15s ease, color 0.15s ease;
+      }
+      .ov-btn-ghost:hover { border-color: var(--accent); color: var(--accent); text-decoration: none; }
+      .ov-btn-ghost[hidden] { display: none; }
+
+      .ov-adv { margin: 26px 0 0; }
+      .ov-adv summary {
+        cursor: pointer;
+        font-size: 0.9375rem;
+        color: var(--text-muted);
+        margin-bottom: 14px;
+      }
+      .ov-adv summary:hover { color: var(--accent); }
+
+      .ov-model__err {
+        margin: 18px 0 0;
+        padding: 12px 14px;
+        border: 1px solid var(--red, #C0554D);
+        border-radius: 10px;
+        background: rgba(192, 85, 77, 0.12);
+        color: var(--text);
+        font-size: 0.9375rem;
+      }
+      .ov-model__err[hidden] { display: none; }
+
+      .ov-gate {
+        max-width: 640px;
+        padding: 24px;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: var(--surface);
+      }
+      .ov-gate p { margin: 0; color: var(--text-body); }
+
+      @media (max-width: 600px) {
+        .ov-model__head { padding: 30px 0 22px; }
+        .ov-leg { padding: 14px 14px 2px; }
+      }
+
       ${getCarouselCSS()}
     </style>
   `;
@@ -1626,12 +1923,37 @@ const OV_TREND_MARK_SVG = `<svg class="ov-mark" viewBox="-3 -3 100 75" aria-hidd
             <path class="ov-mark__arrow" d="M 94 0 L 80.978 21.841 L 68.642 1.883 Z" fill="var(--accent)" />
           </svg>`;
 
-/// The landing page's section links, in one place because they are rendered
-/// twice: once in the at-rest nav and once in the sticky bar that replaces it
-/// on scroll. Defined here so the two can never drift apart.
-const OV_NAV_LINKS = `<a href="#how">How it works</a>
-        <a href="#strategies">Strategies</a>
-        <a href="/learn">Learn</a>`;
+/// Pro badge. SF Symbol crown.fill is what the app marks gated features with
+/// (LaunchView.swift), so the web uses a crown too rather than inventing a
+/// second vocabulary for the same idea. Gold, matching the app's badge.
+const OV_CROWN_SVG = `<svg class="ov-crown" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M2.6 8.1a1.1 1.1 0 0 1 1.72-.9l3.3 2.3 3.45-5.63a1.1 1.1 0 0 1 1.87 0l3.44 5.63 3.3-2.3a1.1 1.1 0 0 1 1.72.9l-1.06 8.2a1.5 1.5 0 0 1-1.49 1.31H5.15a1.5 1.5 0 0 1-1.49-1.31L2.6 8.1Z"/>
+          </svg>`;
+
+/// The nav's links, in one place because they are rendered twice: once in the
+/// at-rest nav and once in the sticky bar that replaces it on scroll. Defined
+/// here so the two can never drift apart.
+///
+/// "How it works" and "Strategies" were removed 2026-08-04. They were in-page
+/// anchors on a one-page site, so they duplicated scrolling, and they were
+/// hidden below 860px -- meaning they only ever existed for the visitors who
+/// could scroll most easily. What is left are destinations.
+///
+/// The menu is a real disclosure, not a CSS-only hover: hover has no touch
+/// equivalent and this is an iPhone app's landing page. Same pattern as the
+/// strategy cards -- a button carrying aria-expanded, hover gated behind
+/// (hover: hover), tap and keyboard driving the same class.
+const OV_NAV_LINKS = `<div class="ov-nav__menuwrap">
+          <button class="ov-nav__menubtn" type="button" aria-expanded="false" aria-controls="ovModelMenu">
+            Model on the Web
+            <svg class="ov-nav__caret" viewBox="0 0 10 6" aria-hidden="true" focusable="false"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="ov-nav__menu" id="ovModelMenu">
+            <a href="/model">Manual Input</a>
+            <a href="/model/import">${OV_CROWN_SVG}Import Robinhood Screenshot</a>
+          </div>
+        </div>
+        <a href="/learn">Resources</a>`;
 
 /// Apple's official "Download on the App Store" badge, black, US/UK, pulled from
 /// toolbox.marketingtools.apple.com. Apple asks that the badge be used as
@@ -1964,6 +2286,39 @@ function getMotionScript(reveal = true) {
         window.addEventListener('resize', onScroll, { passive: true });
         update();
       }
+
+      // --- "Model on the Web" menu ---
+      // There are two of these on the landing page -- the at-rest nav's and the
+      // sticky bar's copy -- so this is delegated on document rather than bound
+      // per element, and it is fine for there to be none at all.
+      //
+      // Hover opens the menu on a fine pointer, in CSS. This is the path for
+      // everything else: touch, keyboard, and a click that pins it open.
+      var MENU_BTN = '.ov-nav__menubtn';
+      var setMenu = function (wrap, open) {
+        wrap.classList.toggle('is-open', open);
+        var b = wrap.querySelector(MENU_BTN);
+        if (b) b.setAttribute('aria-expanded', open ? 'true' : 'false');
+      };
+      document.addEventListener('click', function (e) {
+        var btn = e.target.closest && e.target.closest(MENU_BTN);
+        var wraps = document.querySelectorAll('.ov-nav__menuwrap');
+        for (var i = 0; i < wraps.length; i++) {
+          // The clicked menu toggles; every other one closes, including on a
+          // click that landed outside all of them.
+          var mine = btn && wraps[i].contains(btn);
+          setMenu(wraps[i], mine ? !wraps[i].classList.contains('is-open') : false);
+        }
+      });
+      document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Escape') return;
+        var open = document.querySelectorAll('.ov-nav__menuwrap.is-open');
+        for (var i = 0; i < open.length; i++) {
+          setMenu(open[i], false);
+          var b = open[i].querySelector(MENU_BTN);
+          if (b) b.focus();          // Escape should not strand focus in a closed menu
+        }
+      });
 
       // The walkthrough carousel used to step itself forward twice the first time
       // it scrolled into view. It now advances only when the reader asks it to --
@@ -3984,12 +4339,11 @@ ${cards}
       </script>`;
 }
 
-/// The optionsvision.app landing page. Served on the product host only -- the
-/// light-theme portfolio mirror this used to double as was retired 2026-07-26.
-function getTradeVisionHTML() {
-  return getLayout('OptionsVision — Options Payoff Charts from a Robinhood Screenshot', `
-${getStickyBarHTML('Get the App', 'https://apps.apple.com/app/id6786063635', OV_NAV_LINKS)}
-    <nav class="ov-nav" aria-label="Primary">
+/// The at-rest nav, shared by every page on the product host. Extracted when
+/// /model and /model/import arrived: three copies of a nav is three places for
+/// a link to go stale.
+function getOvNavHTML() {
+  return `<nav class="ov-nav" aria-label="Primary">
       <a class="ov-nav__brand" href="/">
         <span class="ov-nav__wordmark pf-serif">OptionsVision</span>
         ${OV_TREND_MARK_SVG}
@@ -3998,8 +4352,298 @@ ${getStickyBarHTML('Get the App', 'https://apps.apple.com/app/id6786063635', OV_
         ${OV_NAV_LINKS}
       </div>
       <a class="ov-nav__cta" href="https://apps.apple.com/app/id6786063635" target="_blank" rel="noopener noreferrer">Get the App</a>
-    </nav>
+    </nav>`;
+}
 
+/// The 32 strategy names EXACTLY as the app spells them (TradeKind.rawValue and
+/// AdvancedStrategy.rawValue). Taken from the share page's SENTIMENTS table
+/// rather than retyped: that table keys the sentiment chip off these strings, so
+/// a name that differs by even a capital letter renders as "Neutral" whatever
+/// the trade actually is. The mixed casing is the app's, not a typo.
+const OV_STRATEGY_NAMES = [
+  'Long Call', 'Long Put', 'Covered Call', 'Cash-Secured Put',
+  'Call Debit Spread', 'Call Credit Spread', 'Put Debit Spread', 'Put Credit Spread',
+  'Long Straddle', 'Long Strangle',
+  'Long Call Calendar', 'Long Put Calendar', 'Short Put Calendar',
+  'Long Call Diagonal', 'Long Put Diagonal', 'Short Put Diagonal', 'Short Call Diagonal (Covered)',
+  'Long call condor', 'Short call condor', 'Long put condor', 'Short put condor',
+  'Long iron condor', 'Short iron condor',
+  'Long call butterfly', 'Short call butterfly', 'Long put butterfly', 'Short put butterfly',
+  'Long iron butterfly', 'Short iron butterfly',
+  'Put front ratio', 'Call back ratio', 'Put back ratio',
+];
+
+/// The manual-input page.
+///
+/// It deliberately contains NO options math. The /p/ share page is already a
+/// verified port of the app's Black-Scholes -- scripts/check-share-web-parity.mjs
+/// diffs it against the app across all 32 strategies -- so this page's whole job
+/// is to build the payload that page already reads and hand off to it. A second
+/// copy of the pricing engine on the web would be a copy with no parity test
+/// behind it, free to drift silently while both pages still render a chart.
+///
+/// The payoff of that choice: every position modelled here comes out at a real
+/// /p/ URL, so it is shareable by construction.
+///
+/// Leg shape, matching legsFromPayload: t 0=call 1=put 2=share, s +1 long /
+/// -1 short, k strike, q quantity, e entry premium per share, d days this leg
+/// expires AFTER the front expiration (0 for everything single-expiration; a
+/// calendar's back leg is positive).
+function getModelHTML() {
+  const options = OV_STRATEGY_NAMES.map((n) => `<option value="${n}">${n}</option>`).join('\n            ');
+  return getLayout('Model an Options Position — OptionsVision', `
+${getStickyBarHTML('Get the App', 'https://apps.apple.com/app/id6786063635', OV_NAV_LINKS)}
+    ${getOvNavHTML()}
+    <div class="pf-page ov-page ov-model">
+      <header class="ov-model__head">
+        <h1 class="ov-model__title pf-serif">Model a position</h1>
+        <p class="ov-model__sub">Enter a trade leg by leg and chart its profit and loss before expiration. Nothing is sent anywhere &mdash; the position is encoded into the link itself.</p>
+      </header>
+
+      <form class="ov-model__form" id="ovModelForm" novalidate>
+        <div class="ov-field-row">
+          <label class="ov-field">
+            <span>Symbol <em>optional</em></span>
+            <input type="text" id="mSymbol" placeholder="AAPL" autocomplete="off" maxlength="8">
+          </label>
+          <label class="ov-field">
+            <span>Spot price</span>
+            <input type="number" id="mSpot" step="0.01" min="0.01" placeholder="312.66" inputmode="decimal" required>
+          </label>
+          <label class="ov-field">
+            <span>Front expiration</span>
+            <input type="date" id="mExp" required>
+          </label>
+        </div>
+
+        <label class="ov-field">
+          <span>Strategy <em>names the chart; the legs below do the pricing</em></span>
+          <select id="mKind">
+            ${options}
+          </select>
+        </label>
+
+        <div class="ov-legs" id="mLegs"></div>
+
+        <div class="ov-model__actions">
+          <button type="button" class="ov-btn-ghost" id="mAddLeg">Add a leg</button>
+          <button type="submit" class="ov-btn-primary" id="mGo">Chart this position</button>
+        </div>
+
+        <details class="ov-adv">
+          <summary>Rate and dividend assumptions</summary>
+          <div class="ov-field-row">
+            <label class="ov-field">
+              <span>Risk-free rate <em>%</em></span>
+              <input type="number" id="mRate" step="0.01" value="4.25" inputmode="decimal">
+            </label>
+            <label class="ov-field">
+              <span>Dividend yield <em>%</em></span>
+              <input type="number" id="mDiv" step="0.01" value="0" inputmode="decimal">
+            </label>
+          </div>
+        </details>
+
+        <p class="ov-model__err" id="mErr" role="alert" hidden></p>
+      </form>
+
+      <p class="tv-disclaimer">OptionsVision is an educational tool and is not investment advice, not a broker, and never touches your brokerage account. Figures are theoretical model estimates, not live quotes. Options involve substantial risk and are not suitable for every investor.</p>
+    </div>
+
+    <script>
+    (function () {
+      var legsEl = document.getElementById('mLegs');
+      var form = document.getElementById('mForm') || document.getElementById('ovModelForm');
+      var errEl = document.getElementById('mErr');
+      var n = 0;
+
+      function legRow() {
+        var i = ++n;
+        var d = document.createElement('div');
+        d.className = 'ov-leg';
+        d.innerHTML =
+          '<div class="ov-leg__head"><span class="ov-leg__n">Leg ' + i + '</span>' +
+          '<button type="button" class="ov-leg__rm" aria-label="Remove this leg">Remove</button></div>' +
+          '<div class="ov-field-row">' +
+            '<label class="ov-field"><span>Type</span><select data-f="t">' +
+              '<option value="0">Call</option><option value="1">Put</option><option value="2">Shares</option>' +
+            '</select></label>' +
+            '<label class="ov-field"><span>Side</span><select data-f="s">' +
+              '<option value="1">Long</option><option value="-1">Short</option>' +
+            '</select></label>' +
+            '<label class="ov-field"><span>Strike</span>' +
+              '<input type="number" step="0.01" min="0.01" data-f="k" inputmode="decimal"></label>' +
+            '<label class="ov-field"><span>Entry premium <em>per share</em></span>' +
+              '<input type="number" step="0.01" min="0" data-f="e" inputmode="decimal"></label>' +
+            '<label class="ov-field"><span>Contracts</span>' +
+              '<input type="number" step="1" min="1" value="1" data-f="q" inputmode="numeric"></label>' +
+            '<label class="ov-field"><span>Expires <em>blank = front</em></span>' +
+              '<input type="date" data-f="x"></label>' +
+          '</div>';
+        legsEl.appendChild(d);
+        renumber();
+        return d;
+      }
+
+      function renumber() {
+        var rows = legsEl.querySelectorAll('.ov-leg');
+        for (var i = 0; i < rows.length; i++) {
+          rows[i].querySelector('.ov-leg__n').textContent = 'Leg ' + (i + 1);
+          // One leg is the floor: a position with none is not a position.
+          rows[i].querySelector('.ov-leg__rm').hidden = rows.length < 2;
+        }
+        document.getElementById('mAddLeg').hidden = rows.length >= 4;
+      }
+
+      legsEl.addEventListener('click', function (e) {
+        var b = e.target.closest && e.target.closest('.ov-leg__rm');
+        if (!b) return;
+        b.closest('.ov-leg').remove();
+        renumber();
+      });
+
+      // Shares have no strike and no expiration of their own; hide the fields
+      // rather than accept numbers that would be silently dropped.
+      legsEl.addEventListener('change', function (e) {
+        if (!e.target.matches('[data-f="t"]')) return;
+        var row = e.target.closest('.ov-leg');
+        var isShare = e.target.value === '2';
+        row.classList.toggle('is-share', isShare);
+        var k = row.querySelector('[data-f="k"]');
+        if (isShare) k.value = '';
+      });
+
+      document.getElementById('mAddLeg').addEventListener('click', function () { legRow(); });
+
+      function fail(msg) {
+        errEl.textContent = msg;
+        errEl.hidden = false;
+        errEl.scrollIntoView({ block: 'center' });
+        return null;
+      }
+
+      function daysBetween(a, b) {
+        return Math.round((b - a) / 86400000);
+      }
+
+      function build() {
+        errEl.hidden = true;
+        var spot = parseFloat(document.getElementById('mSpot').value);
+        if (!(spot > 0)) return fail('Enter the current price of the underlying.');
+        var expStr = document.getElementById('mExp').value;
+        if (!expStr) return fail('Enter the front expiration date.');
+        var expParts = expStr.split('-').map(Number);
+        var front = new Date(expParts[0], expParts[1] - 1, expParts[2]);
+
+        var rows = legsEl.querySelectorAll('.ov-leg');
+        var legs = [];
+        for (var i = 0; i < rows.length; i++) {
+          var r = rows[i];
+          var g = function (f) { return r.querySelector('[data-f="' + f + '"]'); };
+          var t = parseInt(g('t').value, 10);
+          var q = parseInt(g('q').value, 10);
+          var e = parseFloat(g('e').value);
+          if (!(q > 0)) return fail('Leg ' + (i + 1) + ': enter how many contracts.');
+          if (!(e >= 0)) return fail('Leg ' + (i + 1) + ': enter the entry premium per share.');
+          var leg = { t: t, s: parseInt(g('s').value, 10), q: q, e: e, d: 0 };
+          if (t === 2) {
+            // legsFromPayload reads shares as qty x 1, so quantity is shares,
+            // not contracts. 1 "contract" of stock is the 100 that covers a call.
+            leg.q = q * 100;
+          } else {
+            var k = parseFloat(g('k').value);
+            if (!(k > 0)) return fail('Leg ' + (i + 1) + ': enter a strike.');
+            leg.k = k;
+            var x = g('x').value;
+            if (x) {
+              var xp = x.split('-').map(Number);
+              var d = daysBetween(front, new Date(xp[0], xp[1] - 1, xp[2]));
+              if (d < 0) return fail('Leg ' + (i + 1) + ' expires before the front expiration. The earliest expiration is the front one.');
+              leg.d = d;
+            }
+          }
+          legs.push(leg);
+        }
+        if (!legs.length) return fail('Add at least one leg.');
+
+        var sym = document.getElementById('mSymbol').value.trim().toUpperCase();
+        var payload = {
+          legs: legs,
+          spot: spot,
+          kind: document.getElementById('mKind').value,
+          expMonth: expParts[1], expDay: expParts[2], expYear: expParts[0],
+          riskFreeRate: (parseFloat(document.getElementById('mRate').value) || 0) / 100,
+          dividendYield: (parseFloat(document.getElementById('mDiv').value) || 0) / 100
+        };
+        if (sym) payload.symbol = sym;
+        return payload;
+      }
+
+      // Mirror of the share page's decoder, which does
+      // decodeURIComponent(escape(atob(b64))) -- so this is its inverse, base64url
+      // with the padding stripped.
+      function encodePayload(obj) {
+        var b64 = btoa(unescape(encodeURIComponent(JSON.stringify(obj))));
+        return b64.replace(/\\+/g, '-').replace(/\\//g, '_').replace(/=+$/, '');
+      }
+
+      form.addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        var p = build();
+        if (!p) return;
+        window.location.href = '/p/' + encodePayload(p);
+      });
+
+      legRow();
+    })();
+    </script>
+  `, getTradeVisionPageStyles(), {
+    description: 'Enter an options trade leg by leg and chart its profit and loss before expiration, in your browser.',
+    url: 'https://' + APP_HOST + '/model',
+    reveal: false,
+  });
+}
+
+/// The Pro gate for screenshot import. The importer itself is not built yet, so
+/// this page IS the paywall rather than a step in front of one -- it says what
+/// the feature does, that it needs Pro, and where Pro is bought (the app, via
+/// StoreKit; there is no web purchase path and this page must not imply one).
+function getModelImportHTML() {
+  return getLayout('Import a Robinhood Screenshot — OptionsVision Pro', `
+${getStickyBarHTML('Get the App', 'https://apps.apple.com/app/id6786063635', OV_NAV_LINKS)}
+    ${getOvNavHTML()}
+    <div class="pf-page ov-page ov-model">
+      <header class="ov-model__head">
+        <p class="ov-model__pro">${OV_CROWN_SVG}OptionsVision Pro</p>
+        <h1 class="ov-model__title pf-serif">Import a Robinhood screenshot</h1>
+        <p class="ov-model__sub">Drop in a screenshot of your order ticket and have the strategy, strikes, expiration and premiums read off it &mdash; no typing. This is a Pro feature, and it is still being built.</p>
+      </header>
+
+      <div class="ov-gate">
+        <p>Pro is unlocked in the iPhone app, where your purchase is handled by the App Store. There is no separate web subscription to buy.</p>
+        <div class="ov-model__actions">
+          <a class="appstore-badge" href="https://apps.apple.com/app/id6786063635" target="_blank" rel="noopener noreferrer" aria-label="Download OptionsVision on the App Store">
+            ${APP_STORE_BADGE_SVG}
+          </a>
+          <a class="ov-btn-ghost" href="/model">Model a position by hand</a>
+        </div>
+      </div>
+
+      <p class="tv-disclaimer">OptionsVision is an educational tool and is not investment advice, not a broker, and never touches your brokerage account. Figures are theoretical model estimates, not live quotes. Options involve substantial risk and are not suitable for every investor.</p>
+    </div>
+  `, getTradeVisionPageStyles(), {
+    description: 'Import a Robinhood order-ticket screenshot into an interactive payoff chart. An OptionsVision Pro feature.',
+    url: 'https://' + APP_HOST + '/model/import',
+    reveal: false,
+  });
+}
+
+/// The optionsvision.app landing page. Served on the product host only -- the
+/// light-theme portfolio mirror this used to double as was retired 2026-07-26.
+function getTradeVisionHTML() {
+  return getLayout('OptionsVision — Options Payoff Charts from a Robinhood Screenshot', `
+${getStickyBarHTML('Get the App', 'https://apps.apple.com/app/id6786063635', OV_NAV_LINKS)}
+    ${getOvNavHTML()}
     <div class="pf-page ov-page">
       <header class="pf-hero ov-hero">
         <div class="ov-hero__copy">

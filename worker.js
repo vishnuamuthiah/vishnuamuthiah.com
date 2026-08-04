@@ -1066,7 +1066,9 @@ function getTradeVisionPageStyles() {
         border: 1px solid var(--border);
         border-radius: 14px;
         background: var(--surface);
-        transition: border-color 0.16s ease, transform 0.16s ease;
+        transition: border-color 0.22s ease,
+                    border-radius 0.22s ease,
+                    background 0.22s ease;
       }
       .ov-strat__head {
         display: flex;
@@ -1082,76 +1084,134 @@ function getTradeVisionPageStyles() {
         color: var(--text);
         text-align: left;
         cursor: pointer;
+        /* The rule between the title and its list, drawn as an inset shadow
+           rather than a border-bottom so turning it on costs no extra pixel of
+           height and the card does not twitch by 1px as it opens. */
+        box-shadow: inset 0 0 0 rgba(0, 0, 0, 0);
+        transition: box-shadow 0.22s ease;
       }
-      .ov-strat__name { font-size: 1.0625rem; font-weight: 600; letter-spacing: -0.01em; }
+      .ov-strat__name {
+        font-size: 1.0625rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        transition: color 0.22s ease;
+      }
       .ov-strat__count {
         flex: 0 0 auto;
         font-size: 0.8125rem;
         color: var(--text-muted);
         font-variant-numeric: tabular-nums;
       }
+      /* ---- The drawer ----
+         Geometry note, and it is the whole reason this looked like two stacked
+         boxes before: an absolutely positioned child resolves its percentages
+         against the PADDING box, which sits inside the card's 1px border. So
+         left:0 insets the panel one pixel from the card's outer edge on each
+         side, and the first version's top:calc(100% - 6px) left the card's
+         own rounded bottom border drawn straight across the panel.
+
+         -1px on both sides lines the panel's border box up with the card's, and
+         top: 100% starts it exactly on the card's bottom border, which the open
+         card then turns transparent and squares off. The two elements read as
+         one continuous outline. */
       .ov-strat__panel {
         position: absolute;
-        top: calc(100% - 6px);
-        left: 0;
-        right: 0;
+        top: 100%;
+        left: -1px;
+        right: -1px;
         z-index: 6;
-        padding: 6px 18px 16px;
+        padding: 2px 18px 17px;
         border: 1px solid var(--accent);
         border-top: 0;
         border-radius: 0 0 14px 14px;
         background: var(--surface);
-        box-shadow: 0 22px 40px -18px rgba(0, 0, 0, 0.85);
+        box-shadow: 0 26px 46px -20px rgba(0, 0, 0, 0.9);
         opacity: 0;
         visibility: hidden;
-        transform: translateY(-6px);
         pointer-events: none;
-        transition: opacity 0.16s ease, transform 0.16s ease, visibility 0s 0.16s;
+        /* Unrolls from the top instead of sliding: a translate would have to
+           travel out from under the card, and at this speed you see it pass
+           behind the header. Clipping keeps the motion inside the drawer. */
+        clip-path: inset(0 0 100% 0);
+        transition: clip-path 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                    opacity 0.16s ease,
+                    visibility 0s 0.3s;
       }
       .ov-strat__panel ul {
         margin: 0;
         padding: 0;
         list-style: none;
       }
+      /* No rules between the items. Hairlines on every row made a four-name
+         list read as a data table; spacing separates them well enough. */
       .ov-strat__panel li {
-        padding: 5px 0;
+        padding: 7px 0;
         font-size: 0.875rem;
-        line-height: 1.35;
+        line-height: 1.4;
         color: var(--text-body);
-        border-top: 1px solid var(--border);
       }
-      .ov-strat__panel li:first-child { border-top: 0; }
 
       /* Open state, shared by all three ways in. Hover is gated behind a real
          pointer: on a touch screen :hover sticks after a tap, which would
          leave a panel open with no way to dismiss it. */
       .ov-strat__card.is-open,
-      .ov-strat__card:focus-within { border-color: var(--accent); z-index: 7; }
+      .ov-strat__card:focus-within {
+        border-color: var(--accent);
+        border-bottom-color: transparent;
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+        background: var(--surface-alt);
+        z-index: 7;
+      }
+      .ov-strat__card.is-open .ov-strat__name,
+      .ov-strat__card:focus-within .ov-strat__name { color: var(--accent); }
+      .ov-strat__card.is-open .ov-strat__head,
+      .ov-strat__card:focus-within .ov-strat__head { box-shadow: inset 0 -1px 0 var(--border); }
       .ov-strat__card.is-open .ov-strat__panel,
       .ov-strat__card:focus-within .ov-strat__panel {
         opacity: 1;
         visibility: visible;
-        transform: translateY(0);
         pointer-events: auto;
-        transition: opacity 0.16s ease, transform 0.16s ease, visibility 0s;
+        clip-path: inset(0 0 0 0);
+        transition: clip-path 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                    opacity 0.16s ease,
+                    visibility 0s;
       }
       @media (hover: hover) and (pointer: fine) {
-        .ov-strat__card:hover { border-color: var(--accent); z-index: 7; }
+        .ov-strat__card:hover {
+          border-color: var(--accent);
+          border-bottom-color: transparent;
+          border-bottom-left-radius: 0;
+          border-bottom-right-radius: 0;
+          background: var(--surface-alt);
+          z-index: 7;
+        }
+        .ov-strat__card:hover .ov-strat__name { color: var(--accent); }
+        .ov-strat__card:hover .ov-strat__head { box-shadow: inset 0 -1px 0 var(--border); }
         .ov-strat__card:hover .ov-strat__panel {
           opacity: 1;
           visibility: visible;
-          transform: translateY(0);
           pointer-events: auto;
-          transition: opacity 0.16s ease, transform 0.16s ease, visibility 0s;
+          clip-path: inset(0 0 0 0);
+          transition: clip-path 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                      opacity 0.16s ease,
+                      visibility 0s;
         }
       }
       /* The panel overlays whatever follows the grid, so the reveal must not be
          the only thing that ever needs that room. Reserved on the last row's
          behalf: enough for the tallest group (six members) plus its padding. */
       .ov-strat + p { margin-top: 18px; }
+      /* transition-delay too, not just duration: the closed panel defers its
+         visibility switch by the length of the unroll, and a duration override
+         alone leaves that delay in place. */
       @media (prefers-reduced-motion: reduce) {
         .ov-strat__card,
-        .ov-strat__panel { transition-duration: 0.01ms; }
+        .ov-strat__head,
+        .ov-strat__panel {
+          transition-duration: 0.01ms;
+          transition-delay: 0s;
+        }
       }
       @media (max-width: 600px) {
         .ov-strat { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }

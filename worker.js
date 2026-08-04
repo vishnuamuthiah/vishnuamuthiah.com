@@ -957,23 +957,22 @@ function getTradeVisionPageStyles() {
         border-radius: 10px;
         box-shadow: 0 0 0 1px rgba(107, 204, 245, 0.22), 0 10px 26px -12px rgba(0, 0, 0, 0.8);
       }
-      .ov-btn-ghost {
-        display: inline-flex;
-        align-items: center;
-        gap: 7px;
-        padding: 11px 20px;
-        border: 1px solid var(--border);
-        border-radius: 999px;
-        color: var(--text-body);
-        font-size: 0.9375rem;
-        text-decoration: none;
-        transition: border-color 0.15s ease, color 0.15s ease;
+      /* In-page links travel instead of teleporting. Declared inside the
+         no-preference query rather than as a plain rule plus an override: an
+         animated scroll is a motion effect, and a visitor who has asked for
+         reduced motion should never get it, including on a browser that only
+         honours the media query and not a later reset.
+
+         This sheet only loads on the product host and the /learn guides, which
+         are the pages that have in-page anchors at all. */
+      @media (prefers-reduced-motion: no-preference) {
+        html { scroll-behavior: smooth; }
       }
-      .ov-btn-ghost:hover {
-        border-color: var(--accent);
-        color: var(--accent);
-        text-decoration: none;
-      }
+      /* .tv-stickybar is fixed to the top and slides in as soon as the hero CTA
+         clears the viewport -- which it always has by the time an anchor jump
+         lands. Without this the bar covers the heading the visitor just asked
+         to see. 80px is the bar's own height plus breathing room. */
+      .ov-page [id] { scroll-margin-top: 80px; }
       /* Three facts, not a logo wall -- there are no investor logos to show, and
          these are the claims a trader actually weighs. */
       .ov-hero__proof {
@@ -3692,13 +3691,17 @@ ${getStickyBarHTML('Get the App', 'https://apps.apple.com/app/id6786063635')}
             <a class="appstore-badge" href="https://apps.apple.com/app/id6786063635" target="_blank" rel="noopener noreferrer" aria-label="Download OptionsVision on the App Store">
               ${APP_STORE_BADGE_SVG}
             </a>
-            <a class="ov-btn-ghost" href="#how">See how it works</a>
           </div>
 
+          ${/* "No sign-up" rather than "no account": buying Pro authenticates
+               against the Apple ID the visitor already has, so no OptionsVision
+               account is ever created -- but "no account" invites the reader to
+               wonder about the Apple one. "Sign-up" says the true thing without
+               the ambiguity. */''}
           <ul class="ov-hero__proof">
             <li>32 strategies, single-leg to 4-leg</li>
             <li>Nothing leaves your phone</li>
-            <li>No account, no ads</li>
+            <li>No sign-up, no ads</li>
           </ul>
         </div>
 

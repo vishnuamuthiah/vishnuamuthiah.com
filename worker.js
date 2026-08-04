@@ -911,7 +911,12 @@ function getTradeVisionPageStyles() {
         gap: 26px;
         margin-left: auto;
       }
-      .ov-nav__links a {
+      /* DIRECT children only. The dropdown lives inside .ov-nav__links, so a
+         descendant selector here also matched the two menu rows -- bolding the
+         whole row, description included, and easing it over 0.15s. The
+         description has no width reserve, so it grew as it thickened: that was
+         the "both lines expand" the user saw. The menu styles its own rows. */
+      .ov-nav__links > a {
         color: var(--text-body);
         text-decoration: none;
         font-size: 0.9375rem;
@@ -936,7 +941,7 @@ function getTradeVisionPageStyles() {
         /* Nothing here may be read aloud -- it is the same words twice. */
         speak: never;
       }
-      .ov-nav__links a:hover {
+      .ov-nav__links > a:hover {
         color: var(--text);
         font-weight: 700;
         text-decoration: none;
@@ -1017,7 +1022,10 @@ function getTradeVisionPageStyles() {
         font-size: 0.9375rem;
         text-decoration: none;
         white-space: nowrap;
-        transition: background 0.14s ease, color 0.14s ease;
+        /* No transition at all. The label snaps to bold in one frame, so easing
+           the row's tint in over 0.14s behind it left the two halves of one
+           state change arriving at different times -- which reads as the bolding
+           itself lagging. Native menus highlight instantly; this matches. */
       }
       .ov-nav__menuwrap .ov-nav__menu a:hover {
         background: var(--surface-alt);
@@ -1944,7 +1952,11 @@ function getMotionStyles(reveal = true) {
         align-items: center;
         gap: 9px;
         min-width: 0;
+        text-decoration: none;
       }
+      /* The blanket a:hover in getSharedStyles would otherwise underline the
+         wordmark, and the mark beside it, on the way past. */
+      .tv-stickybar__brand:hover { text-decoration: none; }
       /* The mark is 4:3, so width sets its height too. At 28px it read as an
          afterthought beside a 1.3rem bold wordmark, and 1px of lift left it
          sitting on the text box's descender line rather than on the baseline --
@@ -1960,7 +1972,10 @@ function getMotionStyles(reveal = true) {
         gap: 26px;
         margin-left: auto;
       }
-      .tv-stickybar__links a {
+      /* Direct children only, for the same reason as .ov-nav__links > a: the
+         dropdown renders inside this container too, and a descendant selector
+         reaches into its rows. */
+      .tv-stickybar__links > a {
         color: var(--text-body);
         text-decoration: none;
         font-size: 0.9375rem;
@@ -1970,7 +1985,7 @@ function getMotionStyles(reveal = true) {
       /* Matches the at-rest nav: bold and white on hover, never accent. The
          .ov-nav__reserve span inside each link holds the bold width, so the bar's
          items do not shuffle under the pointer either. */
-      .tv-stickybar__links a:hover {
+      .tv-stickybar__links > a:hover {
         color: var(--text);
         font-weight: 700;
         text-decoration: none;
@@ -2149,13 +2164,17 @@ const APP_STORE_QR_SVG = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 
 /// Guide pages pass nothing and keep the two-item bar: they have no nav to
 /// continue, and their markup stays byte-for-byte what it was.
 function getStickyBarHTML(label, href, links = '') {
+  // An <a>, not a <span>. The wordmark in a bar pinned to the top is the one
+  // thing every visitor expects to take them home, and it was inert.
   const brand = links
-    ? `<span class="tv-stickybar__brand">
+    ? `<a class="tv-stickybar__brand" href="/">
         <span class="tv-stickybar__name pf-serif">OptionsVision</span>
         ${OV_TREND_MARK_SVG}
-      </span>
+      </a>
       <div class="tv-stickybar__links">${links}</div>`
-    : `<span class="tv-stickybar__name pf-serif">OptionsVision</span>`;
+    : `<a class="tv-stickybar__brand" href="/">
+        <span class="tv-stickybar__name pf-serif">OptionsVision</span>
+      </a>`;
   return `    <div class="tv-stickybar" id="tvStickyBar" aria-hidden="true">
       ${brand}
       <a class="tv-stickybar__cta" href="${href}" target="_blank" rel="noopener noreferrer">${label}</a>
@@ -2408,6 +2427,26 @@ function getMotionScript(reveal = true) {
         window.addEventListener('resize', onScroll, { passive: true });
         update();
       }
+
+      // --- Wordmark goes home ---
+      // Both wordmarks are plain links to "/", which is the whole behaviour on
+      // every page except the home page. There, following the link would fetch
+      // and repaint the page just to reach a position it can already scroll to,
+      // so on "/" this intercepts and scrolls instead.
+      //
+      // Modifier clicks and non-primary buttons are left alone, or cmd-click
+      // would stop opening a new tab -- the most common way this kind of
+      // handler quietly breaks.
+      document.addEventListener('click', function (e) {
+        if (e.defaultPrevented || e.button !== 0) return;
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+        var brand = e.target.closest && e.target.closest('.tv-stickybar__brand, .ov-nav__brand');
+        if (!brand || location.pathname !== '/') return;
+        e.preventDefault();
+        var reduce = window.matchMedia &&
+                     window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        window.scrollTo({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
+      });
 
       // --- "Model on the Web" menu ---
       // There are two of these on the landing page -- the at-rest nav's and the

@@ -31,3 +31,14 @@
 # is more visible than a slightly stale one, so keep this shorter than the rest.
 /tradevision/og-card.png
   Cache-Control: public, max-age=3600, stale-while-revalidate=86400
+
+# The landing-page hero shot. This is the LCP element on optionsvision.app, so
+# the default `max-age=0, must-revalidate` would cost a conditional round-trip
+# in front of the largest paint on the page. Listed as two exact paths rather
+# than /tradevision/payoff-chart.* because the no-overlap rule above means a
+# wildcard here would be one edit away from also matching og-card.png.
+/tradevision/payoff-chart.webp
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800
+
+/tradevision/payoff-chart.png
+  Cache-Control: public, max-age=86400, stale-while-revalidate=604800

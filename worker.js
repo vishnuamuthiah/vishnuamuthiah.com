@@ -812,6 +812,353 @@ function getTradeVisionPageStyles() {
         .appstore-badge__svg { width: 158px; }
       }
 
+      /* =====================================================================
+         Landing-page shell
+         =====================================================================
+         Everything below is scoped to .ov-page (or to .ov-nav, which only the
+         product page emits). This sheet is also loaded by the /learn guide
+         pages, and they must keep the 736px editorial measure.
+
+         SPECIFICITY NOTE, and it is load-bearing: getLayout() injects this
+         block as additionalStyles, which sits BEFORE getPortfolioHomeStyles()
+         in <head>. So at equal specificity that later sheet wins. Anything here
+         that overrides a .pf-* rule therefore uses a compound selector
+         (.pf-page.ov-page = 0,2,0) rather than relying on source order. */
+
+      /* .pf-page caps every page at 736px -- an essay measure, correct for the
+         portfolio and the guides. A product landing page is not a document, so
+         the product page alone takes a wider shell. */
+      .pf-page.ov-page {
+        max-width: 1180px;
+        padding: 0 32px 72px;
+      }
+
+      /* ---- Persistent nav ----
+         The scroll-triggered .tv-stickybar still does its job further down the
+         page; this is the at-rest bar that makes the first viewport navigable.
+         The two never coexist visually: the sticky bar only slides in once this
+         one has scrolled away. */
+      .ov-nav {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 20px 32px 0;
+        display: flex;
+        align-items: center;
+        gap: 30px;
+      }
+      .ov-nav__brand {
+        display: flex;
+        align-items: flex-end;
+        gap: 9px;
+        text-decoration: none;
+        flex: 0 0 auto;
+      }
+      .ov-nav__brand:hover { text-decoration: none; }
+      .ov-nav__wordmark {
+        font-size: 1.45rem;
+        line-height: 1;
+        color: var(--text);
+        letter-spacing: -0.012em;
+      }
+      /* The mark ships at 94px for the old 72px masthead. Beside a 1.45rem
+         wordmark it comes down to suit, the same way .ov-lockup--entry does. */
+      .ov-nav .ov-mark { width: 30px; margin-bottom: 1px; }
+      .ov-nav__links {
+        display: flex;
+        gap: 26px;
+        margin-left: auto;
+      }
+      .ov-nav__links a {
+        color: var(--text-body);
+        text-decoration: none;
+        font-size: 0.9375rem;
+        transition: color 0.15s ease;
+      }
+      .ov-nav__links a:hover { color: var(--accent); text-decoration: none; }
+      .ov-nav__cta {
+        flex: 0 0 auto;
+        background: var(--accent);
+        color: var(--on-accent);
+        font-size: 0.9375rem;
+        font-weight: 600;
+        padding: 9px 18px;
+        border-radius: 999px;
+        text-decoration: none;
+        transition: background 0.15s ease, transform 0.15s ease;
+      }
+      .ov-nav__cta:hover {
+        background: var(--accent-hover);
+        transform: translateY(-1px);
+        text-decoration: none;
+      }
+      /* Phones keep the brand and the CTA and drop the section links -- four
+         anchors will not fit beside a pill at 360px, and every one of them is
+         reachable by scrolling. */
+      @media (max-width: 860px) {
+        .ov-nav__links { display: none; }
+        .ov-nav__cta { margin-left: auto; }
+      }
+      @media (max-width: 600px) {
+        .ov-nav { padding: 16px 20px 0; gap: 16px; }
+        .ov-nav__wordmark { font-size: 1.25rem; }
+        .ov-nav .ov-mark { width: 26px; }
+      }
+
+      /* ---- Hero ----
+         Two columns: the claim on the left, the product on the right. The old
+         hero was a centred wordmark over a 47-word paragraph, which put nothing
+         on screen that showed what the app does. */
+      .ov-page .ov-hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
+        gap: 56px;
+        align-items: center;
+        padding: 60px 0 34px;
+        border-bottom: 0;
+        margin-bottom: 0;
+      }
+      .ov-hero__eyebrow {
+        margin: 0 0 18px;
+        font-size: 0.8125rem;
+        letter-spacing: 0.09em;
+        text-transform: uppercase;
+        color: var(--gold);
+      }
+      /* The h1 used to be the word "OptionsVision" -- a brand name where the
+         page's single strongest line should be making a claim. */
+      .ov-page .ov-hero__title {
+        margin: 0;
+        font-size: clamp(2.5rem, 4.9vw, 3.9rem);
+        line-height: 1.04;
+        letter-spacing: -0.022em;
+        font-weight: 400;
+        color: var(--text);
+        text-wrap: balance;
+      }
+      .ov-hero__sub {
+        margin: 20px 0 0;
+        max-width: 30em;
+        color: var(--text-body);
+        font-size: clamp(1.0625rem, 1.5vw, 1.1875rem);
+        line-height: 1.55;
+      }
+      .ov-hero__cta {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 18px;
+        margin: 30px 0 0;
+      }
+      /* Apple asks that the badge be used as supplied, so it is not restyled --
+         it is enlarged and given a halo instead. Black-on-navy was the lowest
+         contrast element on a page whose whole job is that one tap. */
+      .ov-hero__cta .appstore-badge__svg { width: 196px; }
+      .ov-hero__cta .appstore-badge {
+        border-radius: 10px;
+        box-shadow: 0 0 0 1px rgba(107, 204, 245, 0.22), 0 10px 26px -12px rgba(0, 0, 0, 0.8);
+      }
+      .ov-btn-ghost {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 11px 20px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        color: var(--text-body);
+        font-size: 0.9375rem;
+        text-decoration: none;
+        transition: border-color 0.15s ease, color 0.15s ease;
+      }
+      .ov-btn-ghost:hover {
+        border-color: var(--accent);
+        color: var(--accent);
+        text-decoration: none;
+      }
+      /* Three facts, not a logo wall -- there are no investor logos to show, and
+         these are the claims a trader actually weighs. */
+      .ov-hero__proof {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px 26px;
+        margin: 32px 0 0;
+        padding: 0;
+        list-style: none;
+        font-size: 0.875rem;
+        color: var(--text-muted);
+      }
+      .ov-hero__proof li { display: flex; align-items: center; gap: 8px; }
+      .ov-hero__proof li::before {
+        content: "";
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+        background: var(--accent);
+        flex: 0 0 auto;
+      }
+
+      /* ---- Hero shot ----
+         The source screenshot is 900x1955 (1:2.17). Run at the column's full
+         width it would stand ~1100px tall and bury the headline, so the frame
+         declares its own aspect-ratio and crops from the top: header, plain-
+         English summary, chart and both sliders stay; the Greeks read-out below
+         the fold of the crop is what gets cut.
+
+         aspect-ratio rather than max-height so the box is sized before the
+         image decodes -- with width/height on the <img> as well, this reserves
+         its space and contributes no CLS. */
+      .ov-hero__frame {
+        position: relative;
+        width: 100%;
+        max-width: 430px;
+        margin-left: auto;
+        aspect-ratio: 900 / 1150;
+        overflow: hidden;
+        border-radius: 22px;
+        /* Fades the crop into the page ground instead of ending on a hard
+           horizontal edge. Masked rather than overlaid with a gradient so it
+           stays correct if the ground ever changes. */
+        -webkit-mask-image: linear-gradient(180deg, #000 78%, transparent 100%);
+                mask-image: linear-gradient(180deg, #000 78%, transparent 100%);
+      }
+      .ov-hero__frame img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: top center;
+      }
+      @media (max-width: 900px) {
+        .ov-page .ov-hero {
+          grid-template-columns: minmax(0, 1fr);
+          gap: 40px;
+          padding: 40px 0 24px;
+        }
+        .ov-hero__frame { margin: 0 auto; }
+      }
+      @media (max-width: 600px) {
+        .pf-page.ov-page { padding: 0 20px 56px; }
+        .ov-page .ov-hero { padding: 28px 0 18px; gap: 32px; }
+        .ov-hero__cta { gap: 12px; margin-top: 24px; }
+        .ov-hero__cta .appstore-badge__svg { width: 178px; }
+        .ov-hero__frame { max-width: 330px; }
+      }
+
+      /* =====================================================================
+         32 strategies -- eight groups, list on hover
+         =====================================================================
+         Replaces an eight-item <ul> whose bullets ran to five comma-separated
+         strategies each. The group names carry the shape of the range; the
+         members are one hover away.
+
+         The panel is absolutely positioned, so opening one never reflows the
+         grid or shifts anything below it. :hover on the CARD (not the button)
+         keeps it open while the pointer travels down into the panel -- an
+         absolutely positioned child is still a DOM descendant, so the ancestor
+         stays hovered. */
+      .ov-strat {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(215px, 1fr));
+        gap: 14px;
+        margin: 26px 0 4px;
+      }
+      .ov-strat__card {
+        position: relative;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        background: var(--surface);
+        transition: border-color 0.16s ease, transform 0.16s ease;
+      }
+      .ov-strat__head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        width: 100%;
+        padding: 18px 18px 19px;
+        background: none;
+        border: 0;
+        border-radius: 14px;
+        font: inherit;
+        color: var(--text);
+        text-align: left;
+        cursor: pointer;
+      }
+      .ov-strat__name { font-size: 1.0625rem; font-weight: 600; letter-spacing: -0.01em; }
+      .ov-strat__count {
+        flex: 0 0 auto;
+        font-size: 0.8125rem;
+        color: var(--text-muted);
+        font-variant-numeric: tabular-nums;
+      }
+      .ov-strat__panel {
+        position: absolute;
+        top: calc(100% - 6px);
+        left: 0;
+        right: 0;
+        z-index: 6;
+        padding: 6px 18px 16px;
+        border: 1px solid var(--accent);
+        border-top: 0;
+        border-radius: 0 0 14px 14px;
+        background: var(--surface);
+        box-shadow: 0 22px 40px -18px rgba(0, 0, 0, 0.85);
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(-6px);
+        pointer-events: none;
+        transition: opacity 0.16s ease, transform 0.16s ease, visibility 0s 0.16s;
+      }
+      .ov-strat__panel ul {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .ov-strat__panel li {
+        padding: 5px 0;
+        font-size: 0.875rem;
+        line-height: 1.35;
+        color: var(--text-body);
+        border-top: 1px solid var(--border);
+      }
+      .ov-strat__panel li:first-child { border-top: 0; }
+
+      /* Open state, shared by all three ways in. Hover is gated behind a real
+         pointer: on a touch screen :hover sticks after a tap, which would
+         leave a panel open with no way to dismiss it. */
+      .ov-strat__card.is-open,
+      .ov-strat__card:focus-within { border-color: var(--accent); z-index: 7; }
+      .ov-strat__card.is-open .ov-strat__panel,
+      .ov-strat__card:focus-within .ov-strat__panel {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+        pointer-events: auto;
+        transition: opacity 0.16s ease, transform 0.16s ease, visibility 0s;
+      }
+      @media (hover: hover) and (pointer: fine) {
+        .ov-strat__card:hover { border-color: var(--accent); z-index: 7; }
+        .ov-strat__card:hover .ov-strat__panel {
+          opacity: 1;
+          visibility: visible;
+          transform: translateY(0);
+          pointer-events: auto;
+          transition: opacity 0.16s ease, transform 0.16s ease, visibility 0s;
+        }
+      }
+      /* The panel overlays whatever follows the grid, so the reveal must not be
+         the only thing that ever needs that room. Reserved on the last row's
+         behalf: enough for the tallest group (six members) plus its padding. */
+      .ov-strat + p { margin-top: 18px; }
+      @media (prefers-reduced-motion: reduce) {
+        .ov-strat__card,
+        .ov-strat__panel { transition-duration: 0.01ms; }
+      }
+      @media (max-width: 600px) {
+        .ov-strat { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+        .ov-strat__head { padding: 14px 14px 15px; }
+        .ov-strat__name { font-size: 0.9375rem; }
+      }
+
       ${getCarouselCSS()}
     </style>
   `;
@@ -1163,7 +1510,7 @@ function getStickyBarHTML(label, href) {
       // which is exactly how this hid at first -- one CTA opened the dialog and
       // the other silently followed the link.
       document.addEventListener('click', function (e) {
-        var el = e.target.closest && e.target.closest('.appstore-badge, .tv-stickybar__cta');
+        var el = e.target.closest && e.target.closest('.appstore-badge, .tv-stickybar__cta, .ov-nav__cta');
         if (el) open(e);
       });
 
@@ -1257,7 +1604,11 @@ function getMotionScript() {
 
       // --- Sticky CTA bar ---
       var bar = document.getElementById('tvStickyBar');
-      var heroCTA = document.querySelector('.tv-cta');
+      // Two selectors because the landing page hero now uses .ov-hero__cta while
+      // the /learn guides still end on a .tv-cta. Matching only .tv-cta left the
+      // bar permanently hidden on the one page it matters most on: the guard
+      // below is a bar && heroCTA test, so a miss fails silently, not loudly.
+      var heroCTA = document.querySelector('.ov-hero__cta, .tv-cta');
       if (bar && heroCTA) {
         // A scroll listener rather than an observer, on purpose. This is a single
         // boolean derived from one element's position, the read is rAF-throttled so
@@ -1325,6 +1676,15 @@ function getLayout(title, content, additionalStyles = '', meta = {}) {
     // Keeps unfinished pages out of search results. Draft strategy guides must not
     // be indexed under this domain before they have been edited and sourced.
     meta.noindex ? `<meta name="robots" content="noindex, nofollow">` : '',
+    // Starts the LCP image downloading from the <head>, instead of waiting for
+    // the parser to reach the <img> and lay it out. Only worth setting for an
+    // image that is genuinely the largest above-the-fold paint -- preloading
+    // anything else steals bandwidth from what is.
+    //
+    // `type` is what makes this safe to point at a .webp: a browser that cannot
+    // decode the type skips the preload and falls through to the <picture>
+    // element's own <img> fallback, rather than downloading both.
+    meta.preloadImage ? `<link rel="preload" as="image" href="${meta.preloadImage}" type="${meta.preloadImageType || 'image/webp'}" fetchpriority="high">` : '',
   ].filter(Boolean).join('\n    ');
 
   return `<!DOCTYPE html>
@@ -3164,36 +3524,154 @@ ${body}
   });
 }
 
+/// The 32 supported strategies, as eight groups. Was a bulleted list whose
+/// items ran to six comma-separated strategies each -- readable, but a wall.
+///
+/// The counts here are the source of truth for the "32 strategies" claim made
+/// in the hero, the copy above the grid and the App Store listing:
+/// 4 + 4 + 2 + 3 + 4 + 6 + 6 + 3 = 32. Adding a strategy means editing this
+/// array and the three places that quote the total.
+const OV_STRATEGY_GROUPS = [
+  { name: 'Single Leg', items: ['Long call', 'Long put', 'Covered call', 'Cash-secured put'] },
+  { name: 'Vertical Spreads', items: ['Call debit spread', 'Call credit spread', 'Put debit spread', 'Put credit spread'] },
+  { name: 'Straddles &amp; Strangles', items: ['Long straddle', 'Long strangle'] },
+  { name: 'Calendar Spreads', items: ['Long call calendar', 'Long put calendar', 'Short put calendar'] },
+  { name: 'Diagonals', items: ['Long call diagonal', 'Long put diagonal', 'Short put diagonal', 'Short call diagonal (covered)'] },
+  { name: 'Condors', items: ['Long call condor', 'Short call condor', 'Long put condor', 'Short put condor', 'Long iron condor', 'Short iron condor'] },
+  { name: 'Butterflies', items: ['Long call butterfly', 'Short call butterfly', 'Long put butterfly', 'Short put butterfly', 'Long iron butterfly', 'Short iron butterfly'] },
+  { name: 'Unbalanced Ratios', items: ['Put front ratio', 'Call back ratio', 'Put back ratio'] },
+];
+
+/// Eight cards; the members appear on hover, in a panel that overlays whatever
+/// is beneath it rather than pushing it down.
+///
+/// Every strategy name is in the DOM at all times and hidden with CSS, never
+/// injected on open: the list stays selectable, findable with the browser's own
+/// find-in-page, and readable with JS off.
+///
+/// Hover cannot be the only way in -- a touch screen has no hover, and this is
+/// an iPhone app's landing page, so most visitors are on one. The button below
+/// gives touch and keyboard the same reveal, and the CSS gates the hover rule
+/// behind `(hover: hover)` so a tap does not leave a panel stuck open.
+function getStrategyGridHTML() {
+  const cards = OV_STRATEGY_GROUPS.map((group, i) => {
+    const panelId = 'ovStrat' + i;
+    const items = group.items.map((s) => '<li>' + s + '</li>').join('');
+    return `        <div class="ov-strat__card">
+          <button class="ov-strat__head" type="button" aria-expanded="false" aria-controls="${panelId}">
+            <span class="ov-strat__name">${group.name}</span>
+            <span class="ov-strat__count">${group.items.length}</span>
+          </button>
+          <div class="ov-strat__panel" id="${panelId}">
+            <ul>${items}</ul>
+          </div>
+        </div>`;
+  }).join('\n');
+
+  return `<div class="ov-strat">
+${cards}
+      </div>
+      <script>
+        (function () {
+          var grid = document.querySelector('.ov-strat');
+          if (!grid) return;
+          function closeAll(except) {
+            grid.querySelectorAll('.ov-strat__card.is-open').forEach(function (c) {
+              if (c === except) return;
+              c.classList.remove('is-open');
+              var b = c.querySelector('.ov-strat__head');
+              if (b) b.setAttribute('aria-expanded', 'false');
+            });
+          }
+          grid.addEventListener('click', function (e) {
+            var head = e.target.closest('.ov-strat__head');
+            if (!head) return;
+            var card = head.parentElement;
+            var open = card.classList.toggle('is-open');
+            head.setAttribute('aria-expanded', open ? 'true' : 'false');
+            closeAll(card);
+          });
+          // A tap anywhere else dismisses. Without this a touch visitor who
+          // opened a card would have to find it again to close it.
+          document.addEventListener('click', function (e) {
+            if (!e.target.closest('.ov-strat')) closeAll(null);
+          });
+          document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') closeAll(null);
+          });
+        })();
+      </script>`;
+}
+
 /// The optionsvision.app landing page. Served on the product host only -- the
 /// light-theme portfolio mirror this used to double as was retired 2026-07-26.
 function getTradeVisionHTML() {
   return getLayout('OptionsVision — Options Payoff Charts from a Robinhood Screenshot', `
 ${getStickyBarHTML('Get the App', 'https://apps.apple.com/app/id6786063635')}
-    <div class="pf-page ov-page">
-      <header class="pf-hero">
-        <div class="ov-lockup">
-          <h1 class="pf-serif">OptionsVision</h1>
-          ${OV_TREND_MARK_SVG}
-        </div>
-        <p class="pf-sub pf-sub--wide">Take a screenshot from Robinhood and watch it become an interactive P&amp;L chart. Model different scenarios by adjusting your days to expiration and your implied volatility. Then analyze your Greeks and break-evens, all privately on your device.</p>
-
-      <div class="tv-cta">
-        <a class="appstore-badge" href="https://apps.apple.com/app/id6786063635" target="_blank" rel="noopener noreferrer" aria-label="Download OptionsVision on the App Store">
-          ${APP_STORE_BADGE_SVG}
-        </a>
+    <nav class="ov-nav" aria-label="Primary">
+      <a class="ov-nav__brand" href="/">
+        <span class="ov-nav__wordmark pf-serif">OptionsVision</span>
+        ${OV_TREND_MARK_SVG}
+      </a>
+      <div class="ov-nav__links">
+        <a href="#how">How it works</a>
+        <a href="#strategies">Strategies</a>
+        <a href="/learn">Learn</a>
       </div>
+      <a class="ov-nav__cta" href="https://apps.apple.com/app/id6786063635" target="_blank" rel="noopener noreferrer">Get the App</a>
+    </nav>
+
+    <div class="pf-page ov-page">
+      <header class="pf-hero ov-hero">
+        <div class="ov-hero__copy">
+          <p class="ov-hero__eyebrow">Free on iPhone</p>
+          <h1 class="ov-hero__title pf-serif">Turn a Robinhood screenshot into an interactive payoff chart.</h1>
+          <p class="ov-hero__sub">Model any price, date, and volatility level in seconds &mdash; 32 strategies, entirely on your device.</p>
+
+          <div class="ov-hero__cta">
+            <a class="appstore-badge" href="https://apps.apple.com/app/id6786063635" target="_blank" rel="noopener noreferrer" aria-label="Download OptionsVision on the App Store">
+              ${APP_STORE_BADGE_SVG}
+            </a>
+            <a class="ov-btn-ghost" href="#how">See how it works</a>
+          </div>
+
+          <ul class="ov-hero__proof">
+            <li>32 strategies, single-leg to 4-leg</li>
+            <li>Nothing leaves your phone</li>
+            <li>No account, no ads</li>
+          </ul>
+        </div>
+
+        ${/* The LCP element. width/height match the file so the box is reserved
+             before it decodes; the preload in getLayout starts the fetch in the
+             head rather than waiting on layout. Not lazy -- it is above the
+             fold on every viewport, where loading="lazy" costs a round trip. */''}
+        <div class="ov-hero__frame">
+          <picture>
+            <source srcset="/tradevision/payoff-chart.webp" type="image/webp">
+            <img src="/tradevision/payoff-chart.png" width="900" height="1955"
+                 fetchpriority="high" decoding="async"
+                 alt="OptionsVision showing an AAPL long call calendar spread: a profit-and-loss curve with both break-evens marked, and sliders for days to expiration and implied volatility.">
+          </picture>
+        </div>
       </header>
 
       ${getDemoVideosHTML()}
 
       <section class="tv-copy">
+        ${/* This was the hero paragraph until the hero took a one-line subhead.
+             Kept verbatim rather than cut: it is the clearest statement of what
+             the app does on the whole page, and it belongs in the indexable
+             body copy either way. */''}
+        <p>Take a screenshot from Robinhood and watch it become an interactive P&amp;L chart. Model different scenarios by adjusting your days to expiration and your implied volatility. Then analyze your Greeks and break-evens, all privately on your device.</p>
+
         <p>OptionsVision turns any options trade into an interactive payoff chart so you can trade smarter.</p>
 
         <p>Brokerages like Robinhood only show you the payoff at expiration. What's missing is how to value your position before expiration and how to determine whether the option is cheap or expensive. OptionsVision solves these problems in a simple, easy to use UI.</p>
 
         <p>Wondering what your covered call actually looks like if the stock drops 5% with 3 days to expiration remaining? Where your calendar spread breaks even with a change in volatility? Your theta decay if you sold your option right after ex-dividend date? OptionsVision answers these questions with an interactive and accessible payoff chart.</p>
 
-        <h2>How It Works: Screenshot to Interactive Chart in Seconds</h2>
+        <h2 id="how">How It Works: Screenshot to Interactive Chart in Seconds</h2>
 
       ${getWalkthroughCarouselHTML()}
 
@@ -3215,18 +3693,9 @@ ${getStickyBarHTML('Get the App', 'https://apps.apple.com/app/id6786063635')}
           <li>Override any assumption including rate, dividend yield, IV</li>
         </ul>
 
-        <h3>Supports 32 Options Strategies</h3>
-        <p>OptionsVision is built to handle each option strategy with context-aware inputs and a clear explanation of how the trade makes and loses money. Supported strategies include:</p>
-        <ul>
-          <li><strong>Single Leg Options:</strong> Long calls, long puts, covered calls, and cash-secured puts</li>
-          <li><strong>2-Leg Vertical Spreads:</strong> Call debit spreads, call credit spreads, put debit spreads, and put credit spreads</li>
-          <li><strong>Long Straddles and Strangles</strong></li>
-          <li><strong>Calendar Spreads:</strong> Long call calendar spreads, long put calendar spreads, and short put calendar spreads</li>
-          <li><strong>Diagonals:</strong> Long call diagonal, long put diagonal, short put diagonal, and short call diagonal (covered)</li>
-          <li><strong>4-Leg Condors:</strong> Long call condor, short call condor, long put condor, short put condor, long iron condor, and short iron condor</li>
-          <li><strong>4-Leg Butterflies:</strong> Long call butterfly, short call butterfly, long put butterfly, short put butterfly, long iron butterfly, and short iron butterfly</li>
-          <li><strong>Unbalanced Ratios:</strong> Put front ratio, call back ratio, and put back ratio</li>
-        </ul>
+        <h3 id="strategies">Supports 32 Options Strategies</h3>
+        <p>OptionsVision is built to handle each option strategy with context-aware inputs and a clear explanation of how the trade makes and loses money. Hover a group to see every strategy in it:</p>
+        ${getStrategyGridHTML()}
 
         <h3>Private by Design</h3>
         <p>No account necessary and no ads. Your screenshots are processed entirely on your device, and your trades never leave it. The app works completely offline with tickers, earnings, IV history, and dividend data refreshing in the background each week.</p>
@@ -3264,6 +3733,10 @@ ${getGuidesCarouselHTML()}
     imageHeight: 630,
     imageAlt: 'OptionsVision — an options payoff curve rising across a navy background',
     url: 'https://optionsvision.app/',
+    // The hero screenshot, which became this page's LCP element when the hero
+    // stopped being text-only. Not the og-card above -- that one is for
+    // crawlers and is never painted.
+    preloadImage: '/tradevision/payoff-chart.webp',
   });
 }
 

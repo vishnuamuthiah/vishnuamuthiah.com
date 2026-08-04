@@ -855,14 +855,15 @@ function getTradeVisionPageStyles() {
       }
       .ov-nav__brand:hover { text-decoration: none; }
       .ov-nav__wordmark {
-        font-size: 1.45rem;
+        font-size: 1.75rem;
         line-height: 1;
         color: var(--text);
         letter-spacing: -0.012em;
       }
-      /* The mark ships at 94px for the old 72px masthead. Beside a 1.45rem
-         wordmark it comes down to suit, the same way .ov-lockup--entry does. */
-      .ov-nav .ov-mark { width: 30px; margin-bottom: 1px; }
+      /* The mark ships at 94px for the old 72px masthead. Beside a 1.75rem
+         wordmark it comes down to suit, the same way .ov-lockup--entry does --
+         and it moves with the wordmark, so the lockup keeps its proportions. */
+      .ov-nav .ov-mark { width: 36px; margin-bottom: 2px; }
       .ov-nav__links {
         display: flex;
         gap: 26px;
@@ -900,8 +901,8 @@ function getTradeVisionPageStyles() {
       }
       @media (max-width: 600px) {
         .ov-nav { padding: 16px 20px 0; gap: 16px; }
-        .ov-nav__wordmark { font-size: 1.25rem; }
-        .ov-nav .ov-mark { width: 26px; }
+        .ov-nav__wordmark { font-size: 1.5rem; }
+        .ov-nav .ov-mark { width: 31px; }
       }
 
       /* ---- Hero ----
@@ -917,13 +918,6 @@ function getTradeVisionPageStyles() {
         border-bottom: 0;
         margin-bottom: 0;
       }
-      .ov-hero__eyebrow {
-        margin: 0 0 18px;
-        font-size: 0.8125rem;
-        letter-spacing: 0.09em;
-        text-transform: uppercase;
-        color: var(--gold);
-      }
       /* The h1 used to be the word "OptionsVision" -- a brand name where the
          page's single strongest line should be making a claim. */
       .ov-page .ov-hero__title {
@@ -935,19 +929,25 @@ function getTradeVisionPageStyles() {
         color: var(--text);
         text-wrap: balance;
       }
+      /* Gold, at the user's direction. It clears the 16px floor the rest of the
+         gold on these sites is held to -- 17px at its smallest -- so it stays
+         legible at the size the rule was written to protect. */
       .ov-hero__sub {
         margin: 20px 0 0;
         max-width: 30em;
-        color: var(--text-body);
+        color: var(--gold);
         font-size: clamp(1.0625rem, 1.5vw, 1.1875rem);
         line-height: 1.55;
       }
+      /* Wider than the 20px above the subhead: with the eyebrow gone the copy
+         runs headline -> subhead -> button with nothing to break it, and the
+         button needs to read as a separate move rather than a fourth line. */
       .ov-hero__cta {
         display: flex;
         align-items: center;
         flex-wrap: wrap;
         gap: 18px;
-        margin: 30px 0 0;
+        margin: 38px 0 0;
       }
       /* Apple asks that the badge be used as supplied, so it is not restyled --
          it is enlarged and given a halo instead. Black-on-navy was the lowest
@@ -1262,11 +1262,20 @@ const REVEAL_TARGETS = [
 /// the script, so marking a section does not double-animate the band inside it.
 const REVEAL_STANDALONE = '[data-reveal], .project-card, .portfolio-embed, .tv-band';
 
-function getMotionStyles() {
+/// `reveal: false` drops the scroll-reveal entirely for a page.
+///
+/// It is off on optionsvision.app because the reveal defeats the peek: the
+/// landing page wants the Demo Videos band showing at the bottom of the first
+/// viewport to invite the scroll, and a band that starts at opacity 0 until it
+/// is scrolled to cannot peek at anything. The two ideas are mutually
+/// exclusive, and the peek is worth more on a page whose job is conversion.
+function getMotionStyles(reveal = true) {
   const transitions = REVEAL_TARGETS.map((s) => `html.motion-ready ${s}`).join(',\n      ');
   const hidden = REVEAL_TARGETS.map((s) => `html.motion-ready ${s}:not(.is-visible)`).join(',\n      ');
-  return `
-    <style>
+  // Emitting nothing rather than emitting an override: the rule that sets
+  // opacity 0 must not exist at all, or a page with JS disabled would have no
+  // way back from it.
+  const revealCSS = !reveal ? '' : `
       /* --- Scroll reveal --- */
       /* 0.8s rather than the 0.55s this started at -- the quicker version read as a
          snap rather than a settle, especially on a desktop viewport where several
@@ -1280,7 +1289,10 @@ function getMotionStyles() {
         /* 26px, up from 18px. Now that a whole block arrives at once rather than
            a single embed, the shorter travel was easy to miss entirely. */
         transform: translateY(26px);
-      }
+      }`;
+  return `
+    <style>
+      ${revealCSS}
 
       /* --- Sticky CTA bar -----------------------------------------------------
          Slides down once the hero CTA has scrolled past. Not gated on
@@ -1332,6 +1344,38 @@ function getMotionStyles() {
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+      }
+      /* Only emitted when the bar is carrying the nav (the landing page). The
+         wrapper keeps min-width: 0 so the name's ellipsis still works inside a
+         flex row. */
+      .tv-stickybar__brand {
+        display: flex;
+        align-items: flex-end;
+        gap: 8px;
+        min-width: 0;
+      }
+      .tv-stickybar__brand .ov-mark {
+        flex: 0 0 auto;
+        width: 28px;
+        margin-bottom: 1px;
+      }
+      .tv-stickybar__links {
+        display: flex;
+        gap: 26px;
+        margin-left: auto;
+      }
+      .tv-stickybar__links a {
+        color: var(--text-body);
+        text-decoration: none;
+        font-size: 0.9375rem;
+        white-space: nowrap;
+        transition: color 0.15s ease;
+      }
+      .tv-stickybar__links a:hover { color: var(--accent); text-decoration: none; }
+      /* Same breakpoint the at-rest nav drops its links at, so the bar never
+         shows a set of links the page above it has already hidden. */
+      @media (max-width: 860px) {
+        .tv-stickybar__links { display: none; }
       }
       .tv-stickybar__cta {
         flex: none;
@@ -1386,6 +1430,13 @@ const OV_TREND_MARK_SVG = `<svg class="ov-mark" viewBox="-3 -3 100 75" aria-hidd
                   stroke-linecap="round" stroke-linejoin="round" />
             <path class="ov-mark__arrow" d="M 94 0 L 80.978 21.841 L 68.642 1.883 Z" fill="var(--accent)" />
           </svg>`;
+
+/// The landing page's section links, in one place because they are rendered
+/// twice: once in the at-rest nav and once in the sticky bar that replaces it
+/// on scroll. Defined here so the two can never drift apart.
+const OV_NAV_LINKS = `<a href="#how">How it works</a>
+        <a href="#strategies">Strategies</a>
+        <a href="/learn">Learn</a>`;
 
 /// Apple's official "Download on the App Store" badge, black, US/UK, pulled from
 /// toolbox.marketingtools.apple.com. Apple asks that the badge be used as
@@ -1451,9 +1502,23 @@ const APP_STORE_QR_SVG = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 
 /// a fine-pointer device the CTAs open this dialog instead: a QR to scan with
 /// the phone, and the web listing still one click away for anyone who wants it.
 /// Touch devices are untouched and follow the link straight through.
-function getStickyBarHTML(label, href) {
+/// `links` makes this bar a continuation of the page's own nav rather than a
+/// reduced stand-in for it. The landing page passes OV_NAV_LINKS, so what slides
+/// in is the same wordmark, mark, links and CTA that scrolled off -- the bar
+/// reads as the top of the page catching up, not as a second, sparser thing.
+///
+/// Guide pages pass nothing and keep the two-item bar: they have no nav to
+/// continue, and their markup stays byte-for-byte what it was.
+function getStickyBarHTML(label, href, links = '') {
+  const brand = links
+    ? `<span class="tv-stickybar__brand">
+        <span class="tv-stickybar__name">OptionsVision</span>
+        ${OV_TREND_MARK_SVG}
+      </span>
+      <div class="tv-stickybar__links">${links}</div>`
+    : `<span class="tv-stickybar__name">OptionsVision</span>`;
   return `    <div class="tv-stickybar" id="tvStickyBar" aria-hidden="true">
-      <span class="tv-stickybar__name">OptionsVision</span>
+      ${brand}
       <a class="tv-stickybar__cta" href="${href}" target="_blank" rel="noopener noreferrer">${label}</a>
     </div>
 
@@ -1584,7 +1649,7 @@ function getStickyBarHTML(label, href) {
     </script>`;
 }
 
-function getMotionScript() {
+function getMotionScript(reveal = true) {
   return `
     <script>
     (function () {
@@ -1593,7 +1658,10 @@ function getMotionScript() {
       var hasIO = 'IntersectionObserver' in window;
 
       // --- Scroll reveal ---
-      if (motion) {
+      // Gated on the same flag as the CSS above. With the flag off there is no
+      // rule hiding anything, so running the observer would only be busywork --
+      // it would spend a frame per block adding a class that styles nothing.
+      if (motion && ${reveal ? 'true' : 'false'}) {
         // A "unit" is one thing that arrives at once: a trigger element that gets
         // observed, plus every element revealed alongside it. Most units are a single
         // element. Inside .tv-copy a unit is a heading plus the paragraphs and lists
@@ -1663,12 +1731,20 @@ function getMotionScript() {
 
       // --- Sticky CTA bar ---
       var bar = document.getElementById('tvStickyBar');
-      // Two selectors because the landing page hero now uses .ov-hero__cta while
-      // the /learn guides still end on a .tv-cta. Matching only .tv-cta left the
-      // bar permanently hidden on the one page it matters most on: the guard
-      // below is a bar && heroCTA test, so a miss fails silently, not loudly.
-      var heroCTA = document.querySelector('.ov-hero__cta, .tv-cta');
-      if (bar && heroCTA) {
+      // What the bar hands over FROM, in preference order.
+      //
+      // The at-rest .ov-nav first: the sticky bar is that nav's replacement, so
+      // the handoff belongs exactly where the nav leaves the screen, and the
+      // visitor is never without a CTA in reach. Keying off the hero's App Store
+      // badge instead -- which is what this did -- held the bar back until the
+      // badge had fully cleared the top, most of a viewport later, so the whole
+      // hero scrolled by with no visible CTA at all.
+      //
+      // The /learn guides have no nav, so they fall back to their own CTA. The
+      // guard below is a bar && trigger test, so a miss fails silently.
+      var trigger = document.querySelector('.ov-nav') ||
+                    document.querySelector('.ov-hero__cta, .tv-cta');
+      if (bar && trigger) {
         // A scroll listener rather than an observer, on purpose. This is a single
         // boolean derived from one element's position, the read is rAF-throttled so
         // it costs one getBoundingClientRect per frame at most, and unlike an
@@ -1677,9 +1753,9 @@ function getMotionScript() {
         var ticking = false;
         var update = function () {
           ticking = false;
-          // Stick only once the hero CTA has fully passed the top edge -- never
-          // while it is still below the fold on a short viewport.
-          var stuck = heroCTA.getBoundingClientRect().bottom < 0;
+          // Stick once the trigger has fully passed the top edge -- never while
+          // it is still below the fold on a short viewport.
+          var stuck = trigger.getBoundingClientRect().bottom < 0;
           if (bar.classList.contains('is-stuck') === stuck) return;
           bar.classList.toggle('is-stuck', stuck);
           bar.setAttribute('aria-hidden', stuck ? 'false' : 'true');
@@ -1762,7 +1838,7 @@ function getLayout(title, content, additionalStyles = '', meta = {}) {
          win. Loaded before it, the sub-headings came out accent-cyan instead
          of gold, competing with the links around them. */''}
     ${getEditorialCopyStyles()}
-    ${getMotionStyles()}
+    ${getMotionStyles(meta.reveal !== false)}
     ${getMobileStyles()}
     <script>
       // Opt in to motion before the first paint, so the reveal rules apply to the
@@ -1777,7 +1853,7 @@ function getLayout(title, content, additionalStyles = '', meta = {}) {
 </head>
 <body>
     ${content}
-    ${getMotionScript()}
+    ${getMotionScript(meta.reveal !== false)}
 </body>
 </html>`;
 }
@@ -3666,16 +3742,14 @@ ${cards}
 /// light-theme portfolio mirror this used to double as was retired 2026-07-26.
 function getTradeVisionHTML() {
   return getLayout('OptionsVision — Options Payoff Charts from a Robinhood Screenshot', `
-${getStickyBarHTML('Get the App', 'https://apps.apple.com/app/id6786063635')}
+${getStickyBarHTML('Get the App', 'https://apps.apple.com/app/id6786063635', OV_NAV_LINKS)}
     <nav class="ov-nav" aria-label="Primary">
       <a class="ov-nav__brand" href="/">
         <span class="ov-nav__wordmark pf-serif">OptionsVision</span>
         ${OV_TREND_MARK_SVG}
       </a>
       <div class="ov-nav__links">
-        <a href="#how">How it works</a>
-        <a href="#strategies">Strategies</a>
-        <a href="/learn">Learn</a>
+        ${OV_NAV_LINKS}
       </div>
       <a class="ov-nav__cta" href="https://apps.apple.com/app/id6786063635" target="_blank" rel="noopener noreferrer">Get the App</a>
     </nav>
@@ -3683,7 +3757,6 @@ ${getStickyBarHTML('Get the App', 'https://apps.apple.com/app/id6786063635')}
     <div class="pf-page ov-page">
       <header class="pf-hero ov-hero">
         <div class="ov-hero__copy">
-          <p class="ov-hero__eyebrow">Free on iPhone</p>
           <h1 class="ov-hero__title pf-serif">Turn a Robinhood screenshot into an interactive payoff chart.</h1>
           <p class="ov-hero__sub">Model any price, date, and volatility level in seconds &mdash; 32 strategies, entirely on your device.</p>
 
@@ -3800,6 +3873,9 @@ ${getGuidesCarouselHTML()}
     // stopped being text-only. Not the og-card above -- that one is for
     // crawlers and is never painted.
     preloadImage: '/tradevision/payoff-chart.webp',
+    // No scroll reveal here: the hero is sized so the Demo Videos band peeks
+    // into the first viewport, and a band that starts invisible cannot peek.
+    reveal: false,
   });
 }
 

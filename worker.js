@@ -1030,10 +1030,17 @@ function getTradeVisionPageStyles() {
         gap: 2px;
         min-width: 0;
       }
+      /* NO transition on font-weight, and that is the whole point of this rule.
+         -apple-system resolves to SF, which is a variable font, so a browser
+         will genuinely interpolate the weight axis across the transition -- the
+         glyphs thicken and re-lay-out every frame for the duration, which reads
+         as the line growing rather than as it bolding. Weight is a discrete
+         state change; it should land in one frame.
+         .ov-nav__reserve on the label keeps its box at the bold width always,
+         so the row's geometry never moves either. */
       .ov-nav__menu-label {
         color: var(--text);
         line-height: 1.25;
-        transition: font-weight 0.12s ease;
       }
       /* Only the white label bolds. The description underneath stays muted and
          regular, so the row gains emphasis without the whole block thickening. */
@@ -2055,13 +2062,13 @@ const OV_NAV_LINKS = `<div class="ov-nav__menuwrap">
           <div class="ov-nav__menu" id="ovModelMenu">
             <a href="/model">
               <span class="ov-nav__menu-txt">
-                <span class="ov-nav__menu-label">Manual Input</span>
+                <span class="ov-nav__menu-label ov-nav__reserve" data-label="Manual Input">Manual Input</span>
                 <span class="ov-nav__menu-desc">Enter a trade leg by leg</span>
               </span>
             </a>
             <a href="/model/import">
               <span class="ov-nav__menu-txt">
-                <span class="ov-nav__menu-label">Import Robinhood Screenshot</span>
+                <span class="ov-nav__menu-label ov-nav__reserve" data-label="Import Robinhood Screenshot">Import Robinhood Screenshot</span>
                 <span class="ov-nav__menu-desc">Read it off your order ticket</span>
               </span>
               <span class="ov-nav__pro" title="OptionsVision Pro">${OV_CROWN_SVG}<span class="ov-vh"> (OptionsVision Pro)</span></span>

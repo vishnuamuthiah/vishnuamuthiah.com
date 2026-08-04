@@ -846,24 +846,39 @@ function getTradeVisionPageStyles() {
         align-items: center;
         gap: 30px;
       }
+      /* Centred, same as .tv-stickybar__brand. The flex-end this used to run was
+         tuned against a serif wordmark; swapping to bold sans changes the text
+         box metrics, so that tuning no longer described anything. Matching the
+         bar's alignment also means the mark does not jump when one replaces the
+         other on scroll. */
       .ov-nav__brand {
         display: flex;
-        align-items: flex-end;
+        align-items: center;
         gap: 9px;
         text-decoration: none;
         flex: 0 0 auto;
       }
       .ov-nav__brand:hover { text-decoration: none; }
+      /* Bold sans, matching .tv-stickybar__name -- NOT the serif this used to
+         be. The sticky bar is meant to read as this nav catching up on scroll,
+         and setting the same word in two different typefaces broke that: the
+         wordmark visibly changed face as the bar slid in. The sticky bar's
+         treatment is the one that wins, at the user's direction.
+
+         Larger here than in the bar (1.75rem against 1.3rem) on purpose: an
+         at-rest masthead can afford the room, a fixed strip over live content
+         cannot. */
       .ov-nav__wordmark {
         font-size: 1.75rem;
         line-height: 1;
+        font-weight: 700;
         color: var(--text);
-        letter-spacing: -0.012em;
+        letter-spacing: -0.01em;
       }
       /* The mark ships at 94px for the old 72px masthead. Beside a 1.75rem
          wordmark it comes down to suit, the same way .ov-lockup--entry does --
          and it moves with the wordmark, so the lockup keeps its proportions. */
-      .ov-nav .ov-mark { width: 36px; margin-bottom: 2px; }
+      .ov-nav .ov-mark { width: 36px; margin-bottom: 3px; }
       .ov-nav__links {
         display: flex;
         gap: 26px;
@@ -3943,7 +3958,7 @@ function getTradeVisionHTML() {
 ${getStickyBarHTML('Get the App', 'https://apps.apple.com/app/id6786063635', OV_NAV_LINKS)}
     <nav class="ov-nav" aria-label="Primary">
       <a class="ov-nav__brand" href="/">
-        <span class="ov-nav__wordmark pf-serif">OptionsVision</span>
+        <span class="ov-nav__wordmark">OptionsVision</span>
         ${OV_TREND_MARK_SVG}
       </a>
       <div class="ov-nav__links">

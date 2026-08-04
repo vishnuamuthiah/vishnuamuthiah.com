@@ -1131,7 +1131,9 @@ function getTradeVisionPageStyles() {
         left: -1px;
         right: -1px;
         z-index: 6;
-        padding: 12px 16px 16px;
+        /* 18px sides matches .ov-strat__head, so the first column of names
+           starts on the same vertical as the group title above it. */
+        padding: 13px 18px 17px;
         border: 1px solid var(--accent);
         border-top: 0;
         border-radius: 0 0 14px 14px;
@@ -1159,36 +1161,48 @@ function getTradeVisionPageStyles() {
          Same reason for the li: the editorial sheet gives list items a 6px
          bottom margin, and the original rule here only set padding, so the
          margin was never reset at all. */
+      /* Grid, not wrapping flex. Flex sized each item to its own text, so the
+         second column started at a different x on every row and the block read
+         as ragged -- which was half of why the pills looked wrong. Fixed
+         columns line the names up.
+
+         Row-major order on purpose: the data is ordered long/short in pairs, so
+         reading across gives "Long call, Short call" on one line and the two
+         columns mean something. Down-then-across would break that.
+
+         What is NOT here is the point: no border, no fill, no radius, no
+         padding. A single column of left-aligned names is the shape of a menu,
+         which is what made this panel read as a dropdown -- two aligned columns
+         is not that shape, so the names need no chrome to escape it.
+
+         Still ul/li, so assistive tech still announces a list of six, and still
+         no hover state: these are labels, not controls. */
       .ov-page .ov-strat__panel ul {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 6px;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 9px 10px;
         margin: 0;
         padding: 0;
         list-style: none;
+        /* Without this a grid item stretches to its row's height, so one name
+           wrapping makes its neighbour report as tall too. Cosmetically the
+           same for text, but it makes the boxes mean what they look like. */
+        align-items: start;
       }
-      /* Chips, not rows. A single column of left-aligned names is the shape of
-         a menu, which is why this panel read as a dropdown no matter how it was
-         styled -- the giveaway was the content, not the chrome. Pills read as
-         labels, and they fold the six-item groups from six stacked rows into
-         three.
-
-         Still a ul/li underneath, so the list semantics survive: assistive tech
-         still announces a list of six. Deliberately no hover state -- these are
-         labels, and anything that lights up under the pointer would put the
-         menu reading right back. */
-      .ov-page .ov-strat__chip {
+      /* 13px, and the column gap is 10 rather than 14, because this came down
+         to a single pixel: "Cash-secured put" measures 109px and a 14px gap
+         left columns of 108. Measured, not guessed -- at 10px the columns are
+         112 and it fits with 3px to spare.
+         "Short call (covered)" is ~126px and still wraps. Left alone on
+         purpose: it is one label out of 32, and two lines of plain text is an
+         ordinary thing to see -- which is exactly why this reads better than a
+         pill breaking in half. */
+      .ov-page .ov-strat__item {
         margin: 0;
-        padding: 5px 10px;
-        border: 1px solid var(--border);
-        border-radius: 999px;
-        background: var(--surface-alt);
+        padding: 0;
         font-size: 0.8125rem;
-        line-height: 1.35;
+        line-height: 1.4;
         color: var(--text-body);
-        /* A chip broken across two lines looks like a rendering fault. If one
-           cannot fit beside its neighbour it takes the row alone instead. */
-        white-space: nowrap;
       }
 
       /* Available to a screen reader and to a crawler, painted for nobody. */
@@ -1470,16 +1484,27 @@ function getMotionStyles(reveal = true) {
       /* Only emitted when the bar is carrying the nav (the landing page). The
          wrapper keeps min-width: 0 so the name's ellipsis still works inside a
          flex row. */
+      /* Centred, not flex-end. Bottom-aligning a 26px mark against a 33px text
+         box dropped the mark's centre 9px below the wordmark's and hung it 5px
+         past the text's bottom edge -- measured, and visible as a logo sitting
+         in the gutter. Centring puts the two centres together; the 3px lift
+         then sits it just above, which suits a mark whose ink is bottom-heavy
+         and whose arrow reaches up. */
       .tv-stickybar__brand {
         display: flex;
-        align-items: flex-end;
-        gap: 8px;
+        align-items: center;
+        gap: 9px;
         min-width: 0;
       }
+      /* The mark is 4:3, so width sets its height too. At 28px it read as an
+         afterthought beside a 1.3rem bold wordmark, and 1px of lift left it
+         sitting on the text box's descender line rather than on the baseline --
+         which is what made it look dropped. 34px brings it near the nav's 36px,
+         and 5px of lift puts its low point on the wordmark's baseline. */
       .tv-stickybar__brand .ov-mark {
         flex: 0 0 auto;
-        width: 28px;
-        margin-bottom: 1px;
+        width: 36px;
+        margin-bottom: 3px;
       }
       .tv-stickybar__links {
         display: flex;
@@ -3824,11 +3849,11 @@ ${body}
 /// so the chip reads "Long call" under a card titled Condors while the DOM, a
 /// screen reader and a crawler all still get "Long call condor".
 ///
-/// This exists because chips need the labels to be short. The panel is only as
-/// wide as its card -- about 230px of usable width at the four-column layout --
-/// and "Long call butterfly" is wider than half of that, so full names would
-/// wrap one per row and the chips would be a bordered list. Trimming the
-/// repeated word is what makes two fit on a line.
+/// It exists for two reasons. A panel is only as wide as its card -- about
+/// 235px of interior at the four-column layout, so ~110px a column -- and "Long
+/// call butterfly" does not fit in that without wrapping every single row. And
+/// a card that says Butterflies at the top does not need to say butterfly six
+/// more times underneath.
 const OV_STRATEGY_GROUPS = [
   { name: 'Single Leg', suffix: '', items: ['Long call', 'Long put', 'Covered call', 'Cash-secured put'] },
   { name: 'Vertical Spreads', suffix: ' spread', items: ['Call debit', 'Call credit', 'Put debit', 'Put credit'] },
@@ -3858,11 +3883,11 @@ function getStrategyGridHTML() {
     // not read as "Short call (covered) diagonal" -- the suffix goes before the
     // parenthetical in the hidden half so the full name stays grammatical.
     const items = group.items.map((s) => {
-      if (!group.suffix) return '<li class="ov-strat__chip">' + s + '</li>';
+      if (!group.suffix) return '<li class="ov-strat__item">' + s + '</li>';
       const paren = s.indexOf(' (');
       const stem = paren === -1 ? s : s.slice(0, paren);
       const tail = paren === -1 ? '' : s.slice(paren);
-      return '<li class="ov-strat__chip">' + stem +
+      return '<li class="ov-strat__item">' + stem +
              '<span class="ov-vh">' + group.suffix + '</span>' + tail + '</li>';
     }).join('');
     return `        <div class="ov-strat__card">

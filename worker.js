@@ -1355,11 +1355,17 @@ function getTradeVisionPageStyles() {
         box-shadow: inset 0 0 0 rgba(0, 0, 0, 0);
         transition: box-shadow 0.22s ease;
       }
+      /* Sits BELOW --text at rest, which is the whole mechanism. The name used
+         to inherit --text from .ov-strat__head, so the hover rule that set it to
+         --text changed nothing at all -- the only visible difference was a halo,
+         which is why it read as the text blurring rather than brightening.
+         Resting a step down gives the hover somewhere to travel to. */
       .ov-strat__name {
         font-size: 1.0625rem;
         font-weight: 600;
         letter-spacing: -0.01em;
-        transition: color 0.22s ease, text-shadow 0.22s ease;
+        color: var(--text-body);
+        transition: color 0.18s ease;
       }
       .ov-strat__count {
         flex: 0 0 auto;
@@ -1484,16 +1490,15 @@ function getTradeVisionPageStyles() {
         background: var(--surface-alt);
         z-index: 7;
       }
-      /* Open/hover lifts the title to full white and gives it a soft halo,
-         rather than turning it accent-blue. Blue reads as "this is a link" --
-         and these are group headings, not links. The glow is the off-white ink
-         colour at low alpha, so it reads as the text lighting up rather than a
-         coloured shadow behind it. */
+      /* Open/hover lifts the title to the palette's brightest ink. No glow: a
+         text-shadow on type this size softens the edges of the glyphs, so it
+         reads as going slightly out of focus, which is the opposite of the
+         emphasis intended.
+         Not pure white either -- getSharedStyles fixes --text at #EBE6DA and
+         says never pure white on this ground, and #FFF on navy is where dark
+         UIs start to buzz. --text IS the brightest shade here. */
       .ov-strat__card.is-open .ov-strat__name,
-      .ov-strat__card:focus-within .ov-strat__name {
-        color: var(--text);
-        text-shadow: 0 0 14px rgba(235, 230, 218, 0.42);
-      }
+      .ov-strat__card:focus-within .ov-strat__name { color: var(--text); }
       .ov-strat__card.is-open .ov-strat__head,
       .ov-strat__card:focus-within .ov-strat__head { box-shadow: inset 0 -1px 0 var(--border); }
       .ov-strat__card.is-open .ov-strat__panel,
@@ -1515,10 +1520,7 @@ function getTradeVisionPageStyles() {
           background: var(--surface-alt);
           z-index: 7;
         }
-        .ov-strat__card:hover .ov-strat__name {
-          color: var(--text);
-          text-shadow: 0 0 14px rgba(235, 230, 218, 0.42);
-        }
+        .ov-strat__card:hover .ov-strat__name { color: var(--text); }
         .ov-strat__card:hover .ov-strat__head { box-shadow: inset 0 -1px 0 var(--border); }
         .ov-strat__card:hover .ov-strat__panel {
           opacity: 1;

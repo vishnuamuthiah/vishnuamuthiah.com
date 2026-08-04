@@ -926,8 +926,13 @@ function getTradeVisionPageStyles() {
          on screen that showed what the app does. */
       .ov-page .ov-hero {
         display: grid;
-        grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.92fr);
-        gap: 56px;
+        /* Copy column widened from 1.08fr and the gutter pulled in from 56px.
+           Both exist to buy width for the proof list underneath, whose longest
+           line was wrapping in a cell that was a few pixels short. The frame is
+           capped at 430px anyway, so the column it sits in was carrying slack
+           it never used. */
+        grid-template-columns: minmax(0, 1.22fr) minmax(0, 0.78fr);
+        gap: 44px;
         align-items: center;
         padding: 60px 0 34px;
         border-bottom: 0;
@@ -997,7 +1002,7 @@ function getTradeVisionPageStyles() {
       .ov-hero__proof {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 12px 24px;
+        gap: 12px 20px;
         margin: 32px 0 0;
         padding: 0;
         list-style: none;
@@ -1049,6 +1054,20 @@ function getTradeVisionPageStyles() {
         height: 100%;
         object-fit: cover;
         object-position: top center;
+      }
+      /* The awkward band: the hero is still two columns here, so the copy is
+         too narrow to split again -- at 1100px a proof cell comes to 288px and
+         the longest line needs 293, five pixels short, which is enough to break
+         all four onto two rows. One column uses the same space for four single
+         lines instead.
+
+         1150 rather than the 1080 this was first set to: measured, cells only
+         clear the longest line from about 1151px up, where they reach 308px.
+         Bounded at the bottom too -- below 900px the hero stacks and the copy
+         runs full width, where two columns fit easily and one would leave half
+         of every row empty. */
+      @media (min-width: 901px) and (max-width: 1150px) {
+        .ov-hero__proof { grid-template-columns: minmax(0, 1fr); gap: 10px; }
       }
       @media (max-width: 900px) {
         .ov-page .ov-hero {
@@ -3986,7 +4005,7 @@ ${getStickyBarHTML('Get the App', 'https://apps.apple.com/app/id6786063635', OV_
                "Real Analytics". */''}
           <ul class="ov-hero__proof">
             <li>32 strategies, single-leg to 4-leg</li>
-            <li>Black-Scholes priced from your entry premiums</li>
+            <li>Black-Scholes pre-expiration P&amp;L modeling</li>
             <li>Live Greeks and probability of profit</li>
             <li>Earnings and ex-dividend dates built in</li>
           </ul>

@@ -1316,26 +1316,69 @@ function getMotionStyles(reveal = true) {
       }`;
   return `
     <style>
-      /* --- Page wake ---
-         One fade for the whole page on load. Without it a refresh lands as a
-         sequence of pops -- text paints at once, then the hero screenshot, then
-         each video poster as it decodes -- which reads as the page assembling
-         itself rather than arriving.
+      /* =====================================================================
+         Entrance framework
+         =====================================================================
+         Three layers, and which layer a thing belongs to is decided by one
+         question: does it have to wait for anything?
 
-         Gated on motion-ready, so a reduced-motion visitor and a JS-off visitor
-         never meet the opacity: 0 at all. For everyone else the inline head
-         script registers an unconditional 600ms timeout that applies .is-awake
-         before anything that could throw, so no later failure can strand the
-         page invisible.
+           Layer 0  CHROME -- the nav and the sticky bar.
+                    No animation at all. Structural, already in the HTML, needs
+                    no network. It is painted on the first frame and never
+                    hidden, so a refresh always lands on a complete top bar.
+                    (The brand mark inside it still draws itself -- that is the
+                    mark's own animation, not an entrance.)
 
-         0.3s is deliberately short: the hero screenshot is this page's LCP
-         element and does not count as painted while it is transparent, so every
-         millisecond spent here is a millisecond added to LCP. */
-      html.motion-ready body { opacity: 0; }
-      html.motion-ready.is-awake body {
-        opacity: 1;
-        transition: opacity 0.3s ease-out;
+           Layer 1  COPY -- the hero headline, subhead, CTA and proof list.
+                    A short staggered rise, as a CSS animation with fill: both.
+                    It starts when the element is PARSED, not when a script runs
+                    and not when a resource lands, so it can never wait on the
+                    network and there is no state a failure can strand it in.
+
+           Layer 2  MEDIA -- the hero screenshot.
+                    The only thing here whose arrival this page does not
+                    control, so it is the only thing that fades on load rather
+                    than on parse. Its frame reserves the space either way, so
+                    nothing moves when it lands.
+
+         This replaces a single fade over the whole body. That hid layer 0 along
+         with everything else and held it until the screenshot resolved, so the
+         nav -- which needs no loading whatsoever -- was blank and then flashed
+         in with the rest of the page.
+
+         Everything below is gated on motion-ready, so reduced-motion and JS-off
+         visitors get the finished page with no entrance at all. */
+      @keyframes ov-rise {
+        from { opacity: 0; transform: translateY(14px); }
+        to   { opacity: 1; transform: none; }
       }
+
+      /* Layer 1. The delays are 70ms apart -- enough to read as a sequence
+         rather than a single block, short enough that the whole hero has
+         settled inside half a second. */
+      html.motion-ready .ov-hero__title,
+      html.motion-ready .ov-hero__sub,
+      html.motion-ready .ov-hero__cta,
+      html.motion-ready .ov-hero__proof,
+      html.motion-ready .ov-hero__frame {
+        animation: ov-rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+      }
+      html.motion-ready .ov-hero__title { animation-delay: 0.04s; }
+      html.motion-ready .ov-hero__sub   { animation-delay: 0.11s; }
+      html.motion-ready .ov-hero__cta   { animation-delay: 0.18s; }
+      html.motion-ready .ov-hero__proof { animation-delay: 0.25s; }
+      /* The frame rides in alongside the copy rather than after it: it is half
+         the composition, and holding it back left the hero visibly lopsided. */
+      html.motion-ready .ov-hero__frame { animation-delay: 0.08s; }
+
+      /* Layer 2. Opacity only -- the frame has already done the moving, and
+         animating the image as well would slide it against its own container.
+         Not a keyframe animation, because this one waits for an event. */
+      html.motion-ready img.ov-fade-in {
+        opacity: 0;
+        transition: opacity 0.45s ease-out;
+      }
+      html.motion-ready img.ov-fade-in.is-loaded { opacity: 1; }
       ${revealCSS}
 
       /* --- Sticky CTA bar -----------------------------------------------------
@@ -1893,29 +1936,35 @@ function getLayout(title, content, additionalStyles = '', meta = {}) {
       if (!window.matchMedia || !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
         document.documentElement.classList.add('motion-ready');
 
-        // --- Page wake ---
-        // Text paints immediately and images arrive whenever they arrive, so a
-        // refresh used to land as a sequence of pops rather than as one page.
-        // The body starts transparent and fades in once, so everything above the
-        // fold arrives together.
+        // --- Entrance, layer 2 only: media that arrives on the network ---
         //
-        // The timeout is registered FIRST and unconditionally, before anything
-        // that could throw. It is the guarantee that the page cannot stay
-        // invisible: the class that reveals the body is applied within 600ms no
-        // matter what happens below, or on a connection slow enough that waiting
-        // for the hero image would mean staring at nothing.
-        var wake = function () { document.documentElement.classList.add('is-awake'); };
-        setTimeout(wake, 600);
+        // Layers 0 and 1 (chrome and copy -- see getMotionStyles) are pure CSS
+        // and need no help: they start on parse and cannot wait on anything.
+        // The hero screenshot is the one element whose arrival time this page
+        // does not control, so it is the only one JS touches.
+        //
+        // The timeout is registered FIRST, before anything that could throw, and
+        // sweeps in every marked image unconditionally. It is the guarantee that
+        // a failure below -- or a connection slow enough that waiting would mean
+        // staring at a hole -- can never leave the image invisible.
+        var show = function (el) { el.classList.add('is-loaded'); };
+        var sweep = function () {
+          var all = document.querySelectorAll('.ov-fade-in');
+          for (var i = 0; i < all.length; i++) show(all[i]);
+        };
+        setTimeout(sweep, 1200);
 
-        // The faster path. The hero screenshot is this page's LCP element and
-        // the largest thing that can pop, so waking on its load keeps it part of
-        // the fade instead of landing on top of it. Pages without one wake as
-        // soon as the document is parsed.
         document.addEventListener('DOMContentLoaded', function () {
-          var hero = document.querySelector('.ov-hero__frame img');
-          if (!hero || hero.complete) return wake();
-          hero.addEventListener('load', wake);
-          hero.addEventListener('error', wake);
+          var imgs = document.querySelectorAll('img.ov-fade-in');
+          for (var i = 0; i < imgs.length; i++) {
+            (function (img) {
+              // An image served from cache can finish before this listener is
+              // attached, and then the load event never comes. Check first.
+              if (img.complete) return show(img);
+              img.addEventListener('load', function () { show(img); });
+              img.addEventListener('error', function () { show(img); });
+            })(imgs[i]);
+          }
         });
       }
     </script>
@@ -3855,7 +3904,7 @@ ${getStickyBarHTML('Get the App', 'https://apps.apple.com/app/id6786063635', OV_
         <div class="ov-hero__frame">
           <picture>
             <source srcset="/tradevision/payoff-chart.webp" type="image/webp">
-            <img src="/tradevision/payoff-chart.png" width="900" height="1955"
+            <img class="ov-fade-in" src="/tradevision/payoff-chart.png" width="900" height="1955"
                  fetchpriority="high" decoding="async"
                  alt="OptionsVision showing an AAPL long call calendar spread: a profit-and-loss curve with both break-evens marked, and sliders for days to expiration and implied volatility.">
           </picture>

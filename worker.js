@@ -938,8 +938,8 @@ function getTradeVisionPageStyles() {
         left: 50%;
         transform: translateX(-50%) translateY(-6px);
         z-index: 60;
-        min-width: 258px;
-        padding: 7px;
+        min-width: 320px;
+        padding: 6px;
         border: 1px solid var(--border);
         border-radius: 14px;
         background: var(--surface);
@@ -962,12 +962,17 @@ function getTradeVisionPageStyles() {
         top: -12px;
         height: 12px;
       }
+      /* The crown sits on the RIGHT. On the left it occupied a gutter only the
+         second item had, so the two labels started at different x and the menu
+         read as misaligned -- which is what looked wrong about it. On the right
+         both labels share a left edge and the badge forms its own column. */
       .ov-nav__menuwrap .ov-nav__menu a {
         display: flex;
         align-items: center;
-        gap: 9px;
-        padding: 10px 12px;
-        border-radius: 9px;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 9px 12px;
+        border-radius: 10px;
         color: var(--text-body);
         font-size: 0.9375rem;
         text-decoration: none;
@@ -978,6 +983,34 @@ function getTradeVisionPageStyles() {
         background: var(--surface-alt);
         color: var(--text);
         text-decoration: none;
+      }
+      .ov-nav__menu-txt {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+      }
+      .ov-nav__menu-label { color: var(--text); line-height: 1.25; }
+      /* The second line is the point of the change. Two bare labels in a large
+         panel left the menu mostly padding, and "Manual Input" does not say what
+         it does on its own. A line of explanation fills the space with something
+         worth reading instead of shrinking the panel around nothing. */
+      .ov-nav__menu-desc {
+        font-size: 0.8125rem;
+        color: var(--text-muted);
+        line-height: 1.3;
+      }
+      /* A lone crown assumes the reader already knows the convention. Tinting it
+         into a badge makes it read as a status marker on the row rather than a
+         decoration floating beside the text. The accessible name is carried by
+         the visually hidden span next to it, so it is not title-only. */
+      .ov-nav__pro {
+        display: inline-flex;
+        align-items: center;
+        flex: 0 0 auto;
+        padding: 4px 7px;
+        border-radius: 7px;
+        background: rgba(217, 174, 87, 0.14);
       }
       .ov-crown {
         width: 15px;
@@ -1949,8 +1982,19 @@ const OV_NAV_LINKS = `<div class="ov-nav__menuwrap">
             <svg class="ov-nav__caret" viewBox="0 0 10 6" aria-hidden="true" focusable="false"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
           <div class="ov-nav__menu" id="ovModelMenu">
-            <a href="/model">Manual Input</a>
-            <a href="/model/import">${OV_CROWN_SVG}Import Robinhood Screenshot</a>
+            <a href="/model">
+              <span class="ov-nav__menu-txt">
+                <span class="ov-nav__menu-label">Manual Input</span>
+                <span class="ov-nav__menu-desc">Enter a trade leg by leg</span>
+              </span>
+            </a>
+            <a href="/model/import">
+              <span class="ov-nav__menu-txt">
+                <span class="ov-nav__menu-label">Import Robinhood Screenshot</span>
+                <span class="ov-nav__menu-desc">Read it off your order ticket</span>
+              </span>
+              <span class="ov-nav__pro" title="OptionsVision Pro">${OV_CROWN_SVG}<span class="ov-vh"> (OptionsVision Pro)</span></span>
+            </a>
           </div>
         </div>
         <a href="/learn">Resources</a>`;

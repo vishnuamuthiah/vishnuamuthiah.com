@@ -859,21 +859,26 @@ function getTradeVisionPageStyles() {
         flex: 0 0 auto;
       }
       .ov-nav__brand:hover { text-decoration: none; }
-      /* Bold sans, matching .tv-stickybar__name -- NOT the serif this used to
-         be. The sticky bar is meant to read as this nav catching up on scroll,
-         and setting the same word in two different typefaces broke that: the
-         wordmark visibly changed face as the bar slid in. The sticky bar's
-         treatment is the one that wins, at the user's direction.
+      /* Serif, and it has to stay serif. LaunchView.swift renders the app's
+         wordmark in IowanOldStyle-Roman -- the same face .pf-serif names here --
+         and does it deliberately: it probes for the font at runtime and falls
+         back to New York rather than let SwiftUI drop silently to sans, so that
+         the app and the site render the wordmark in the identical typeface
+         rather than two serifs that merely resemble each other.
 
-         Larger here than in the bar (1.75rem against 1.3rem) on purpose: an
+         This was briefly set in bold sans to match the sticky bar, which had
+         the fix backwards: it traded a mismatch between two bars on one site
+         for a mismatch between the site and the product. The bar moved to serif
+         instead.
+
+         Larger here than in the bar (1.75rem against 1.45rem) on purpose: an
          at-rest masthead can afford the room, a fixed strip over live content
          cannot. */
       .ov-nav__wordmark {
         font-size: 1.75rem;
         line-height: 1;
-        font-weight: 700;
         color: var(--text);
-        letter-spacing: -0.01em;
+        letter-spacing: -0.012em;
       }
       /* The mark ships at 94px for the old 72px masthead. Beside a 1.75rem
          wordmark it comes down to suit, the same way .ov-lockup--entry does --
@@ -1503,14 +1508,23 @@ function getMotionStyles(reveal = true) {
         visibility: visible;
         transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), visibility 0s;
       }
+      /* Serif and regular weight, the same face and weight the app's launch
+         screen uses (LaunchView.swift, IowanOldStyle-Roman at .regular). The
+         wordmark is one asset and should be one asset everywhere it appears.
+         Bold is deliberately NOT used: Iowan Old Style's bold is a different
+         cut, and where it is unavailable a browser synthesises one, which is
+         exactly the "two serifs that merely resemble each other" the app's font
+         handling was written to avoid.
+
+         1.3rem -> 1.45rem to pay for the lost weight. A regular serif reads
+         lighter than the bold sans this replaced, and next to bold sans nav
+         links it needed the size back rather than a faux-bold. The name is
+         allowed to ellipsis and the pill is flex: none, so growing it can never
+         squeeze the tap target on a narrow screen. */
       .tv-stickybar__name {
-        font-weight: 700;
-        /* 1.05rem -> 1.3rem: 4px up from where this started. The name is allowed to
-           ellipsis and the pill is flex:none, so growing this can never squeeze the
-           tap target on a narrow screen. */
-        font-size: 1.3rem;
+        font-size: 1.45rem;
         color: var(--text);
-        letter-spacing: -0.01em;
+        letter-spacing: -0.012em;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
@@ -1584,7 +1598,7 @@ function getMotionStyles(reveal = true) {
          so the pill never gets squeezed on a narrow screen. */
       @media (max-width: 600px) {
         .tv-stickybar { padding: 6px 14px; gap: 10px; }
-        .tv-stickybar__name { font-size: 1.2rem; }
+        .tv-stickybar__name { font-size: 1.32rem; }
         .tv-stickybar__cta {
           font-size: 0.85rem;
           padding: 8px 16px;
@@ -1693,11 +1707,11 @@ const APP_STORE_QR_SVG = "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 
 function getStickyBarHTML(label, href, links = '') {
   const brand = links
     ? `<span class="tv-stickybar__brand">
-        <span class="tv-stickybar__name">OptionsVision</span>
+        <span class="tv-stickybar__name pf-serif">OptionsVision</span>
         ${OV_TREND_MARK_SVG}
       </span>
       <div class="tv-stickybar__links">${links}</div>`
-    : `<span class="tv-stickybar__name">OptionsVision</span>`;
+    : `<span class="tv-stickybar__name pf-serif">OptionsVision</span>`;
   return `    <div class="tv-stickybar" id="tvStickyBar" aria-hidden="true">
       ${brand}
       <a class="tv-stickybar__cta" href="${href}" target="_blank" rel="noopener noreferrer">${label}</a>
@@ -3977,7 +3991,7 @@ function getTradeVisionHTML() {
 ${getStickyBarHTML('Get the App', 'https://apps.apple.com/app/id6786063635', OV_NAV_LINKS)}
     <nav class="ov-nav" aria-label="Primary">
       <a class="ov-nav__brand" href="/">
-        <span class="ov-nav__wordmark">OptionsVision</span>
+        <span class="ov-nav__wordmark pf-serif">OptionsVision</span>
         ${OV_TREND_MARK_SVG}
       </a>
       <div class="ov-nav__links">

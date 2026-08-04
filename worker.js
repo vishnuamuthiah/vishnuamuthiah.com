@@ -1136,14 +1136,26 @@ function getTradeVisionPageStyles() {
                     opacity 0.16s ease,
                     visibility 0s 0.3s;
       }
-      .ov-strat__panel ul {
+      /* .ov-page prefix is doing real work. This grid lives inside .tv-copy, and
+         getEditorialCopyStyles() -- which loads AFTER this sheet -- sets
+         ".tv-copy ul, .tv-copy ol" to margin 0 0 20px and padding-left 18px.
+         That selector and a bare ".ov-strat__panel ul" are BOTH (0,1,1), so the
+         tie broke on source order and the editorial rule won: every panel
+         carried 20px of dead space under its last item and an 18px indent it
+         never asked for. The extra class makes it (0,2,1) and settles it.
+
+         Same reason for the li: the editorial sheet gives list items a 6px
+         bottom margin, and the original rule here only set padding, so the
+         margin was never reset at all. */
+      .ov-page .ov-strat__panel ul {
         margin: 0;
         padding: 0;
         list-style: none;
       }
       /* No rules between the items. Hairlines on every row made a four-name
          list read as a data table; spacing separates them well enough. */
-      .ov-strat__panel li {
+      .ov-page .ov-strat__panel li {
+        margin: 0;
         padding: 7px 0;
         font-size: 0.875rem;
         line-height: 1.4;
@@ -1292,6 +1304,26 @@ function getMotionStyles(reveal = true) {
       }`;
   return `
     <style>
+      /* --- Page wake ---
+         One fade for the whole page on load. Without it a refresh lands as a
+         sequence of pops -- text paints at once, then the hero screenshot, then
+         each video poster as it decodes -- which reads as the page assembling
+         itself rather than arriving.
+
+         Gated on motion-ready, so a reduced-motion visitor and a JS-off visitor
+         never meet the opacity: 0 at all. For everyone else the inline head
+         script registers an unconditional 600ms timeout that applies .is-awake
+         before anything that could throw, so no later failure can strand the
+         page invisible.
+
+         0.3s is deliberately short: the hero screenshot is this page's LCP
+         element and does not count as painted while it is transparent, so every
+         millisecond spent here is a millisecond added to LCP. */
+      html.motion-ready body { opacity: 0; }
+      html.motion-ready.is-awake body {
+        opacity: 1;
+        transition: opacity 0.3s ease-out;
+      }
       ${revealCSS}
 
       /* --- Sticky CTA bar -----------------------------------------------------
@@ -1848,6 +1880,31 @@ function getLayout(title, content, additionalStyles = '', meta = {}) {
       // fully visible page.
       if (!window.matchMedia || !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
         document.documentElement.classList.add('motion-ready');
+
+        // --- Page wake ---
+        // Text paints immediately and images arrive whenever they arrive, so a
+        // refresh used to land as a sequence of pops rather than as one page.
+        // The body starts transparent and fades in once, so everything above the
+        // fold arrives together.
+        //
+        // The timeout is registered FIRST and unconditionally, before anything
+        // that could throw. It is the guarantee that the page cannot stay
+        // invisible: the class that reveals the body is applied within 600ms no
+        // matter what happens below, or on a connection slow enough that waiting
+        // for the hero image would mean staring at nothing.
+        var wake = function () { document.documentElement.classList.add('is-awake'); };
+        setTimeout(wake, 600);
+
+        // The faster path. The hero screenshot is this page's LCP element and
+        // the largest thing that can pop, so waking on its load keeps it part of
+        // the fade instead of landing on top of it. Pages without one wake as
+        // soon as the document is parsed.
+        document.addEventListener('DOMContentLoaded', function () {
+          var hero = document.querySelector('.ov-hero__frame img');
+          if (!hero || hero.complete) return wake();
+          hero.addEventListener('load', wake);
+          hero.addEventListener('error', wake);
+        });
       }
     </script>
 </head>

@@ -1131,7 +1131,7 @@ function getTradeVisionPageStyles() {
         left: -1px;
         right: -1px;
         z-index: 6;
-        padding: 2px 18px 17px;
+        padding: 12px 16px 16px;
         border: 1px solid var(--accent);
         border-top: 0;
         border-radius: 0 0 14px 14px;
@@ -1160,18 +1160,48 @@ function getTradeVisionPageStyles() {
          bottom margin, and the original rule here only set padding, so the
          margin was never reset at all. */
       .ov-page .ov-strat__panel ul {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
         margin: 0;
         padding: 0;
         list-style: none;
       }
-      /* No rules between the items. Hairlines on every row made a four-name
-         list read as a data table; spacing separates them well enough. */
-      .ov-page .ov-strat__panel li {
+      /* Chips, not rows. A single column of left-aligned names is the shape of
+         a menu, which is why this panel read as a dropdown no matter how it was
+         styled -- the giveaway was the content, not the chrome. Pills read as
+         labels, and they fold the six-item groups from six stacked rows into
+         three.
+
+         Still a ul/li underneath, so the list semantics survive: assistive tech
+         still announces a list of six. Deliberately no hover state -- these are
+         labels, and anything that lights up under the pointer would put the
+         menu reading right back. */
+      .ov-page .ov-strat__chip {
         margin: 0;
-        padding: 7px 0;
-        font-size: 0.875rem;
-        line-height: 1.4;
+        padding: 5px 10px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: var(--surface-alt);
+        font-size: 0.8125rem;
+        line-height: 1.35;
         color: var(--text-body);
+        /* A chip broken across two lines looks like a rendering fault. If one
+           cannot fit beside its neighbour it takes the row alone instead. */
+        white-space: nowrap;
+      }
+
+      /* Available to a screen reader and to a crawler, painted for nobody. */
+      .ov-vh {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        margin: -1px;
+        padding: 0;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+        border: 0;
       }
 
       /* Open state, shared by all three ways in. Hover is gated behind a real
@@ -1236,9 +1266,14 @@ function getTradeVisionPageStyles() {
           transition-delay: 0s;
         }
       }
+      /* One column on phones, not two. Two columns at 375px leaves a card about
+         160px wide -- roughly 124px of panel interior -- which is narrower than
+         a single "Cash-secured put" chip, so every chip would take its own row
+         and the widest would overflow the panel. Full width gives ~297px, where
+         chips pair up as intended. */
       @media (max-width: 600px) {
-        .ov-strat { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
-        .ov-strat__head { padding: 14px 14px 15px; }
+        .ov-strat { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+        .ov-strat__head { padding: 14px 16px 15px; }
         .ov-strat__name { font-size: 0.9375rem; }
       }
 
@@ -3784,15 +3819,25 @@ ${body}
 /// in the hero, the copy above the grid and the App Store listing:
 /// 4 + 4 + 2 + 3 + 4 + 6 + 6 + 3 = 32. Adding a strategy means editing this
 /// array and the three places that quote the total.
+/// `suffix` is the part of each strategy's full name that the group heading
+/// already says. It is NOT dropped -- it is rendered in a visually hidden span,
+/// so the chip reads "Long call" under a card titled Condors while the DOM, a
+/// screen reader and a crawler all still get "Long call condor".
+///
+/// This exists because chips need the labels to be short. The panel is only as
+/// wide as its card -- about 230px of usable width at the four-column layout --
+/// and "Long call butterfly" is wider than half of that, so full names would
+/// wrap one per row and the chips would be a bordered list. Trimming the
+/// repeated word is what makes two fit on a line.
 const OV_STRATEGY_GROUPS = [
-  { name: 'Single Leg', items: ['Long call', 'Long put', 'Covered call', 'Cash-secured put'] },
-  { name: 'Vertical Spreads', items: ['Call debit spread', 'Call credit spread', 'Put debit spread', 'Put credit spread'] },
-  { name: 'Straddles &amp; Strangles', items: ['Long straddle', 'Long strangle'] },
-  { name: 'Calendar Spreads', items: ['Long call calendar', 'Long put calendar', 'Short put calendar'] },
-  { name: 'Diagonals', items: ['Long call diagonal', 'Long put diagonal', 'Short put diagonal', 'Short call diagonal (covered)'] },
-  { name: 'Condors', items: ['Long call condor', 'Short call condor', 'Long put condor', 'Short put condor', 'Long iron condor', 'Short iron condor'] },
-  { name: 'Butterflies', items: ['Long call butterfly', 'Short call butterfly', 'Long put butterfly', 'Short put butterfly', 'Long iron butterfly', 'Short iron butterfly'] },
-  { name: 'Unbalanced Ratios', items: ['Put front ratio', 'Call back ratio', 'Put back ratio'] },
+  { name: 'Single Leg', suffix: '', items: ['Long call', 'Long put', 'Covered call', 'Cash-secured put'] },
+  { name: 'Vertical Spreads', suffix: ' spread', items: ['Call debit', 'Call credit', 'Put debit', 'Put credit'] },
+  { name: 'Straddles &amp; Strangles', suffix: '', items: ['Long straddle', 'Long strangle'] },
+  { name: 'Calendar Spreads', suffix: ' calendar spread', items: ['Long call', 'Long put', 'Short put'] },
+  { name: 'Diagonals', suffix: ' diagonal', items: ['Long call', 'Long put', 'Short put', 'Short call (covered)'] },
+  { name: 'Condors', suffix: ' condor', items: ['Long call', 'Short call', 'Long put', 'Short put', 'Long iron', 'Short iron'] },
+  { name: 'Butterflies', suffix: ' butterfly', items: ['Long call', 'Short call', 'Long put', 'Short put', 'Long iron', 'Short iron'] },
+  { name: 'Unbalanced Ratios', suffix: ' ratio', items: ['Put front', 'Call back', 'Put back'] },
 ];
 
 /// Eight cards; the members appear on hover, in a panel that overlays whatever
@@ -3809,7 +3854,17 @@ const OV_STRATEGY_GROUPS = [
 function getStrategyGridHTML() {
   const cards = OV_STRATEGY_GROUPS.map((group, i) => {
     const panelId = 'ovStrat' + i;
-    const items = group.items.map((s) => '<li>' + s + '</li>').join('');
+    // "Short call (covered)" keeps its qualifier on the visible chip but must
+    // not read as "Short call (covered) diagonal" -- the suffix goes before the
+    // parenthetical in the hidden half so the full name stays grammatical.
+    const items = group.items.map((s) => {
+      if (!group.suffix) return '<li class="ov-strat__chip">' + s + '</li>';
+      const paren = s.indexOf(' (');
+      const stem = paren === -1 ? s : s.slice(0, paren);
+      const tail = paren === -1 ? '' : s.slice(paren);
+      return '<li class="ov-strat__chip">' + stem +
+             '<span class="ov-vh">' + group.suffix + '</span>' + tail + '</li>';
+    }).join('');
     return `        <div class="ov-strat__card">
           <button class="ov-strat__head" type="button" aria-expanded="false" aria-controls="${panelId}">
             <span class="ov-strat__name">${group.name}</span>

@@ -975,17 +975,23 @@ function getTradeVisionPageStyles() {
       .ov-page [id] { scroll-margin-top: 80px; }
       /* Three facts, not a logo wall -- there are no investor logos to show, and
          these are the claims a trader actually weighs. */
+      /* A 2x2 grid rather than a wrapping flex row. With four items of uneven
+         length, flex-wrap packed them 3-then-1 and the ragged last row read as
+         an accident; a fixed two columns keeps the block square whatever the
+         copy says. */
       .ov-hero__proof {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 10px 26px;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px 24px;
         margin: 32px 0 0;
         padding: 0;
         list-style: none;
         font-size: 0.875rem;
         color: var(--text-muted);
       }
-      .ov-hero__proof li { display: flex; align-items: center; gap: 8px; }
+      /* align-items: flex-start, not center: these wrap to two lines at some
+         widths and a centred dot floats to the middle of the block. */
+      .ov-hero__proof li { display: flex; align-items: flex-start; gap: 8px; line-height: 1.4; }
       .ov-hero__proof li::before {
         content: "";
         width: 5px;
@@ -993,6 +999,9 @@ function getTradeVisionPageStyles() {
         border-radius: 50%;
         background: var(--accent);
         flex: 0 0 auto;
+        /* Sits the dot on the first line's optical centre. Without it the
+           flex-start alignment above pins it to the very top of the box. */
+        margin-top: 0.5em;
       }
 
       /* ---- Hero shot ----
@@ -1038,6 +1047,9 @@ function getTradeVisionPageStyles() {
         .pf-page.ov-page { padding: 0 20px 56px; }
         .ov-page .ov-hero { padding: 28px 0 18px; gap: 32px; }
         .ov-hero__cta { gap: 12px; margin-top: 24px; }
+        /* Two columns of this copy at 375px leaves ~150px a cell, which breaks
+           every one of them onto three lines. */
+        .ov-hero__proof { grid-template-columns: minmax(0, 1fr); gap: 10px; }
         .ov-hero__cta .appstore-badge__svg { width: 178px; }
         .ov-hero__frame { max-width: 330px; }
       }
@@ -3823,15 +3835,16 @@ ${getStickyBarHTML('Get the App', 'https://apps.apple.com/app/id6786063635', OV_
             </a>
           </div>
 
-          ${/* "No sign-up" rather than "no account": buying Pro authenticates
-               against the Apple ID the visitor already has, so no OptionsVision
-               account is ever created -- but "no account" invites the reader to
-               wonder about the Apple one. "Sign-up" says the true thing without
-               the ambiguity. */''}
+          ${/* Four claims about what the app actually computes, rather than
+               three about what it does not do. Each one is defended further
+               down the page: the pricing model, the Greeks and POP, and the
+               earnings/dividend feed all have their own paragraph under
+               "Real Analytics". */''}
           <ul class="ov-hero__proof">
             <li>32 strategies, single-leg to 4-leg</li>
-            <li>Nothing leaves your phone</li>
-            <li>No sign-up, no ads</li>
+            <li>Black-Scholes priced from your entry premiums</li>
+            <li>Live Greeks and probability of profit</li>
+            <li>Earnings and ex-dividend dates built in</li>
           </ul>
         </div>
 
@@ -3877,7 +3890,7 @@ ${getStickyBarHTML('Get the App', 'https://apps.apple.com/app/id6786063635', OV_
         <h3>Watch Time and Volatility Work</h3>
         <p>Adjust days-to-expiration and IV to watch theta decay reshape your position in real time. Or flip to the at-expiration view for the standard payoff chart. As each dividend's ex-date passes, it drops out of the pricing, so the chart stays accurate.</p>
 
-        <h3>Real Analytics, Not Approximations</h3>
+        <h3>Real Analytics</h3>
         <ul>
           <li>Black-Scholes pricing with implied volatility solved from your actual per-leg entry premiums</li>
           <li>Live Greeks: Delta, Gamma, Theta, and Vega, per share and for the whole position</li>
